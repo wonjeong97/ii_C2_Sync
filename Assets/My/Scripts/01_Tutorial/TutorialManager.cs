@@ -14,6 +14,7 @@ namespace My.Scripts._01_Tutorial
         public TutorialPage1Data page1;
         public TutorialPage2Data page2;
         public TutorialPage3Data page3;
+        public TutorialPage4Data page4;
     }
 
     // [매니저] 튜토리얼 흐름 관리
@@ -35,9 +36,10 @@ namespace My.Scripts._01_Tutorial
             if (pages != null && pages.Length > 0)
             {
                 // 타입 확인 후 안전하게 주입
-                if (pages[0] is TutorialPage1Controller page1) page1.SetupData(setting.page1);
-                if (pages[1] is TutorialPage2Controller page2) page2.SetupData(setting.page2);
-                if (pages[2] is TutorialPage3Controller page3) page3.SetupData(setting.page3);
+                if (pages.Length > 0 && pages[0] is TutorialPage1Controller page1) page1.SetupData(setting.page1);
+                if (pages.Length > 1 && pages[1] is TutorialPage2Controller page2) page2.SetupData(setting.page2);
+                if (pages.Length > 2 && pages[2] is TutorialPage3Controller page3) page3.SetupData(setting.page3);
+                if (pages.Length > 3 && pages[3] is TutorialPage4Controller page4) page4.SetupData(setting.page4);
             }
         }
 
