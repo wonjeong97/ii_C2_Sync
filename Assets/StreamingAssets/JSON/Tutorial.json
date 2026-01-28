@@ -9,5 +9,28 @@
       "fontSize": 80,
       "fontColor": {"r": 0.2588235, "g": 0.254902, "b": 0.2588235, "a": 1}      
     }
+  },
+  "page2": {
+    "descriptionText": {
+      "name": "Text_Description",
+      "position": {"x": 1000, "y": -963},
+      "scale": {"x": 1, "y": 1, "z": 1},
+      "text": "체험 후 최대 5개의 마음 조각을 받을 수 있습니다.",
+      "fontName": "font4",
+      "fontSize": 80,
+      "fontColor": {"r": 0.2588235, "g": 0.254902, "b": 0.2588235, "a": 1}
+    }
+  },
+  "page3":
+  {
+    "descriptionText": {
+      "name": "Text_Description",
+      "position": {"x": 1000, "y": -963},
+      "scale": {"x": 1, "y": 1, "z": 1},
+      "text": "각자의 자리 가운데 두 개의 발판 위에\n한발씩 올라서서 <color=#DC2525>제자리 점프하면</color>, 시작됩니다.",
+      "fontName": "font4",
+      "fontSize": 80,
+      "fontColor": {"r": 0.2588235, "g": 0.254902, "b": 0.2588235, "a": 1}
+    }
   }
 }
