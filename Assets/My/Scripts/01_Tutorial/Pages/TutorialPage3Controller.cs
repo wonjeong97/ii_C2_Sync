@@ -47,7 +47,14 @@ namespace My.Scripts._01_Tutorial.Pages
             if (guideText != null && data.guideText != null)
             {
                 guideText.supportRichText = true;
-                UIManager.Instance.SetText(guideText.gameObject, data.guideText);
+                if (UIManager.Instance != null)
+                {
+                    UIManager.Instance.SetText(guideText.gameObject, data.guideText);
+                }
+                else
+                {
+                    Debug.LogWarning("[TutorialPage3Controller] UIManager.Instance가 null입니다.");
+                }
             }
         }
 

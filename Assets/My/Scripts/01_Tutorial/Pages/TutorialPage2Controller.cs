@@ -7,11 +7,10 @@ using Wonjeong.UI;
 
 namespace My.Scripts._01_Tutorial.Pages
 {
-    // [데이터] JSON의 "page1" 섹션과 1:1 매핑
     [Serializable]
     public class TutorialPage2Data
     {
-        public TextSetting descriptionText; // 타이틀 없이 설명 텍스트만 존재
+        public TextSetting descriptionText;
     }
 
     // [컨트롤러] 페이지 로직 담당
@@ -34,7 +33,7 @@ namespace My.Scripts._01_Tutorial.Pages
                 }
                 else
                 {
-                    Debug.LogWarning("[TutorialPage1Controller] UIManager.Instance가 null입니다.");
+                    Debug.LogWarning("[TutorialPage2Controller] UIManager.Instance가 null입니다.");
                 }
             }
         }
