@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using My.Scripts.Core;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,13 +14,14 @@ namespace My.Scripts._01_Tutorial.Pages
         public TextSetting descriptionText;
     }
 
-    // [컨트롤러] 페이지 로직 담당
     public class TutorialPage2Controller : GamePage<TutorialPage2Data>
     {
         [Header("UI Components")]
-        [SerializeField] private Text descriptionText; // Inspector에서 연결할 UI 텍스트
+        [SerializeField] private Text descriptionText;
 
-        // 1. 데이터 주입 (매니저가 호출)
+        private bool _isCompleted = false;
+
+        // 1. 데이터 주입
         protected override void SetupData(TutorialPage2Data data)
         {
             if (data == null) return;
@@ -31,10 +33,6 @@ namespace My.Scripts._01_Tutorial.Pages
                 {
                     UIManager.Instance.SetText(descriptionText.gameObject, data.descriptionText);
                 }
-                else
-                {
-                    Debug.LogWarning("[TutorialPage2Controller] UIManager.Instance가 null입니다.");
-                }
             }
         }
 
@@ -42,17 +40,44 @@ namespace My.Scripts._01_Tutorial.Pages
         public override void OnEnter()
         {
             base.OnEnter();
-            // 필요 시 추가 연출 (예: 텍스트 페이드 인) 구현 가능
+            
+            _isCompleted = false; // 상태 초기화
+
+            // 3초 후 자동으로 넘어가는 코루틴 실행
+            StartCoroutine(AutoPassRoutine());
         }
 
-        // 3. 업데이트 (입력 감지)
+        // 자동 넘김 코루틴
+        private IEnumerator AutoPassRoutine()
+        {
+            yield return new WaitForSeconds(3.0f);
+
+            // 아직 완료되지 않았다면 다음 단계로 진행
+            if (!_isCompleted)
+            {
+                _isCompleted = true;
+                CompleteStep(); 
+            }
+        }
+
+        // 3. 업데이트 (입력 감지 - 스킵 기능)
         private void Update()
         {
-            // 엔터 키 또는 마우스 클릭 시 다음 단계로 진행
+            if (_isCompleted) return;
+
+            // 엔터 키 또는 마우스 클릭 시 3초 기다리지 않고 즉시 다음 단계로 진행
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetMouseButtonDown(0))
             {
-                CompleteStep(); // 상위(TutorialManager)에 완료 신호 전송
+                _isCompleted = true;
+                StopAllCoroutines(); // 대기 중이던 자동 넘김 타이머 취소
+                CompleteStep();
             }
+        }
+        
+        public override void OnExit()
+        {
+            base.OnExit();
+            StopAllCoroutines(); // 페이지를 나갈 때 코루틴 확실히 정리
         }
     }
 }
