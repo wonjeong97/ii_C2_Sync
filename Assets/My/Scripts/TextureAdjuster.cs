@@ -57,6 +57,7 @@ public class TextureAdjuster : MonoBehaviour
         if (!Application.isPlaying || transform.hasChanged)
         {
             UpdateUVs();
+            transform.hasChanged = false;
         }
     }
 
