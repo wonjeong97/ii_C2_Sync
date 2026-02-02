@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Wonjeong.Data;
 using Wonjeong.UI;
+using Wonjeong.Utils;
 
 namespace My.Scripts._01_Tutorial.Pages
 {
@@ -76,7 +77,7 @@ namespace My.Scripts._01_Tutorial.Pages
                 yield return StartCoroutine(FadeText(0f, 1f, FADE_IN_TIME));
 
                 // 3. 대기 (3초)
-                yield return new WaitForSeconds(DISPLAY_TIME);
+                yield return CoroutineData.GetWaitForSeconds(DISPLAY_TIME);
 
                 // 4. 페이드 아웃 (1초)
                 yield return StartCoroutine(FadeText(1f, 0f, FADE_OUT_TIME));

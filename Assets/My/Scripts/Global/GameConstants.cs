@@ -8,6 +8,7 @@ namespace My.Scripts.Global
         { 
             public const string Title = "00_Title"; // 타이틀 씬
             public const string Tutorial = "01_Tutorial"; // 튜토리얼 씬
+            public const string PlayTutorial = "02_PlayTutorial";
         }
 
         /// <summary> 리소스 경로 상수 모음 </summary>
@@ -15,6 +16,7 @@ namespace My.Scripts.Global
         {
             public const string JsonSetting = "Settings"; // 기본 설정 JSON
             public const string Tutorial = "JSON/Tutorial"; // 튜토리얼 데이터
+            public const string PlayTutorial = "JSON/PlayTutorial"; // 튜토리얼 데이터
         }
     }
 }

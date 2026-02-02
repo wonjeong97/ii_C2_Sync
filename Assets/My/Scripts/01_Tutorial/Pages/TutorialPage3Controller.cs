@@ -12,13 +12,13 @@ namespace My.Scripts._01_Tutorial.Pages
     [Serializable]
     public class TutorialPage3Data
     {
-        public TextSetting guideText;
+        public TextSetting descriptionText;
     }
 
     public class TutorialPage3Controller : GamePage<TutorialPage3Data>
     {
         [Header("UI Components")]
-        [SerializeField] private Text guideText;
+        [SerializeField] private Text descriptionText;
         [SerializeField] private Image checkImageA;
         [SerializeField] private Image checkImageB;
 
@@ -44,12 +44,12 @@ namespace My.Scripts._01_Tutorial.Pages
         protected override void SetupData(TutorialPage3Data data)
         {
             if (data == null) return;
-            if (guideText != null && data.guideText != null)
+            if (descriptionText != null && data.descriptionText != null)
             {
-                guideText.supportRichText = true;
+                descriptionText.supportRichText = true;
                 if (UIManager.Instance != null)
                 {
-                    UIManager.Instance.SetText(guideText.gameObject, data.guideText);
+                    UIManager.Instance.SetText(descriptionText.gameObject, data.descriptionText);
                 }
                 else
                 {

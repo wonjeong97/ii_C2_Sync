@@ -342,7 +342,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 199a894bcb8b8b242af4a48fbd7922f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  guideText: {fileID: 0}
+  descriptionText: {fileID: 1338546923}
   checkImageA: {fileID: 1498821696}
   checkImageB: {fileID: 1288603767}
   jumpLandingTolerance: 0.25

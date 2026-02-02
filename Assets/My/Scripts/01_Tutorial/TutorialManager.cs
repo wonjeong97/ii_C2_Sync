@@ -17,13 +17,13 @@ namespace My.Scripts._01_Tutorial
         public TutorialPage4Data page4;
     }
 
-    // [매니저] 튜토리얼 흐름 관리
+    // 튜토리얼 흐름 관리
     public class TutorialManager : BaseFlowManager
     {
         // 1. 설정 로드 및 데이터 주입
         protected override void LoadSettings()
         {
-            // "Settings/JSON/Tutorial.json" 로드 (경로는 GameConstants 사용 권장)
+            // "Settings/JSON/Tutorial.json" 로드
             var setting = JsonLoader.Load<TutorialSetting>(GameConstants.Path.Tutorial);
 
             if (setting == null)
@@ -51,7 +51,7 @@ namespace My.Scripts._01_Tutorial
             // GameManager가 있다면 씬 전환 요청
             if (GameManager.Instance != null)
             {
-                //GameManager.Instance.ChangeScene(GameConstants.Scene.PlayTutorial);
+                GameManager.Instance.ChangeScene(GameConstants.Scene.PlayTutorial);
             }
         }
     }

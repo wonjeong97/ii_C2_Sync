@@ -1,0 +1,22 @@
+{
+  "guideTexts": [
+    {
+      "name": "Text_중앙 발판에 서서..",
+      "position": {"x": 0, "y": 200},
+      "scale": {"x": 1, "y": 1, "z": 1},
+      "text": "중앙 발판에 서서\n발을 굴러 달려주세요.",
+      "fontName": "font6",
+      "fontSize": 55,
+      "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}
+    },
+    {
+      "name": "Text_달리면 게이지가..",
+      "position": {"x": 0, "y": 200},
+      "scale": {"x": 1, "y": 1, "z": 1},
+      "text": "달리면 게이지가 채워집니다.\n달려주세요.",
+      "fontName": "font6",
+      "fontSize": 55,
+      "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}
+    }
+  ]
+}

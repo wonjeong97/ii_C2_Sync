@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Wonjeong.Data;
 using Wonjeong.UI;
+using Wonjeong.Utils;
 
 namespace My.Scripts._01_Tutorial.Pages
 {
@@ -50,7 +51,7 @@ namespace My.Scripts._01_Tutorial.Pages
         // 자동 넘김 코루틴
         private IEnumerator AutoPassRoutine()
         {
-            yield return new WaitForSeconds(3.0f);
+            yield return CoroutineData.GetWaitForSeconds(3.0f);
 
             // 아직 완료되지 않았다면 다음 단계로 진행
             if (!_isCompleted)
