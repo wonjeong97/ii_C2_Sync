@@ -2492,8 +2492,8 @@ MonoBehaviour:
   maxDistance: 150
   p1Floor: {fileID: 1249170318}
   p2Floor: {fileID: 571241275}
-  runSpeedBoost: 2
-  speedDecay: 3
+  runSpeedBoost: 0.2
+  speedDecay: 1
   maxScrollSpeed: 10
 --- !u!4 &823285676
 Transform:

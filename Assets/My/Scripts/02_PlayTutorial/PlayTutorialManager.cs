@@ -62,19 +62,20 @@ public class PlayTutorialManager : MonoBehaviour
         // 1. 데이터 로드
         _data = JsonLoader.Load<PlayTutorialData>(JsonPath);
         if (_data == null) Debug.LogWarning($"[PlayTutorialManager] '{JsonPath}' 로드 실패");
-
         // 2. 게이지 초기화
         if (p1Gauge) p1Gauge.UpdateGauge(0, maxDistance);
         if (p2Gauge) p2Gauge.UpdateGauge(0, maxDistance);
-
         // 3. 바닥 초기화
         InitFloor(p1Floor);
         InitFloor(p2Floor);
-
         // 4. 입력 이벤트 연결
         if (InputManager.Instance != null)
         {
             InputManager.Instance.OnPadDown += HandlePadDown;
+        }
+        else
+        {
+            Debug.LogError("[PlayTutorialManager] InputManager가 없습니다.");
         }
         
         // 5. 인트로 시나리오 시작
@@ -270,7 +271,7 @@ public class PlayTutorialManager : MonoBehaviour
 
     public void ShowPopup(int index)
     {   
-        if (_data == null || _data.guideTexts == null || index >= _data.guideTexts.Length) return;
+        if (_data == null || _data.guideTexts == null || index < 0 || index >= _data.guideTexts.Length) return;
         
         if (popupText != null)
         {
