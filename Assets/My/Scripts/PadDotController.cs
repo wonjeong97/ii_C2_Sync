@@ -78,7 +78,8 @@ public class PadDotController : MonoBehaviour
             else
             {
                 // 떼면 원래 이미지(DotVoid)로 복구
-                padImages[index].sprite = _defaultSprites[index];
+                if (_defaultSprites != null && _defaultSprites[index] != null)
+                    padImages[index].sprite = _defaultSprites[index];
             }
         }
     }
