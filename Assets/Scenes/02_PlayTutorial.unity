@@ -543,7 +543,7 @@ MonoBehaviour:
   uvLoopSize: 0.025
   virtualMetersPerLoop: 5
   virtualDistStartToEnd: 10
-  resetVirtualDistance: -20
+  resetVirtualDistance: -15
 --- !u!4 &201100368
 Transform:
   m_ObjectHideFlags: 0
@@ -2067,7 +2067,6 @@ GameObject:
   m_Component:
   - component: {fileID: 609568968}
   - component: {fileID: 609568970}
-  - component: {fileID: 609568969}
   m_Layer: 8
   m_Name: Frame (2)
   m_TagString: Untagged
@@ -2090,22 +2089,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 393388247}
   m_LocalEulerAnglesHint: {x: 0, y: -0.042, z: 0}
---- !u!114 &609568969
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 609568967}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e67c1c51fce196740bb279f3e763e2ba, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  endPosition: {x: 198.82, y: -4.38, z: -149.83}
-  moveSpeed: 5
-  debugKey: 101
-  loopMovement: 1
 --- !u!212 &609568970
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -2247,14 +2230,13 @@ GameObject:
   m_Component:
   - component: {fileID: 693146794}
   - component: {fileID: 693146796}
-  - component: {fileID: 693146795}
   m_Layer: 7
   m_Name: Frame (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &693146794
 Transform:
   m_ObjectHideFlags: 0
@@ -2270,22 +2252,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 880923159}
   m_LocalEulerAnglesHint: {x: 0, y: -0.042, z: 0}
---- !u!114 &693146795
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 693146793}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e67c1c51fce196740bb279f3e763e2ba, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  endPosition: {x: 198.82, y: -4.38, z: -149.83}
-  moveSpeed: 5
-  debugKey: 101
-  loopMovement: 1
 --- !u!212 &693146796
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -2348,14 +2314,13 @@ GameObject:
   m_Component:
   - component: {fileID: 699031175}
   - component: {fileID: 699031177}
-  - component: {fileID: 699031176}
   m_Layer: 7
   m_Name: Frame (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &699031175
 Transform:
   m_ObjectHideFlags: 0
@@ -2371,22 +2336,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 880923159}
   m_LocalEulerAnglesHint: {x: 0, y: -0.042, z: 0}
---- !u!114 &699031176
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 699031174}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e67c1c51fce196740bb279f3e763e2ba, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  endPosition: {x: 198.82, y: -4.38, z: -149.83}
-  moveSpeed: 5
-  debugKey: 101
-  loopMovement: 1
 --- !u!212 &699031177
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -2580,13 +2529,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 880923159}
+  - component: {fileID: 880923160}
   m_Layer: 7
   m_Name: Frame_Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &880923159
 Transform:
   m_ObjectHideFlags: 0
@@ -2605,6 +2555,29 @@ Transform:
   - {fileID: 693146794}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &880923160
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 880923158}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88421db0bdf95654b855a9a37765eb13, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  framePrefab: {fileID: 2835066405940408977, guid: e22e6bb9afa83bb4e8511edbef98efce,
+    type: 3}
+  poolSize: 6
+  pathStart: {x: 23.278, y: 0.28, z: 17.57}
+  pathEnd: {x: 43.27, y: 0.28, z: 32.62}
+  fixedRotation: {x: 0, y: -0.042, z: 0}
+  fixedScale: {x: 3.27, y: 3.27, z: 3.27}
+  uvLoopSize: 0.025
+  virtualMetersPerLoop: 5
+  virtualDistStartToEnd: 10
+  resetVirtualDistance: -15
 --- !u!1 &916833621
 GameObject:
   m_ObjectHideFlags: 0
@@ -4926,7 +4899,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2015938096}
   - component: {fileID: 2015938098}
-  - component: {fileID: 2015938097}
   m_Layer: 8
   m_Name: Frame (3)
   m_TagString: Untagged
@@ -4949,22 +4921,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 393388247}
   m_LocalEulerAnglesHint: {x: 0, y: -0.042, z: 0}
---- !u!114 &2015938097
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2015938095}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e67c1c51fce196740bb279f3e763e2ba, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  endPosition: {x: 198.82, y: -4.38, z: -149.83}
-  moveSpeed: 5
-  debugKey: 101
-  loopMovement: 1
 --- !u!212 &2015938098
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -5367,7 +5323,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2133958355}
   - component: {fileID: 2133958357}
-  - component: {fileID: 2133958356}
   m_Layer: 8
   m_Name: Frame (1)
   m_TagString: Untagged
@@ -5390,22 +5345,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 393388247}
   m_LocalEulerAnglesHint: {x: 0, y: -0.042, z: 0}
---- !u!114 &2133958356
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2133958354}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e67c1c51fce196740bb279f3e763e2ba, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  endPosition: {x: 198.82, y: -4.38, z: -149.83}
-  moveSpeed: 5
-  debugKey: 101
-  loopMovement: 1
 --- !u!212 &2133958357
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -5638,6 +5577,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Frame (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2835066405940408977, guid: e22e6bb9afa83bb4e8511edbef98efce,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

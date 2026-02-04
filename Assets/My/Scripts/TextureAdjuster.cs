@@ -103,7 +103,14 @@ public class TextureAdjuster : MonoBehaviour
         }
     }
 
-    void OnValidate() => UpdateUVs();
+    void OnValidate()
+    {
+        if (loopMaxY < loopMinY)
+        {
+            (loopMinY, loopMaxY) = (loopMaxY, loopMinY);
+        }
+        UpdateUVs();
+    }
 
     public void UpdateUVs()
     {

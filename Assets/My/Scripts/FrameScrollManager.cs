@@ -49,18 +49,22 @@ public class FrameScrollManager : MonoBehaviour
         // 플레이어가 앞으로 달리면 바닥(오브젝트)은 뒤로 옵니다.
         _moveDirection = -_segmentVector.normalized;
 
+        if (virtualDistStartToEnd <= 0f || uvLoopSize <= 0f)
+        {
+            Debug.LogError("FrameScrollManager: virtualDistStartToEnd와 uvLoopSize는 0보다 커야 합니다.");
+            enabled = false;
+            return;
+        }
+
         // 3. 비율 계산 (Sync)
         // 텍스처 1 Loop (0.025 UV) = 가상 5m
         // Start->End 벡터 = 가상 10m
         // 즉, "가상 5m"의 월드 길이 = _segmentVector 길이의 절반 (5/10)
         float worldDistPerLoop = _segmentVector.magnitude * (virtualMetersPerLoop / virtualDistStartToEnd);
         
-        if (uvLoopSize > 0)
-        {
-            // UV 1 당 World 이동 거리
-            _worldDistPerUV = worldDistPerLoop / uvLoopSize;
-        }
-
+        // UV 1 당 World 이동 거리
+        _worldDistPerUV = worldDistPerLoop / uvLoopSize;
+        
         // 4. 프레임 생성 및 배치
         // "10m 마다 생성" -> Start-End 벡터가 가상 10m이므로, 배치 간격은 벡터 그 자체입니다.
         for (int i = 0; i < poolSize; i++)
@@ -86,7 +90,7 @@ public class FrameScrollManager : MonoBehaviour
     /// </summary>
     public void ScrollFrames(float uvSpeed)
     {
-        if (_frames.Count == 0) return;
+        if (!enabled || _frames.Count == 0) return;
 
         // 1. 이번 프레임 이동 거리 (World)
         // uvSpeed가 양수일 때 뒤로(카메라 쪽으로) 와야 함
