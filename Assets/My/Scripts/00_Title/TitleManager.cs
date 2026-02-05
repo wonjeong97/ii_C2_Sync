@@ -26,18 +26,9 @@ namespace My.Scripts._00_Title
         {
             _isTransitioning = true;
             Debug.Log("[TitleManager] 튜토리얼 진입 요청");
-
-            // GameManager를 경유하여 페이드 효과 등 공통 전환 로직을 적용받기 위함
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.ChangeScene(GameConstants.Scene.Tutorial);
-            }
-            else
-            {
-                // GameManager가 없는 단독 테스트 환경에서도 씬 이동이 가능하도록 예외 처리
-                Debug.LogWarning("GameManager가 없습니다. 즉시 로드합니다.");
-                UnityEngine.SceneManagement.SceneManager.LoadScene(GameConstants.Scene.Tutorial);
-            }
+            
+            // 페이드 효과 없이 씬을 넘기기 위해 게임매니저 호출 X
+            UnityEngine.SceneManagement.SceneManager.LoadScene(GameConstants.Scene.Tutorial);
         }
     }
 }

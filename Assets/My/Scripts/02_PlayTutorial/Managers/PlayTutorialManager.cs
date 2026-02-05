@@ -33,6 +33,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
     {
         public TextSetting[] guideTexts;
         public TextSetting phase1SuccessMessage; 
+        public TextSetting[] finalTexts;
     }
 
     /// <summary>
@@ -403,9 +404,19 @@ namespace My.Scripts._02_PlayTutorial.Managers
         {
             yield return CoroutineData.GetWaitForSeconds(2.0f);
             if (_data != null && _data.guideTexts.Length > 5)
-            {
+            {   
+                // 팝업 텍스트 변경 (guideTexts[5])
                 yield return StartCoroutine(ui.FadeOutPopupTextAndChange(_data.guideTexts[5].text, 1f, 1f));
             }
+            
+            yield return CoroutineData.GetWaitForSeconds(2.0f);
+            
+            if (ui != null && _data != null && _data.finalTexts != null && _data.finalTexts.Length > 0)
+            {
+                yield return StartCoroutine(ui.RunFinalPageSequence(_data.finalTexts));
+            }
+            
+            _currentPhase = TutorialPhase.Complete;
         }
     }
 }

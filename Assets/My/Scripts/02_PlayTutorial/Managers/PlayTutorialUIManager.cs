@@ -1,6 +1,9 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using Wonjeong.Data;
+using Wonjeong.UI;
+using Wonjeong.Utils;
 
 namespace My.Scripts._02_PlayTutorial.Managers
 {
@@ -26,6 +29,10 @@ namespace My.Scripts._02_PlayTutorial.Managers
         [Header("Gauge UI")]
         [SerializeField] private GaugeController p1Gauge; 
         [SerializeField] private GaugeController p2Gauge; 
+        
+        [Header("Final Page UI")]
+        [SerializeField] private CanvasGroup finalPageCanvasGroup;
+        [SerializeField] private Text finalPageText;
 
         /// <summary>
         /// 씬 진입 시 UI 상태를 초기화함.
@@ -42,6 +49,14 @@ namespace My.Scripts._02_PlayTutorial.Managers
             
             // 튜토리얼 시작 전에는 화살표 가이드가 보이지 않도록 모두 끔
             StopAllArrows();
+            
+            // 시작 시 Final Page가 안보이도록 설정
+            if (finalPageCanvasGroup != null)
+            {
+                finalPageCanvasGroup.alpha = 0f;
+                finalPageCanvasGroup.gameObject.SetActive(false);
+                finalPageCanvasGroup.blocksRaycasts = false; // 입력 차단
+            }
         }
 
         /// <summary>
@@ -166,6 +181,80 @@ namespace My.Scripts._02_PlayTutorial.Managers
             
             centerText.gameObject.SetActive(false);
         }
+        
+        /// <summary>
+        /// 마지막 페이지를 부드럽게 페이드 인시키는 코루틴.
+        /// </summary>
+        /// <param name="duration">페이드 시간</param>
+        public IEnumerator FadeInFinalPageRoutine(float duration)
+        {
+            if (finalPageCanvasGroup == null)
+            {
+                Debug.LogWarning("[UI] Final Page CanvasGroup is missing.");
+                yield break;
+            }
+
+            // 활성화 후 투명도 0부터 시작
+            finalPageCanvasGroup.gameObject.SetActive(true);
+            finalPageCanvasGroup.alpha = 0f;
+
+            yield return StartCoroutine(FadeCanvasGroup(finalPageCanvasGroup, 0f, 1f, duration));
+            
+            // 페이드 완료 후 입력 허용
+            finalPageCanvasGroup.blocksRaycasts = true; 
+        }
+        
+        /// <summary>
+        /// 마지막 페이지를 띄우고 텍스트 4개를 순차적으로 보여주는 코루틴
+        /// 흐름: (등장 1초) -> 2초 유지 -> (퇴장 1초) -> 다음 텍스트 -> (등장 1초) ...
+        /// </summary>
+        public IEnumerator RunFinalPageSequence(TextSetting[] texts)
+        {
+            if (finalPageCanvasGroup == null || finalPageText == null || texts == null) yield break;
+
+            // 페이지 활성화 (투명 상태)
+            finalPageCanvasGroup.gameObject.SetActive(true);
+            finalPageCanvasGroup.alpha = 0f;
+            finalPageCanvasGroup.blocksRaycasts = true;
+
+            for (int i = 0; i < texts.Length; i++)
+            {
+                // 1. 텍스트 데이터 적용 (폰트, 사이즈, 내용 등)
+                if (UIManager.Instance != null)
+                {
+                    UIManager.Instance.SetText(finalPageText.gameObject, texts[i]);
+                }
+                else
+                {
+                    finalPageText.text = texts[i].text;
+                }
+
+                // 2. 등장 (Fade In 1초)
+                if (i == 0)
+                {
+                    // 첫 번째는 페이지 전체(CanvasGroup)를 페이드 인
+                    SetTextAlpha(finalPageText, 1f); // 텍스트는 불투명하게 설정해둠
+                    yield return StartCoroutine(FadeCanvasGroup(finalPageCanvasGroup, 0f, 1f, 1.0f));
+                }
+                else
+                {
+                    // 두 번째부터는 텍스트만 페이드 인
+                    // (텍스트 교체 전 Fade Out으로 안보이는 상태에서 시작)
+                    yield return StartCoroutine(FadeTextAlpha(finalPageText, 0f, 1f, 1.0f));
+                }
+
+                // 3. 유지 (2초)
+                yield return CoroutineData.GetWaitForSeconds(2.0f);
+
+                // 4. 퇴장 (Fade Out 1초) - 다음 텍스트가 있을 때만
+                if (i < texts.Length - 1)
+                {
+                    yield return StartCoroutine(FadeTextAlpha(finalPageText, 1f, 0f, 1.0f));
+                }
+            }
+            
+            // 4개의 텍스트가 모두 끝난 후의 처리가 필요하다면 여기에 추가 (예: 페이지 닫기)
+        }
 
         // --- Utility Coroutines ---
 
@@ -195,6 +284,13 @@ namespace My.Scripts._02_PlayTutorial.Managers
                 yield return null;
             }
             txt.color = new Color(c.r, c.g, c.b, end);
+        }
+        
+        private void SetTextAlpha(Text txt, float alpha)
+        {
+            if (!txt) return;
+            Color c = txt.color;
+            txt.color = new Color(c.r, c.g, c.b, alpha);
         }
     }
 }
