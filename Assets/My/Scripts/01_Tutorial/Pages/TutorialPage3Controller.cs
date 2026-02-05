@@ -6,6 +6,7 @@ using My.Scripts.Core;
 using My.Scripts.Global;
 using Wonjeong.Data;
 using Wonjeong.UI;
+using Wonjeong.Utils; // CoroutineData 사용을 위해 필요
 
 namespace My.Scripts._01_Tutorial.Pages
 {
@@ -35,6 +36,7 @@ namespace My.Scripts._01_Tutorial.Pages
 
         private bool _isAFinished;
         private bool _isBFinished;
+        private bool _isStepCompleted; // ★ 중복 완료 방지용 플래그
 
         // === 상태 관리 변수 ===
         private bool _pAPad0, _pAPad1;
@@ -82,6 +84,8 @@ namespace My.Scripts._01_Tutorial.Pages
             // 재진입 시 이전 상태가 남아있으면 로직이 꼬일 수 있으므로 완전 초기화
             _isAFinished = false;
             _isBFinished = false;
+            _isStepCompleted = false; // ★ 초기화
+
             _pAIsReady = _pAHasJumped = false;
             _pBIsReady = _pBHasJumped = false;
             _pAFirstFootTime = _pBFirstFootTime = 0f;
@@ -188,8 +192,12 @@ namespace My.Scripts._01_Tutorial.Pages
                 CheckSequence(1, _pBPad0, _pBPad1, ref _pBIsReady, ref _pBHasJumped, ref _pBFirstFootTime, ref _isBFinished, checkImageB);
             }
             
-            // 두 플레이어 모두 성공했다면 다음 페이지로 이동
-            if (_isAFinished && _isBFinished) CompleteStep();
+            // 두 플레이어 모두 성공했고 아직 완료 처리되지 않았다면 1초 대기 후 이동
+            if (_isAFinished && _isBFinished && !_isStepCompleted)
+            {
+                _isStepCompleted = true;
+                StartCoroutine(WaitAndCompleteRoutine());
+            }
         }
 
         /// <summary>
@@ -276,6 +284,15 @@ namespace My.Scripts._01_Tutorial.Pages
         }
 
         /// <summary>
+        /// 마지막 성공 연출을 보기 위해 1초 대기 후 완료 처리하는 코루틴
+        /// </summary>
+        private IEnumerator WaitAndCompleteRoutine()
+        {
+            yield return CoroutineData.GetWaitForSeconds(1.0f);
+            CompleteStep();
+        }
+
+        /// <summary>
         /// 개발용 디버그 기능. 엔터 키로 강제 성공 처리 가능.
         /// </summary>
         private void Update()
@@ -285,7 +302,13 @@ namespace My.Scripts._01_Tutorial.Pages
             {
                 if (!_isAFinished) { _isAFinished = true; StartCoroutine(FadeInRoutine(checkImageA, 1.0f)); }
                 if (!_isBFinished) { _isBFinished = true; StartCoroutine(FadeInRoutine(checkImageB, 1.0f)); }
-                if (_isAFinished && _isBFinished) CompleteStep();
+                
+                // 디버그 키로 완료할 때도 대기 시간 적용
+                if (_isAFinished && _isBFinished && !_isStepCompleted) 
+                {
+                    _isStepCompleted = true;
+                    StartCoroutine(WaitAndCompleteRoutine());
+                }
             }
         }
     }

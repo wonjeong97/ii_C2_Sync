@@ -20,6 +20,13 @@ namespace My.Scripts._02_PlayTutorial.Managers
         [Header("Obstacle Settings")]
         [SerializeField] private TutorialObstacleManager p1Obstacles;
         [SerializeField] private TutorialObstacleManager p2Obstacles;
+        
+        [Header("Fog Settings")]
+        [SerializeField] private bool useFog = true;
+        [SerializeField] private Color fogColor = new Color(0.1f, 0.1f, 0.1f, 1f); // 어두운 회색
+        [SerializeField] private FogMode fogMode = FogMode.Linear; // 선형(Linear) 모드 권장
+        [SerializeField] private float fogStartDistance = 10f; // 안개가 시작되는 거리
+        [SerializeField] private float fogEndDistance = 40f;   // 완전히 안보이게 되는 거리
 
         /// <summary>
         /// 환경 요소들을 초기 상태로 설정함.
@@ -27,8 +34,36 @@ namespace My.Scripts._02_PlayTutorial.Managers
         public void InitEnvironment()
         {
             // 스크롤 기능을 활성화하되, 게임 시작 전까지는 움직이지 않도록 초기 속도를 0으로 고정함
-            if (p1Floor) { p1Floor.enableScroll = true; p1Floor.scrollSpeedY = 0f; }
-            if (p2Floor) { p2Floor.enableScroll = true; p2Floor.scrollSpeedY = 0f; }
+            if (p1Floor)
+            {
+                p1Floor.enableScroll = true; 
+                p1Floor.scrollSpeedY = 0f;
+            }
+
+            if (p2Floor)
+            {
+                p2Floor.enableScroll = true; 
+                p2Floor.scrollSpeedY = 0f;
+            }
+            
+            RenderSettings.fog = useFog;
+            
+            if (useFog)
+            {
+                RenderSettings.fogColor = fogColor;
+                RenderSettings.fogMode = fogMode;
+
+                if (fogMode == FogMode.Linear)
+                {
+                    RenderSettings.fogStartDistance = fogStartDistance;
+                    RenderSettings.fogEndDistance = fogEndDistance;
+                }
+                else
+                {
+                    // Exponential 모드일 경우 Density 사용 (기본값 0.05f 설정)
+                    RenderSettings.fogDensity = 0.05f; 
+                }
+            }
         }
 
         /// <summary>
