@@ -179,7 +179,7 @@ namespace My.Scripts._02_PlayTutorial.Controllers
             // 요청된 범위 내의 장애물 렌더러만 수집
             for (int i = startIndex; i < startIndex + count; i++)
             {
-                if (i >= 0 && i < _spawnedObstacles.Count)
+                if (i >= 0 && i < _spawnedObstacles.Count && _spawnedObstacles[i] != null)
                 {
                     var renderers = _spawnedObstacles[i].GetComponentsInChildren<Renderer>();
                     targetRenderers.AddRange(renderers);
@@ -222,9 +222,15 @@ namespace My.Scripts._02_PlayTutorial.Controllers
             {
                 foreach (Material m in r.materials)
                 {
-                    // 쉐이더 프로퍼티 이름에 따라 적절한 알파값 설정
-                    if (m.HasProperty("_Color")) m.color = new Color(m.color.r, m.color.g, m.color.b, alpha);
-                    else if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", new Color(m.color.r, m.color.g, m.color.b, alpha));
+                    if (m.HasProperty("_Color"))
+                    {
+                        m.color = new Color(m.color.r, m.color.g, m.color.b, alpha);
+                    }
+                    else if (m.HasProperty("_BaseColor"))
+                    {
+                        Color baseColor = m.GetColor("_BaseColor");
+                        m.SetColor("_BaseColor", new Color(baseColor.r, baseColor.g, baseColor.b, alpha));
+                    }
                 }
             }
         }

@@ -37,12 +37,13 @@ namespace My.Scripts._02_PlayTutorial.Controllers
         public bool IsStunned { get; private set; }
 
         // 외부(Manager/UI)에서 거리 변화를 감지할 수 있도록 이벤트 정의 (Decoupling)
-        public event Action<float, float> OnDistanceChanged;
+        public event Action<int, float, float> OnDistanceChanged;
 
         private PlayerPhysicsConfig _config;
         private Vector2[] _lanePositions;
         private readonly bool[] _leftPadFlags = new bool[3];
         private readonly bool[] _rightPadFlags = new bool[3];
+        private Coroutine _stunCoroutine;
 
         /// <summary>
         /// 매니저로부터 초기 설정값과 위치 정보를 주입받아 초기화함.
@@ -105,6 +106,8 @@ namespace My.Scripts._02_PlayTutorial.Controllers
         public bool HandleInput(int laneIdx, int padIdx)
         {
             if (IsStunned) return false;
+            if (laneIdx < 0 || laneIdx >= _leftPadFlags.Length) return false;
+            if (padIdx != 0 && padIdx != 1) return false;
 
             // 해당 라인의 패드 입력 상태 갱신
             if (padIdx == 0) _leftPadFlags[laneIdx] = true;
@@ -151,7 +154,7 @@ namespace My.Scripts._02_PlayTutorial.Controllers
         /// </summary>
         private void NotifyDistanceChanged()
         {
-            OnDistanceChanged?.Invoke(currentDistance, _config.maxDistance);
+            OnDistanceChanged?.Invoke(playerIndex, currentDistance, _config.maxDistance);
         }
 
         /// <summary>
@@ -171,7 +174,8 @@ namespace My.Scripts._02_PlayTutorial.Controllers
         /// <param name="duration">스턴 지속 시간</param>
         public void OnHit(float duration)
         {
-            StartCoroutine(StunRoutine(duration));
+            if (_stunCoroutine != null) StopCoroutine(_stunCoroutine);
+            _stunCoroutine = StartCoroutine(StunRoutine(duration));
         }
 
         /// <summary>
@@ -195,6 +199,7 @@ namespace My.Scripts._02_PlayTutorial.Controllers
             // 상태 복구
             if (characterCanvasGroup) characterCanvasGroup.alpha = 1.0f;
             IsStunned = false;
+            _stunCoroutine = null;
         }
     }
 }

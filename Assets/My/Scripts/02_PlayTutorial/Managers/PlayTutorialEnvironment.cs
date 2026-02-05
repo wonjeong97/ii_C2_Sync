@@ -62,10 +62,16 @@ namespace My.Scripts._02_PlayTutorial.Managers
         {
             // 상위 매니저(PlayTutorialManager)가 하위 시스템(ObstacleManager)을 직접 참조하지 않도록 
             // 환경 매니저가 중계(Facade) 역할을 수행함
-            var target = (playerIdx == 0) ? p1Obstacles : p2Obstacles;
+            TutorialObstacleManager target = null;
+            if (playerIdx == 0) target = p1Obstacles;
+            else if (playerIdx == 1) target = p2Obstacles;
+            else
+            {
+                Debug.LogWarning($"[PlayTutorialEnvironment] invalid playerIdx: {playerIdx}");
+                return;
+            }
             if (target != null) target.FadeInSpecificObstacles(duration, startIndex, count);
         }
-
         /// <summary>
         /// 양쪽 플레이어의 장애물을 동시에 등장시킴.
         /// </summary>

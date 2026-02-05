@@ -93,12 +93,17 @@ namespace My.Scripts._02_PlayTutorial.Managers
                     Vector2[] lanes = (i == 0) ? settings.p1LanePositions : settings.p2LanePositions;
                     players[i].Setup(i, lanes, settings.physicsConfig);
 
-                    // 플레이어의 거리 변화 이벤트를 UI 게이지 업데이트와 연결 (Observer Pattern)
-                    // 클로저(Closure) 문제 방지를 위해 로컬 변수 pIdx 사용
-                    int pIdx = i; 
-                    players[i].OnDistanceChanged += (curr, max) => 
-                        ui.UpdateGauge(pIdx, Mathf.Min(curr, settings.targetDistancePhase1), max);
+                    // 혹시 모를 중복 구독을 방지하기 위해 해제 후 구독
+                    players[i].OnDistanceChanged -= HandlePlayerDistanceChanged;
+                    players[i].OnDistanceChanged += HandlePlayerDistanceChanged;
                 }
+            }
+
+            if (players == null || players.Length < 2 || players[0] == null || players[1] == null)
+            {
+                Debug.LogError("Tutorial requires exactly two players assigned.");
+                enabled = false;
+                return;
             }
 
             if (InputManager.Instance != null) InputManager.Instance.OnPadDown += HandlePadDown;
@@ -109,6 +114,19 @@ namespace My.Scripts._02_PlayTutorial.Managers
         private void OnDestroy()
         {
             if (InputManager.Instance != null) InputManager.Instance.OnPadDown -= HandlePadDown;
+            if (Instance == this) Instance = null;
+
+            // 플레이어 이벤트 구독 해제
+            if (players != null)
+            {
+                foreach (var player in players)
+                {
+                    if (player != null)
+                    {
+                        player.OnDistanceChanged -= HandlePlayerDistanceChanged;
+                    }
+                }
+            }
         }
 
         private void Update()
@@ -129,6 +147,16 @@ namespace My.Scripts._02_PlayTutorial.Managers
             float s1 = players[0] ? players[0].currentSpeed : 0f;
             float s2 = players[1] ? players[1].currentSpeed : 0f;
             env.ScrollEnvironment(s1, s2);
+        }
+        
+        private void HandlePlayerDistanceChanged(int playerIdx, float currentDist, float maxDist)
+        {
+            // UI 게이지 업데이트
+            // Phase 1 목표 거리까지만 게이지가 차오르도록 제한(Min)을 둠
+            if (ui)
+            {
+                ui.UpdateGauge(playerIdx, Mathf.Min(currentDist, settings.targetDistancePhase1), maxDist);
+            }
         }
 
         /// <summary>
@@ -199,7 +227,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
                 players[1].currentDistance >= settings.targetDistancePhase1)
             {
                 _phase1GlobalComplete = true;
-                string msg = (_data != null) ? _data.phase1SuccessMessage.text : "잘하셨어요.";
+                string msg = _data?.phase1SuccessMessage?.text ?? "잘하셨어요.";
                 StartCoroutine(SuccessSequenceRoutine(msg));
             }
         }
@@ -275,8 +303,8 @@ namespace My.Scripts._02_PlayTutorial.Managers
 
         private IEnumerator IntroScenario()
         {
-            string t1 = (_data != null && _data.guideTexts.Length > 0) ? _data.guideTexts[0].text : "Start";
-            string t2 = (_data != null && _data.guideTexts.Length > 1) ? _data.guideTexts[1].text : "Next";
+            string t1 = (_data?.guideTexts != null && _data.guideTexts.Length > 0) ? _data.guideTexts[0].text : "Start";
+            string t2 = (_data?.guideTexts != null && _data.guideTexts.Length > 1) ? _data.guideTexts[1].text : "Next";
 
             ui.ShowPopupImmediately(t1);
             yield return CoroutineData.GetWaitForSeconds(3.0f);
@@ -292,7 +320,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
             _currentPhase = TutorialPhase.Intro; // 연출 중 입력 방지를 위해 상태 변경
             yield return StartCoroutine(ui.ShowSuccessText(message, 2.0f));
 
-            if (_data != null && _data.guideTexts.Length > 3)
+            if (_data?.guideTexts != null && _data.guideTexts.Length > 3)
             {
                 ui.PreparePopup(_data.guideTexts[2].text);
                 yield return StartCoroutine(ui.FadeInPopup(1.0f));

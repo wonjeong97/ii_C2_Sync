@@ -83,8 +83,14 @@ namespace My.Scripts._01_Tutorial.Pages
 
                 if (descriptionText != null && currentSetting != null)
                 {
-                    // UIManager를 통해 매번 새로운 텍스트 설정(내용, 폰트 등)을 UI에 적용
-                    UIManager.Instance.SetText(descriptionText.gameObject, currentSetting);
+                    if (UIManager.Instance != null)
+                    {
+                        UIManager.Instance.SetText(descriptionText.gameObject, currentSetting);
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[TutorialPage4] UIManager.Instance가 null입니다.");
+                    }
                     
                     // 연출 시작을 위해 활성화하되, 페이드 인 효과를 위해 투명 상태로 시작
                     descriptionText.gameObject.SetActive(true);
