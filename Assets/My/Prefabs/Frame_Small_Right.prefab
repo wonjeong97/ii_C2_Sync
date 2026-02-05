@@ -10,8 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 83579677223327992}
   - component: {fileID: 7856392521985202260}
-  m_Layer: 7
-  m_Name: Frame
+  m_Layer: 8
+  m_Name: Frame_Small_Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -25,13 +25,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2835066405940408977}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.0003643937, z: -0, w: 1}
-  m_LocalPosition: {x: 23.278, y: 0.28, z: 17.57}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 3.27, y: 3.27, z: 3.27}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: -0.042, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &7856392521985202260
 SpriteRenderer:
   m_ObjectHideFlags: 0

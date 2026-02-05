@@ -7,25 +7,36 @@ using Wonjeong.UI;
 
 namespace My.Scripts._01_Tutorial.Pages
 {
-    // [데이터] JSON의 "page1" 섹션과 1:1 매핑
+    /// <summary>
+    /// 튜토리얼 1페이지의 데이터 구조를 정의하는 클래스.
+    /// JSON 파일의 "page1" 섹션 데이터와 매핑됨.
+    /// </summary>
     [Serializable]
     public class TutorialPage1Data
     {
-        public TextSetting descriptionText; // 타이틀 없이 설명 텍스트만 존재
+        // 1페이지는 별도의 타이틀 없이 설명 텍스트만으로 구성되므로 해당 설정만 포함
+        public TextSetting descriptionText;
     }
 
-    // [컨트롤러] 페이지 로직 담당
+    /// <summary>
+    /// 튜토리얼의 첫 번째 페이지 동작을 제어하는 컨트롤러.
+    /// 텍스트 정보를 표시하고 사용자의 입력(넘기기)을 대기함.
+    /// </summary>
     public class TutorialPage1Controller : GamePage<TutorialPage1Data>
     {
         [Header("UI Components")]
-        [SerializeField] private Text descriptionText; // Inspector에서 연결할 UI 텍스트
+        [SerializeField] private Text descriptionText;
 
-        // 1. 데이터 주입 (매니저가 호출)
+        /// <summary>
+        /// 외부에서 로드된 데이터를 받아 UI를 초기화함.
+        /// </summary>
+        /// <param name="data">JSON 파싱을 통해 생성된 페이지 데이터 객체</param>
         protected override void SetupData(TutorialPage1Data data)
         {
             if (data == null) return;
 
-            // UIManager를 이용해 JSON 설정값(내용, 폰트, 위치 등)을 UI에 적용
+            // UIManager를 사용하여 텍스트의 스타일(폰트, 크기 등)과 내용을 일괄 적용
+            // 이를 통해 데이터와 뷰의 표시 로직을 분리하고 일관된 스타일을 유지함
             if (descriptionText != null && data.descriptionText != null)
             {
                 if (UIManager.Instance != null)
@@ -38,21 +49,14 @@ namespace My.Scripts._01_Tutorial.Pages
                 }
             }
         }
-
-        // 2. 페이지 진입
-        public override void OnEnter()
-        {
-            base.OnEnter();
-            // 필요 시 추가 연출 (예: 텍스트 페이드 인) 구현 가능
-        }
-
-        // 3. 업데이트 (입력 감지)
+        
         private void Update()
         {
-            // 엔터 키 또는 마우스 클릭 시 다음 단계로 진행
+            // 사용자가 내용을 확인하고 다음 단계로 넘어가려는 의도(엔터 또는 클릭)를 확인
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetMouseButtonDown(0))
             {
-                CompleteStep(); // 상위(TutorialManager)에 완료 신호 전송
+                // 부모 클래스의 메서드를 호출하여 현재 스텝 완료 이벤트를 전파
+                CompleteStep(); 
             }
         }
     }

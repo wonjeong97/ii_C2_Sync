@@ -17,6 +17,51 @@
       "fontName": "font6",
       "fontSize": 55,
       "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}
+    },
+    {
+      "name": "Text_이제 장애물을 피해",
+      "position": {"x": 0, "y": 200},
+      "scale": {"x": 1, "y": 1, "z": 1},
+      "text": "이제 장애물을 피해\n달려 볼까요?",
+      "fontName": "font6",
+      "fontSize": 55,
+      "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}
+    },
+    {
+      "name": "Text_화살표 방향을 따라",
+      "position": {"x": 0, "y": 200},
+      "scale": {"x": 1, "y": 1, "z": 1},
+      "text": "화살표 방향을 따라 장애물을 피해\n이동해서 달려주세요.",
+      "fontName": "font6",
+      "fontSize": 55,
+      "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}
+    },
+    {
+      "name": "Text_장애물에 부딪히면",
+      "position": {"x": 0, "y": 200},
+      "scale": {"x": 1, "y": 1, "z": 1},
+      "text": "장애물에 부딪히면\n2초간 움직일 수 없습니다.",
+      "fontName": "font6",
+      "fontSize": 55,
+      "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}
+    },
+    {
+      "name": "Text_이해하셨나요",
+      "position": {"x": 0, "y": 200},
+      "scale": {"x": 1, "y": 1, "z": 1},
+      "text": "이해하셨나요?",
+      "fontName": "font6",
+      "fontSize": 55,
+      "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}
     }
-  ]
+  ],
+  "phase1SuccessMessage": {
+    "name": "Text_10M",
+    "position": {"x": 0, "y": 32},
+    "scale": {"x": 1, "y": 1, "z": 1},
+    "text": "잘 하셨어요.",
+    "fontName": "font7",
+    "fontSize": 55,
+    "fontColor": {"r": 0.4745098, "g": 0.4156863, "b": 0.3372549, "a": 1}
+  }
 }
