@@ -66,7 +66,7 @@ namespace My.Scripts._02_PlayTutorial.Components
             // 플레이어가 장애물과 같은 라인에 위치하고 있다면 피격으로 판정
             if (playerCurrentLane == obstacleLaneConverted)
             {
-                Debug.LogError($"<color=red>[HIT] P{_ownerPlayerIdx + 1} 충돌! (PlayerLane: {playerCurrentLane})</color>");
+                //Debug.LogError($"<color=red>[HIT] P{_ownerPlayerIdx + 1} 충돌! (PlayerLane: {playerCurrentLane})</color>");
             
                 // 시각적 피드백(애니메이션) 제공
                 if (_animator != null) 
@@ -83,7 +83,7 @@ namespace My.Scripts._02_PlayTutorial.Components
             else
             {
                 // 플레이어가 다른 라인에 있어 회피에 성공함
-                Debug.Log($"[PASS] P{_ownerPlayerIdx + 1} 회피 성공.");
+                //Debug.Log($"[PASS] P{_ownerPlayerIdx + 1} 회피 성공.");
             }
         }
 

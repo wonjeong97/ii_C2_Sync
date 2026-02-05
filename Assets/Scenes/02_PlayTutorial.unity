@@ -3007,6 +3007,7 @@ MonoBehaviour:
   pathStart: {x: -3.286, y: -3.5, z: 2.52}
   pathEnd: {x: -23.278, y: -3.5, z: 17.57}
   virtualDistStartToEnd: 10
+  isSpawnCube: 0
 --- !u!114 &902630579
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3028,6 +3029,7 @@ MonoBehaviour:
   pathStart: {x: 3.286, y: -3.5, z: 2.52}
   pathEnd: {x: 23.278, y: -3.5, z: 17.57}
   virtualDistStartToEnd: 10
+  isSpawnCube: 0
 --- !u!4 &902630580
 Transform:
   m_ObjectHideFlags: 0
@@ -4335,10 +4337,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   characterUI: {fileID: 285932494}
   characterCanvasGroup: {fileID: 740405611349450655}
-  PlayerIndex: 0
-  CurrentSpeed: 0
-  CurrentDistance: 0
-  CurrentLane: 1
+  playerIndex: 0
+  currentSpeed: 0
+  currentDistance: 0
+  currentLane: 1
 --- !u!1 &1520971909
 GameObject:
   m_ObjectHideFlags: 0
@@ -4729,10 +4731,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   characterUI: {fileID: 1998430890}
   characterCanvasGroup: {fileID: 1998430891}
-  PlayerIndex: 0
-  CurrentSpeed: 0
-  CurrentDistance: 0
-  CurrentLane: 1
+  playerIndex: 0
+  currentSpeed: 0
+  currentDistance: 0
+  currentLane: 1
 --- !u!1 &1663171321
 GameObject:
   m_ObjectHideFlags: 0
@@ -4958,54 +4960,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1743992091}
   m_CullTransparentMesh: 1
---- !u!1 &1796684657
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1796684659}
-  - component: {fileID: 1796684658}
-  m_Layer: 0
-  m_Name: DisplaySystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1796684658
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1796684657}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 82b477b16916d3343bc3b2e0692467f9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  camP1: {fileID: 0}
-  camP2: {fileID: 0}
-  fullScreenWidth: 3840
-  targetActiveWidth: 2000
---- !u!4 &1796684659
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1796684657}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1822757596
 GameObject:
   m_ObjectHideFlags: 0
@@ -6172,7 +6126,6 @@ SceneRoots:
   - {fileID: 58588284}
   - {fileID: 410087041}
   - {fileID: 1258557251}
-  - {fileID: 1796684659}
   - {fileID: 1376944987}
   - {fileID: 1461379220}
   - {fileID: 1943723057}
