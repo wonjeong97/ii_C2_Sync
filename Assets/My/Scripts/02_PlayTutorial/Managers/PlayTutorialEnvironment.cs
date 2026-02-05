@@ -34,6 +34,8 @@ namespace My.Scripts._02_PlayTutorial.Managers
         private float _prevFogStartDistance;
         private float _prevFogEndDistance;
         private float _prevFogDensity;
+        
+        private bool _hasFogBackup;
 
         /// <summary>
         /// 환경 요소들을 초기 상태로 설정함.
@@ -61,6 +63,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
             _prevFogStartDistance = RenderSettings.fogStartDistance;
             _prevFogEndDistance = RenderSettings.fogEndDistance;
             _prevFogDensity = RenderSettings.fogDensity;
+            _hasFogBackup = true;
 
             if (useFog)
             {
@@ -137,7 +140,8 @@ namespace My.Scripts._02_PlayTutorial.Managers
         }
         
         private void OnDisable()
-        {
+        {   
+            if (!_hasFogBackup) return;
             RenderSettings.fog = _prevFog;
             RenderSettings.fogColor = _prevFogColor;
             RenderSettings.fogMode = _prevFogMode;
