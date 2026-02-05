@@ -1,3 +1,4 @@
+using My.Scripts.Core;
 using UnityEngine;
 using UnityEngine.UI;
 using My.Scripts.Global; // InputManager 사용
