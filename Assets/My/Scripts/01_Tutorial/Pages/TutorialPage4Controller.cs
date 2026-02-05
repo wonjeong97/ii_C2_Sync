@@ -80,33 +80,29 @@ namespace My.Scripts._01_Tutorial.Pages
             for (int i = 0; i < _data.descriptionTexts.Length; i++)
             {
                 var currentSetting = _data.descriptionTexts[i];
-
-                if (descriptionText != null && currentSetting != null)
+                if (descriptionText == null || currentSetting == null)
                 {
-                    if (UIManager.Instance != null)
-                    {
-                        UIManager.Instance.SetText(descriptionText.gameObject, currentSetting);
-                    }
-                    else
-                    {
-                        Debug.LogWarning("[TutorialPage4] UIManager.Instance가 null입니다.");
-                    }
-                    
-                    // 연출 시작을 위해 활성화하되, 페이드 인 효과를 위해 투명 상태로 시작
-                    descriptionText.gameObject.SetActive(true);
-                    SetTextAlpha(0f);
+                    Debug.LogWarning("[TutorialPage4] descriptionText 또는 currentSetting이 null입니다. 해당 항목을 건너뜁니다.");
+                    continue;
                 }
-
+                if (UIManager.Instance == null)
+                {
+                    Debug.LogWarning("[TutorialPage4] UIManager.Instance가 null입니다.");
+                    descriptionText.gameObject.SetActive(false);
+                    SetTextAlpha(0f);
+                    continue;
+                }
+                UIManager.Instance.SetText(descriptionText.gameObject, currentSetting);
+                // 연출 시작을 위해 활성화하되, 페이드 인 효과를 위해 투명 상태로 시작
+                descriptionText.gameObject.SetActive(true);
+                SetTextAlpha(0f);
                 // 1. 텍스트 서서히 등장
                 yield return StartCoroutine(FadeText(0f, 1f, FadeInTime));
-
                 // 2. 사용자가 읽을 수 있도록 일정 시간 대기
                 yield return CoroutineData.GetWaitForSeconds(DisplayTime);
-
                 // 3. 텍스트 서서히 퇴장
                 yield return StartCoroutine(FadeText(1f, 0f, FadeOutTime));
             }
-
             // 모든 텍스트 시나리오가 끝나면 페이지 완료 처리
             CompleteStep();
         }

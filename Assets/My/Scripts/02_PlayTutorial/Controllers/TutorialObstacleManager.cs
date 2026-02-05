@@ -107,7 +107,7 @@ namespace My.Scripts._02_PlayTutorial.Controllers
         /// <param name="segmentVector">전체 경로 벡터</param>
         private void SpawnObstacles(Vector3 segmentVector)
         {
-            if (obstaclePrefab == null) return;
+            if (obstaclePrefab == null || spawnData == null) return;
 
             // 거리 1m당 이동해야 할 벡터
             Vector3 vectorPerMeter = segmentVector / virtualDistStartToEnd;
@@ -206,14 +206,15 @@ namespace My.Scripts._02_PlayTutorial.Controllers
                 yield return null;
             }
             // 오차 방지를 위해 최종값으로 고정
-            foreach (var r in targets) SetAlpha(r, end);
+            foreach (var r
+                     in targets) SetAlpha(r, end);
         }
-
         /// <summary>
         /// 재질(Material)의 투명도를 설정하는 헬퍼 메서드.
         /// </summary>
         private void SetAlpha(Renderer r, float alpha)
         {
+            if (r == null) return;
             if (r is SpriteRenderer sr)
             {
                 sr.color = new Color(sr.color.r, sr.color.g, sr.color.b, alpha);
