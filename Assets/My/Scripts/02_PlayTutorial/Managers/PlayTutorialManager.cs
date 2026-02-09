@@ -421,7 +421,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
         private IEnumerator FinalTextChangeSequence()
         {
             yield return CoroutineData.GetWaitForSeconds(2.0f);
-            if (_data != null && _data.guideTexts.Length > 5)
+            if (_data != null && _data.guideTexts != null && _data.guideTexts.Length > 5)
             {
                 // 팝업 텍스트 변경 (guideTexts[5])
                 yield return StartCoroutine(ui.FadeOutPopupTextAndChange(_data.guideTexts[5].text, 0.1f, 0.1f));

@@ -137,7 +137,8 @@ namespace My.Scripts._03_Play150M.Managers
         }
 
         private void OnDestroy()
-        {
+        {   
+            if (Instance == this) Instance = null;
             if (InputManager.Instance != null) InputManager.Instance.OnPadDown -= HandlePadDown;
             if (players != null)
             {
@@ -209,13 +210,13 @@ namespace My.Scripts._03_Play150M.Managers
             if (_isGameFinished) return;
 
             if (ui) ui.UpdateGauge(playerIdx, currentDist, targetDistance);
-
-            while (currentDist >= _nextMilestones[playerIdx] && _nextMilestones[playerIdx] < targetDistance)
+            
+            if (currentDist >= _nextMilestones[playerIdx] && _nextMilestones[playerIdx] < targetDistance)
             {
                 int milestone = _nextMilestones[playerIdx];
                 _nextMilestones[playerIdx] += 10; 
 
-                // 루프 내에서 정지 상태 설정
+                // 정지 상태 설정
                 _isPlayerPaused[playerIdx] = true;
                 
                 if (players[playerIdx]) 
