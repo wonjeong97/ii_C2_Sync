@@ -385,6 +385,12 @@ namespace My.Scripts._02_PlayTutorial.Managers
                 _waitingForFinalHit = true;
                 yield return CoroutineData.GetWaitForSeconds(settings.autoRunDuration);
                 _currentPhase = TutorialPhase.Complete;
+                // 장애물 미충돌 시에도 씬 전환 보장
+                if (_waitingForFinalHit)
+                {
+                    _waitingForFinalHit = false;
+                    StartCoroutine(FinalTextChangeSequence());
+                }
             }
         }
 
