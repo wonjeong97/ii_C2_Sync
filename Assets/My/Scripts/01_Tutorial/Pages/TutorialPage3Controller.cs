@@ -246,7 +246,7 @@ namespace My.Scripts._01_Tutorial.Pages
                 {
                     // 성공 조건 충족
                     isFinished = true;
-                    StartCoroutine(FadeInRoutine(checkImg, 1.0f));
+                    StartCoroutine(FadeInRoutine(checkImg, 0.1f));
                     Debug.Log($"[TutorialPage3] P{pIdx} 성공! (착지 시간차: {Time.time - firstFootTime:F3}초)");
                 }
                 else
@@ -290,26 +290,6 @@ namespace My.Scripts._01_Tutorial.Pages
         {
             yield return CoroutineData.GetWaitForSeconds(1.0f);
             CompleteStep();
-        }
-
-        /// <summary>
-        /// 개발용 디버그 기능. 엔터 키로 강제 성공 처리 가능.
-        /// </summary>
-        private void Update()
-        {
-            // # TODO: 릴리즈 빌드에서는 제거하거나 전처리기(#if UNITY_EDITOR)로 감싸는 것이 좋음
-            if (Input.GetKeyDown(KeyCode.Return))
-            {
-                if (!_isAFinished) { _isAFinished = true; StartCoroutine(FadeInRoutine(checkImageA, 1.0f)); }
-                if (!_isBFinished) { _isBFinished = true; StartCoroutine(FadeInRoutine(checkImageB, 1.0f)); }
-                
-                // 디버그 키로 완료할 때도 대기 시간 적용
-                if (_isAFinished && _isBFinished && !_isStepCompleted) 
-                {
-                    _isStepCompleted = true;
-                    StartCoroutine(WaitAndCompleteRoutine());
-                }
-            }
         }
     }
 }

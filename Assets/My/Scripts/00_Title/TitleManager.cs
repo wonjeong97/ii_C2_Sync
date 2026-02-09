@@ -25,7 +25,6 @@ namespace My.Scripts._00_Title
         private void GoToTutorial()
         {
             _isTransitioning = true;
-            Debug.Log("[TitleManager] 튜토리얼 진입 요청");
             
             // 페이드 효과 없이 씬을 넘기기 위해 게임매니저 호출 X
             UnityEngine.SceneManagement.SceneManager.LoadScene(GameConstants.Scene.Tutorial);

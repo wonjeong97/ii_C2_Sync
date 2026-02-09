@@ -6,17 +6,19 @@ namespace My.Scripts.Global
         /// <summary> 씬 이름 상수 모음 </summary>
         public static class Scene
         { 
-            public const string Title = "00_Title"; // 타이틀 씬
-            public const string Tutorial = "01_Tutorial"; // 튜토리얼 씬
+            public const string Title = "00_Title";
+            public const string Tutorial = "01_Tutorial";
             public const string PlayTutorial = "02_PlayTutorial";
+            public const string Play150M = "03_Play150M";
         }
 
         /// <summary> 리소스 경로 상수 모음 </summary>
         public static class Path
         {
-            public const string JsonSetting = "Settings"; // 기본 설정 JSON
-            public const string Tutorial = "JSON/Tutorial"; // 튜토리얼 데이터
-            public const string PlayTutorial = "JSON/PlayTutorial"; // 튜토리얼 데이터
+            public const string JsonSetting = "Settings"; 
+            public const string Tutorial = "JSON/Tutorial";
+            public const string PlayTutorial = "JSON/PlayTutorial";
+            public const string Play150M = "JSON/Play150M"; 
         }
     }
 }

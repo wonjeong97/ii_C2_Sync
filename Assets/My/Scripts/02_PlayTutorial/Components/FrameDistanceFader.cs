@@ -1,9 +1,10 @@
 using UnityEngine;
+using UnityEngine.UI; // ★ Text 컴포넌트 제어를 위해 추가
 
 namespace My.Scripts._02_PlayTutorial.Components
 {
     /// <summary>
-    /// 대상(카메라)과의 거리에 따라 스프라이트/메쉬의 투명도를 조절하는 클래스
+    /// 대상(카메라)과의 거리에 따라 스프라이트/메쉬 및 자식 텍스트의 투명도를 조절하는 클래스
     /// </summary>
     public class FrameDistanceFader : MonoBehaviour
     {
@@ -22,9 +23,13 @@ namespace My.Scripts._02_PlayTutorial.Components
         private MeshRenderer _meshRenderer;
         private Color _originColor;
 
+        // ★ 텍스트 페이딩을 위한 변수 추가
+        private Text[] _childTexts; 
+        private Color[] _originTextColors;
+
         private void Awake()
         {
-            // 렌더러 컴포넌트 찾기 (Sprite 또는 Mesh 둘 다 대응)
+            // 1. 렌더러 컴포넌트 찾기
             _spriteRenderer = GetComponent<SpriteRenderer>();
             if (_spriteRenderer)
             {
@@ -35,9 +40,19 @@ namespace My.Scripts._02_PlayTutorial.Components
                 _meshRenderer = GetComponent<MeshRenderer>();
                 if (_meshRenderer)
                 {
-                    // Material 인스턴스 생성을 막기 위해 sharedMaterial 사용 고려 가능하나,
-                    // 색상을 개별적으로 바꾸려면 material에 접근해야 함.
                     _originColor = _meshRenderer.material.color;
+                }
+            }
+
+            // ★ 2. 자식 오브젝트에 있는 모든 Text 컴포넌트를 찾아서 색상 저장
+            _childTexts = GetComponentsInChildren<Text>();
+            if (_childTexts != null && _childTexts.Length > 0)
+            {
+                _originTextColors = new Color[_childTexts.Length];
+                for (int i = 0; i < _childTexts.Length; i++)
+                {
+                    // 각 텍스트의 원래 색상(RGB)을 기억해둠
+                    _originTextColors[i] = _childTexts[i].color;
                 }
             }
         }
@@ -58,33 +73,44 @@ namespace My.Scripts._02_PlayTutorial.Components
             // 1. Z축 거리 계산 (절댓값)
             float distance = Mathf.Abs(transform.position.z - targetTransform.position.z);
 
-            // 2. 거리 비율 계산 (InverseLerp: 범위 내 위치를 0~1로 반환)
-            // 가까움(visibleDist) -> 1, 멂(invisibleDist) -> 0
+            // 2. 거리 비율 계산 (가까움 -> 1, 멂 -> 0)
             float alpha = Mathf.InverseLerp(invisibleDist, fullyVisibleDist, distance);
 
-            // 3. 알파값 적용
+            // 3. 알파값 일괄 적용
             SetAlpha(alpha);
         }
 
         private void SetAlpha(float alpha)
         {
-            // 스프라이트 렌더러인 경우
+            // (1) 프레임 본체(Sprite/Mesh) 투명도 조절
             if (_spriteRenderer != null)
             {
                 Color c = _originColor;
                 c.a = alpha;
                 _spriteRenderer.color = c;
             }
-            // 3D 메쉬 렌더러인 경우 (Quad 등)
             else if (_meshRenderer != null)
             {
                 Color c = _originColor;
                 c.a = alpha;
-                // Standard Shader 등을 사용할 때 투명도 적용
                 if (_meshRenderer.material.HasProperty("_Color"))
                     _meshRenderer.material.color = c;
                 else if (_meshRenderer.material.HasProperty("_BaseColor"))
                     _meshRenderer.material.SetColor("_BaseColor", c);
+            }
+
+            // ★ (2) 자식 텍스트들의 투명도 조절
+            if (_childTexts != null)
+            {
+                for (int i = 0; i < _childTexts.Length; i++)
+                {
+                    if (_childTexts[i] != null)
+                    {
+                        Color c = _originTextColors[i]; // 원래 색상 가져오기
+                        c.a = alpha;                    // 투명도만 덮어쓰기
+                        _childTexts[i].color = c;       // 적용
+                    }
+                }
             }
         }
     }

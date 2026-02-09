@@ -57,8 +57,6 @@ namespace My.Scripts._01_Tutorial
         /// </summary>
         protected override void OnAllFinished()
         {
-            Debug.Log("튜토리얼 종료 -> 다음 씬(실전 플레이)으로 이동");
-            
             // 씬 전환 로직은 GameManager에 위임하여 페이드 효과 등 전역적인 전환 처리를 따르도록 함
             if (GameManager.Instance != null)
             {
