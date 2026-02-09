@@ -11,7 +11,7 @@ using Wonjeong.Data;
 using Wonjeong.UI;
 using Wonjeong.Utils;
 
-namespace My.Scripts._03_Play150M
+namespace My.Scripts._03_Play150M.Managers
 {
     [System.Serializable]
     public class Play150MData
@@ -22,7 +22,6 @@ namespace My.Scripts._03_Play150M
 
     public class Play150MManager : MonoBehaviour
     {
-        // [수정] Instance 필드를 프로퍼티로 변경 (캡슐화 경고 해결)
         public static Play150MManager Instance { get; private set; }
 
         [Header("Settings")]
@@ -42,18 +41,17 @@ namespace My.Scripts._03_Play150M
         [SerializeField] private PadDotController padDotController;
 
         [Header("Players")]
+        // [수정] 플레이어는 항상 2명
         [SerializeField] private TutorialPlayerController[] players = new TutorialPlayerController[2];
 
         private Play150MData _data;
         private bool _gameStarted;
         private bool _isGameFinished;
 
-        // [수정] 배열 참조가 변하지 않으므로 readonly 적용
+        // [수정] 플레이어가 2명 고정이므로 고정 배열 사용 (GC 방지 및 가독성 향상)
         private readonly bool[] _playerFinished = new bool[2];
         private readonly bool[] _isPlayerPaused = new bool[2];
-        
-        // [수정] 명시적 배열 크기 지정 제거 및 readonly 적용
-        private readonly int[] _nextMilestones = { 10, 10 };
+        private readonly int[] _nextMilestones = { 10, 10 }; // 초기값 할당
         private readonly Queue<int>[] _questionQueues = new Queue<int>[2];
 
         private void Awake()
@@ -66,8 +64,14 @@ namespace My.Scripts._03_Play150M
         {
             _data = JsonLoader.Load<Play150MData>(GameConstants.Path.Play150M);
             
-            // 패턴 매칭: null 체크 간소화
-            if (settings is null) { Debug.LogError("Settings Missing"); return; }
+            if (settings == null) { Debug.LogError("Settings Missing"); return; }
+            
+            // 안전장치: Inspector 실수로 players 크기가 2가 아닐 경우 경고
+            if (players == null || players.Length < 2)
+            {
+                Debug.LogError("[Play150MManager] Players array must have size 2.");
+                return;
+            }
 
             InitializeQuestionQueues();
             
@@ -80,7 +84,7 @@ namespace My.Scripts._03_Play150M
                 padDotController.SetCenterDotsAlpha(1, 1f);
             }
 
-            // 마일스톤 초기화 (배열은 readonly지만 내부 값은 변경 가능)
+            // 마일스톤 초기화 (readonly 배열이므로 요소 값만 변경)
             _nextMilestones[0] = 10;
             _nextMilestones[1] = 10;
 
@@ -90,7 +94,8 @@ namespace My.Scripts._03_Play150M
                 countdownText.text = "";
             }
 
-            for (int i = 0; i < players.Length; i++)
+            // 플레이어 2명 초기화
+            for (int i = 0; i < 2; i++)
             {
                 if (players[i] != null)
                 {
@@ -111,11 +116,11 @@ namespace My.Scripts._03_Play150M
             StartCoroutine(StartSequence());
         }
 
-        // 누락되었던 메서드 구현
         private void InitializeQuestionQueues()
         {
-            int questionCount = (_data?.questions != null) ? _data.questions.Length : 0;
+            int questionCount = (_data != null && _data.questions != null) ? _data.questions.Length : 0;
             
+            // 2명분에 대해 큐 생성
             for (int p = 0; p < 2; p++)
             {
                 List<int> indices = new List<int>();
@@ -145,7 +150,8 @@ namespace My.Scripts._03_Play150M
         {
             if (!_gameStarted) return;
 
-            for (int i = 0; i < players.Length; i++)
+            // [수정] 2명에 대해서만 루프
+            for (int i = 0; i < 2; i++)
             {
                 if (_isPlayerPaused[i])
                 {
@@ -158,7 +164,7 @@ namespace My.Scripts._03_Play150M
 
             float stopLimit = targetDistance + 1.0f; 
             
-            // 삼항 연산자 패턴 정리
+            // [수정] 2명 고정이므로 인덱스 0, 1 직접 접근 (안전 체크 포함)
             float s1 = (players[0] && !_isPlayerPaused[0] && players[0].currentDistance < stopLimit) ? players[0].currentSpeed : 0f;
             float s2 = (players[1] && !_isPlayerPaused[1] && players[1].currentDistance < stopLimit) ? players[1].currentSpeed : 0f;
 
@@ -168,7 +174,8 @@ namespace My.Scripts._03_Play150M
         private void HandlePadDown(int playerIdx, int laneIdx, int padIdx)
         {
             if (!_gameStarted || _isGameFinished) return;
-            if (playerIdx < 0 || playerIdx >= players.Length) return;
+            // 인덱스 범위 체크 (0 또는 1)
+            if (playerIdx < 0 || playerIdx >= 2) return;
             
             var player = players[playerIdx];
             if (player == null) return;
@@ -203,13 +210,14 @@ namespace My.Scripts._03_Play150M
 
             if (ui) ui.UpdateGauge(playerIdx, currentDist, targetDistance);
 
-            // 10m 단위 마일스톤 체크
-            if (!_isPlayerPaused[playerIdx] && currentDist >= _nextMilestones[playerIdx] && _nextMilestones[playerIdx] < targetDistance)
+            while (currentDist >= _nextMilestones[playerIdx] && _nextMilestones[playerIdx] < targetDistance)
             {
                 int milestone = _nextMilestones[playerIdx];
                 _nextMilestones[playerIdx] += 10; 
 
+                // 루프 내에서 정지 상태 설정
                 _isPlayerPaused[playerIdx] = true;
+                
                 if (players[playerIdx]) 
                 {
                     players[playerIdx].ForceStop();
@@ -255,23 +263,21 @@ namespace My.Scripts._03_Play150M
 
         public int GetCurrentLane(int playerIdx)
         {
-            if (playerIdx >= 0 && playerIdx < players.Length && players[playerIdx] != null)
+            if (playerIdx >= 0 && playerIdx < 2 && players[playerIdx] != null)
                 return players[playerIdx].currentLane;
             return 1;
         }
 
         public void OnPlayerHit(int playerIdx)
         {
-            if (playerIdx >= 0 && playerIdx < players.Length && players[playerIdx] != null)
+            if (playerIdx >= 0 && playerIdx < 2 && players[playerIdx] != null)
             {
                 players[playerIdx].OnHit(2.0f);
             }
         }
 
-        // [복원] 누락되었던 시퀀스 로직 구현 (150M UI에 맞춰 수정됨)
         private IEnumerator StartSequence()
         {
-            // 150M UI에는 HidePopup이 없고 QuestionPopup 제어만 있음
             if (ui)
             {
                 ui.HideQuestionPopup(0, 0f);
@@ -287,7 +293,7 @@ namespace My.Scripts._03_Play150M
                     yield return CoroutineData.GetWaitForSeconds(1.0f);
                 }
 
-                if (_data?.startText != null)
+                if (_data != null && _data.startText != null)
                 {
                     if (UIManager.Instance != null)
                         UIManager.Instance.SetText(countdownText.gameObject, _data.startText);

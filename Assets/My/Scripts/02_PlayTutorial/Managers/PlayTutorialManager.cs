@@ -370,10 +370,10 @@ namespace My.Scripts._02_PlayTutorial.Managers
             players[0].MoveToLane(1);
             players[1].MoveToLane(1);
 
-            string msg = (_data != null) ? _data.phase1SuccessMessage.text : "Complete";
+            string msg = (_data != null && _data.phase1SuccessMessage != null) ? _data.phase1SuccessMessage.text : "Complete";
             yield return StartCoroutine(ui.ShowSuccessText(msg, 2.0f));
 
-            if (_data != null && _data.guideTexts.Length > 4)
+            if (_data != null && _data.guideTexts != null && _data.guideTexts.Length > 4)
             {
                 ui.PreparePopup(_data.guideTexts[4].text);
                 StartCoroutine(ui.FadeInPopup(0.1f));

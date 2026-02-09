@@ -109,16 +109,17 @@ namespace My.Scripts._02_PlayTutorial.Managers
 
         public IEnumerator FadeInPopup(float duration)
         {   
+            if (!popup) yield break;
             if (!popup.gameObject.activeInHierarchy) popup.gameObject.SetActive(true);
             yield return StartCoroutine(FadeCanvasGroup(popup, 0f, 1f, duration));
         }
 
         public void HidePopup(float duration)
         {
+            if (!popup) return;
             StartCoroutine(FadeCanvasGroup(popup, popup.alpha, 0f, duration));
-            if (popup) popup.blocksRaycasts = false;
+            popup.blocksRaycasts = false;
         }
-
         public IEnumerator FadeOutPopupTextAndChange(string newText, float fadeOutTime, float fadeInTime)
         {
             yield return StartCoroutine(FadeTextAlpha(popupText, 1f, 0f, fadeOutTime));

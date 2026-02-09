@@ -167,7 +167,6 @@ public class FrameScrollManager : MonoBehaviour
         }
 
         // 2. 해당 프레임을 트랙의 맨 뒤로 이동
-        // (FrameData는 일반 클래스이므로 명시적 null 체크 필요)
         if (closestFrame != null)
         {
             Vector3 totalTrackOffset = _segmentVector * _frames.Count;
@@ -176,12 +175,15 @@ public class FrameScrollManager : MonoBehaviour
             // 다음 거리(미터) 계산
             float nextMeters = closestFrame.currentMeters + totalVirtualDistance;
 
-            // 위치 이동 및 데이터 갱신
-            closestFrame.transform.position += totalTrackOffset;
-            closestFrame.currentMeters = nextMeters;
-        
-            // UI 라벨 갱신 (피니시 라인 통과 여부 등 내부 로직 처리)
-            UpdateFrameLabel(closestFrame);
+            // [수정] 피니시 거리(finishDistance)를 넘지 않을 때만 리사이클 수행 (ScrollFrames와 동일 조건)
+            if (nextMeters <= finishDistance)
+            {
+                closestFrame.transform.position += totalTrackOffset;
+                closestFrame.currentMeters = nextMeters;
+            
+                // 실제로 업데이트된 경우에만 라벨 갱신
+                UpdateFrameLabel(closestFrame);
+            }
         }
     }
 }

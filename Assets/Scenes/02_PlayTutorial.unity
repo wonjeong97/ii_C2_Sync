@@ -2898,8 +2898,6 @@ MonoBehaviour:
   fogMode: 1
   fogStartDistance: 10
   fogEndDistance: 20
-  leftCamera: {fileID: 0}
-  rightCamera: {fileID: 0}
 --- !u!114 &823285678
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2914,16 +2912,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   popup: {fileID: 306402220}
   popupText: {fileID: 1572212062}
-  popupQuestionLeft: {fileID: 0}
-  textLeftDistance: {fileID: 0}
-  textLeftQuestion: {fileID: 0}
-  popupQuestionRight: {fileID: 0}
-  textRightDistance: {fileID: 0}
-  textRightQuestion: {fileID: 0}
-  p1YesOut: {fileID: 0}
-  p1NoOut: {fileID: 0}
-  p2YesOut: {fileID: 0}
-  p2NoOut: {fileID: 0}
   centerText: {fileID: 1057946599}
   p1RightArrow: {fileID: 705485150}
   p2RightArrow: {fileID: 302695187}
