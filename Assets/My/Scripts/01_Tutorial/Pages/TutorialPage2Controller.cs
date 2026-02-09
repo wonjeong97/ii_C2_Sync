@@ -79,22 +79,6 @@ namespace My.Scripts._01_Tutorial.Pages
             }
         }
         
-        private void Update()
-        {
-            // 이미 완료된 상태라면 중복 처리를 방지하기 위해 로직을 수행하지 않음
-            if (_isCompleted) return;
-
-            // 성격 급한 사용자나 이미 내용을 아는 사용자를 위해 클릭/엔터로 대기 시간을 건너뛰게 함
-            if (Input.GetKeyDown(KeyCode.Return) || Input.GetMouseButtonDown(0))
-            {
-                _isCompleted = true;
-                
-                // 자동 넘김 코루틴이 나중에 중복으로 실행되지 않도록 강제 종료함
-                StopAllCoroutines(); 
-                CompleteStep();
-            }
-        }
-        
         /// <summary>
         /// 페이지가 비활성화될 때 호출되어 정리 작업을 수행함.
         /// </summary>

@@ -16,12 +16,12 @@ namespace My.Scripts._02_PlayTutorial.Managers
     /// </summary>
     public enum TutorialPhase
     {
-        Intro,          // 인트로 (팝업 연출)
-        Phase1Center,  // 중앙 라인 달리기 (기본 조작)
-        Phase2Right,   // 우측 라인 이동
-        Phase3Left,    // 좌측 라인 이동
-        FinalAutoRun,  // 자동 달리기 (피날레 연출)
-        Complete        // 튜토리얼 종료
+        Intro, // 인트로 (팝업 연출)
+        Phase1Center, // 중앙 라인 달리기 (기본 조작)
+        Phase2Right, // 우측 라인 이동
+        Phase3Left, // 좌측 라인 이동
+        FinalAutoRun, // 자동 달리기 (피날레 연출)
+        Complete // 튜토리얼 종료
     }
 
     /// <summary>
@@ -32,7 +32,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
     public class PlayTutorialData
     {
         public TextSetting[] guideTexts;
-        public TextSetting phase1SuccessMessage; 
+        public TextSetting phase1SuccessMessage;
         public TextSetting[] finalTexts;
     }
 
@@ -45,28 +45,27 @@ namespace My.Scripts._02_PlayTutorial.Managers
         public static PlayTutorialManager Instance;
 
         [Header("Settings")]
-        [SerializeField] private TutorialSettingsSO settings; // 기획 데이터(밸런스)와 로직을 분리하기 위해 SO 사용
+        [SerializeField] private TutorialSettingsSO settings;
 
-        [Header("Sub Systems")]
+        [Header("Sub Systems")] 
         [SerializeField] private PlayTutorialUIManager ui;
         [SerializeField] private PlayTutorialEnvironment env;
 
         [Header("Players")]
-        // 개별 변수(p1, p2) 대신 배열을 사용하여 루프 처리 및 인덱스 기반 접근을 용이하게 함
         [SerializeField] private TutorialPlayerController[] players = new TutorialPlayerController[2];
 
         private PlayTutorialData _data;
         private TutorialPhase _currentPhase = TutorialPhase.Intro;
 
-        private bool _gameStarted;     
-        private bool _isWaitingForRun; 
+        private bool _gameStarted;
+        private bool _isWaitingForRun;
         private bool _popupFadedOut;
-        
+
         private readonly float[] _phaseDistances = new float[2]; // 각 페이즈별 누적 거리
-        private readonly bool[] _phaseCompleted = new bool[2];   // 각 페이즈 완료 여부
-        
+        private readonly bool[] _phaseCompleted = new bool[2]; // 각 페이즈 완료 여부
+
         private bool _phase1GlobalComplete; // Phase 1은 두 플레이어 모두 완료해야 넘어감
-        private bool _routineStarted;       // 코루틴 중복 실행 방지 플래그
+        private bool _routineStarted; // 코루틴 중복 실행 방지 플래그
         private bool _waitingForFinalHit;
 
         private void Awake()
@@ -78,8 +77,12 @@ namespace My.Scripts._02_PlayTutorial.Managers
         private void Start()
         {
             _data = JsonLoader.Load<PlayTutorialData>(GameConstants.Path.PlayTutorial);
-            
-            if (settings == null) { Debug.LogError("Settings Missing"); return; }
+
+            if (settings == null)
+            {
+                Debug.LogError("Settings Missing");
+                return;
+            }
 
             // UI 및 환경 초기화에 SO의 설정값을 주입하여 일관된 물리 법칙 적용
             ui.InitUI(settings.physicsConfig.maxDistance);
@@ -108,7 +111,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
             }
 
             if (InputManager.Instance != null) InputManager.Instance.OnPadDown += HandlePadDown;
-            
+
             StartCoroutine(IntroScenario());
         }
 
@@ -137,7 +140,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
             // 마지막 페이즈(자동 달리기) 여부에 따라 목표 속도 결정
             bool isAutoRun = (_currentPhase == TutorialPhase.FinalAutoRun);
             float autoTarget = isAutoRun ? settings.physicsConfig.maxScrollSpeed * settings.autoRunSpeedRatio : 0f;
-            
+
             // 모든 플레이어의 물리 업데이트 처리
             for (int i = 0; i < players.Length; i++)
             {
@@ -149,7 +152,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
             float s2 = players[1] ? players[1].currentSpeed : 0f;
             env.ScrollEnvironment(s1, s2);
         }
-        
+
         private void HandlePlayerDistanceChanged(int playerIdx, float currentDist, float maxDist)
         {
             // UI 게이지 업데이트
@@ -166,11 +169,11 @@ namespace My.Scripts._02_PlayTutorial.Managers
         private void HandlePadDown(int playerIdx, int laneIdx, int padIdx)
         {
             // 자동 달리기 중이거나 게임 시작 전에는 입력 무시
-            if (!_gameStarted || _currentPhase == TutorialPhase.FinalAutoRun) return; 
-            
+            if (!_gameStarted || _currentPhase == TutorialPhase.FinalAutoRun) return;
+
             // 인덱스 범위 안전성 체크
             if (playerIdx < 0 || playerIdx >= players.Length) return;
-            if (laneIdx < 0 || laneIdx > 2) return; 
+            if (laneIdx < 0 || laneIdx > 2) return;
 
             var player = players[playerIdx];
             if (player == null) return;
@@ -194,13 +197,10 @@ namespace My.Scripts._02_PlayTutorial.Managers
                     break;
 
                 case TutorialPhase.Phase2Right:
-                    // 우측 이동 페이즈: 목표 라인 2, 완료 시 Phase2CompletionRoutine 실행
-                    // 공통 함수(HandleRunningPhase)를 사용하여 로직 중복을 제거함
                     HandleRunningPhase(player, laneIdx, 2, settings.targetDistancePhase2, Phase2CompletionRoutine);
                     break;
 
                 case TutorialPhase.Phase3Left:
-                    // 좌측 이동 페이즈: 목표 라인 0, 완료 시 Phase3CompletionRoutine 실행
                     HandleRunningPhase(player, laneIdx, 0, settings.targetDistancePhase3, Phase3CompletionRoutine);
                     break;
             }
@@ -221,10 +221,10 @@ namespace My.Scripts._02_PlayTutorial.Managers
 
             player.MoveAndAccelerate(1);
             CheckPopupClose();
-            
+
             // 두 플레이어 모두 목표를 달성했는지 체크 (Global Complete)
             if (!_phase1GlobalComplete &&
-                players[0].currentDistance >= settings.targetDistancePhase1 && 
+                players[0].currentDistance >= settings.targetDistancePhase1 &&
                 players[1].currentDistance >= settings.targetDistancePhase1)
             {
                 _phase1GlobalComplete = true;
@@ -242,7 +242,8 @@ namespace My.Scripts._02_PlayTutorial.Managers
         /// <param name="targetLane">현재 페이즈에서 이동해야 할 목표 라인 인덱스</param>
         /// <param name="targetDist">현재 페이즈의 목표 이동 거리</param>
         /// <param name="nextRoutine">두 플레이어 모두 완료 시 실행할 연출 코루틴 대리자</param>
-        private void HandleRunningPhase(TutorialPlayerController player, int laneIdx, int targetLane, float targetDist, Func<IEnumerator> nextRoutine)
+        private void HandleRunningPhase(TutorialPlayerController player, int laneIdx, int targetLane, float targetDist,
+            Func<IEnumerator> nextRoutine)
         {
             // TutorialPlayerController.cs에 정의된 프로퍼티는 PascalCase(PlayerIndex)임
             int pIdx = player.playerIndex;
@@ -254,16 +255,16 @@ namespace My.Scripts._02_PlayTutorial.Managers
             if (!_popupFadedOut)
             {
                 _popupFadedOut = true;
-                ui.HidePopup(1.0f);
+                ui.HidePopup(0.1f);
             }
-            
+
             // 해당 플레이어 쪽의 화살표 UI를 끔 (우측 이동(2)이면 true, 좌측(0)이면 false)
-            ui.StopArrowFadeOut(pIdx, laneIdx == 2, 1.0f); 
+            ui.StopArrowFadeOut(pIdx, laneIdx == 2, 1.0f);
 
             // 실제 물리 이동 및 가속 처리
             player.MoveAndAccelerate(targetLane);
 
-            // 해당 페이즈에서의 진행 거리 누적 (배열 사용으로 ref 제거됨)
+            // 해당 페이즈에서의 진행 거리 누적
             _phaseDistances[pIdx] += 1f;
 
             // 개인별 목표 달성 체크
@@ -287,7 +288,11 @@ namespace My.Scripts._02_PlayTutorial.Managers
         /// </summary>
         private void CheckPopupClose()
         {
-            if (_isWaitingForRun) { _isWaitingForRun = false; ui.HidePopup(1.0f); }
+            if (_isWaitingForRun)
+            {
+                _isWaitingForRun = false;
+                ui.HidePopup(0.1f);
+            }
         }
 
         /// <summary>
@@ -309,30 +314,39 @@ namespace My.Scripts._02_PlayTutorial.Managers
 
             ui.ShowPopupImmediately(t1);
             yield return CoroutineData.GetWaitForSeconds(3.0f);
-            yield return StartCoroutine(ui.FadeOutPopupTextAndChange(t2, 1f, 1f));
-            
-            _isWaitingForRun = true; 
+            yield return StartCoroutine(ui.FadeOutPopupTextAndChange(t2, 0.1f, 0.1f));
+
+            _isWaitingForRun = true;
             _gameStarted = true;
             _currentPhase = TutorialPhase.Phase1Center;
         }
 
         private IEnumerator SuccessSequenceRoutine(string message)
         {
-            _currentPhase = TutorialPhase.Intro; // 연출 중 입력 방지를 위해 상태 변경
+            _currentPhase = TutorialPhase.Intro; 
+            
             yield return StartCoroutine(ui.ShowSuccessText(message, 2.0f));
 
             if (_data?.guideTexts != null && _data.guideTexts.Length > 3)
             {
+                // 팝업 텍스트 준비
                 ui.PreparePopup(_data.guideTexts[2].text);
-                yield return StartCoroutine(ui.FadeInPopup(1.0f));
-                env.FadeInAllObstacles(0, 3, 1.0f);
+                
+                float fadeDuration = 0.1f; 
+                StartCoroutine(ui.FadeInPopup(fadeDuration)); 
+                env.FadeInAllObstacles(0, 3, fadeDuration);
+                
+                // 페이드 및 텍스트 읽을 시간 대기 (3초)
                 yield return CoroutineData.GetWaitForSeconds(3.0f);
-                yield return StartCoroutine(ui.FadeOutPopupTextAndChange(_data.guideTexts[3].text, 1f, 1f));
-                yield return CoroutineData.GetWaitForSeconds(0.5f);
+                
+                // 다음 텍스트로 전환
+                yield return StartCoroutine(ui.FadeOutPopupTextAndChange(_data.guideTexts[3].text, 0.1f, 0.1f));
+                yield return CoroutineData.GetWaitForSeconds(1f);
 
-                // 다음 페이즈(2) 준비
+                // 다음 페이즈(우측 이동) 준비
                 ResetPhaseState();
-                ui.PlayArrow(0, true); ui.PlayArrow(1, true);
+                ui.PlayArrow(0, true);
+                ui.PlayArrow(1, true);
                 _currentPhase = TutorialPhase.Phase2Right;
             }
         }
@@ -340,8 +354,10 @@ namespace My.Scripts._02_PlayTutorial.Managers
         private IEnumerator Phase2CompletionRoutine()
         {
             yield return CoroutineData.GetWaitForSeconds(1.0f);
-            players[0].MoveToLane(1); players[1].MoveToLane(1);
-            ui.PlayArrow(0, false); ui.PlayArrow(1, false);
+            players[0].MoveToLane(1);
+            players[1].MoveToLane(1);
+            ui.PlayArrow(0, false);
+            ui.PlayArrow(1, false);
 
             // 다음 페이즈(3) 준비
             ResetPhaseState();
@@ -351,7 +367,8 @@ namespace My.Scripts._02_PlayTutorial.Managers
         private IEnumerator Phase3CompletionRoutine()
         {
             yield return CoroutineData.GetWaitForSeconds(1.0f);
-            players[0].MoveToLane(1); players[1].MoveToLane(1);
+            players[0].MoveToLane(1);
+            players[1].MoveToLane(1);
 
             string msg = (_data != null) ? _data.phase1SuccessMessage.text : "Complete";
             yield return StartCoroutine(ui.ShowSuccessText(msg, 2.0f));
@@ -359,12 +376,13 @@ namespace My.Scripts._02_PlayTutorial.Managers
             if (_data != null && _data.guideTexts.Length > 4)
             {
                 ui.PreparePopup(_data.guideTexts[4].text);
-                StartCoroutine(ui.FadeInPopup(1.0f));
-                env.FadeInAllObstacles(3, 1, 1.0f);
-
-                // 피날레 자동 달리기 시작
+                StartCoroutine(ui.FadeInPopup(0.1f));
+                env.FadeInAllObstacles(3, 1, 0.1f);
+                yield return CoroutineData.GetWaitForSeconds(1.0f);
+                
+                // 장애물 부딪힘 자동 달리기 시작
                 _currentPhase = TutorialPhase.FinalAutoRun;
-                _waitingForFinalHit = true; 
+                _waitingForFinalHit = true;
                 yield return CoroutineData.GetWaitForSeconds(settings.autoRunDuration);
                 _currentPhase = TutorialPhase.Complete;
             }
@@ -390,7 +408,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
             if (playerIdx >= 0 && playerIdx < players.Length && players[playerIdx] != null)
             {
                 players[playerIdx].OnHit(2.0f);
-                
+
                 // 마지막 자동 달리기 중 충돌 시 추가 연출 트리거
                 if (_waitingForFinalHit)
                 {
@@ -404,19 +422,30 @@ namespace My.Scripts._02_PlayTutorial.Managers
         {
             yield return CoroutineData.GetWaitForSeconds(2.0f);
             if (_data != null && _data.guideTexts.Length > 5)
-            {   
+            {
                 // 팝업 텍스트 변경 (guideTexts[5])
-                yield return StartCoroutine(ui.FadeOutPopupTextAndChange(_data.guideTexts[5].text, 1f, 1f));
+                yield return StartCoroutine(ui.FadeOutPopupTextAndChange(_data.guideTexts[5].text, 0.1f, 0.1f));
             }
-            
+
             yield return CoroutineData.GetWaitForSeconds(2.0f);
-            
+
             if (ui != null && _data != null && _data.finalTexts != null && _data.finalTexts.Length > 0)
             {
                 yield return StartCoroutine(ui.RunFinalPageSequence(_data.finalTexts));
             }
-            
+
             _currentPhase = TutorialPhase.Complete;
+
+            Debug.Log("[PlayTutorialManager] 튜토리얼 완료 -> Play150M 이동");
+            if (GameManager.Instance)
+            {
+                GameManager.Instance.ChangeScene(GameConstants.Scene.Play150M);
+            }
+            else
+            {
+                // GameManager가 없을 경우 로드
+                UnityEngine.SceneManagement.SceneManager.LoadScene(GameConstants.Scene.Play150M);
+            }
         }
     }
 }

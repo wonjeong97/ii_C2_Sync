@@ -14,7 +14,6 @@ namespace My.Scripts._01_Tutorial.Pages
     [Serializable]
     public class TutorialPage1Data
     {
-        // 1페이지는 별도의 타이틀 없이 설명 텍스트만으로 구성되므로 해당 설정만 포함
         public TextSetting descriptionText;
     }
 
@@ -34,9 +33,7 @@ namespace My.Scripts._01_Tutorial.Pages
         protected override void SetupData(TutorialPage1Data data)
         {
             if (data == null) return;
-
-            // UIManager를 사용하여 텍스트의 스타일(폰트, 크기 등)과 내용을 일괄 적용
-            // 이를 통해 데이터와 뷰의 표시 로직을 분리하고 일관된 스타일을 유지함
+            
             if (descriptionText != null && data.descriptionText != null)
             {
                 if (UIManager.Instance != null)

@@ -164,7 +164,7 @@ namespace My.Scripts.Core.FlowSystem
         /// <summary>
         /// CanvasGroup의 Alpha 값을 조절하여 페이드 효과를 주는 코루틴.
         /// </summary>
-        protected IEnumerator FadePage(GamePage page, float start, float end, float duration = 0.5f)
+        protected IEnumerator FadePage(GamePage page, float start, float end, float duration = 0.1f)
         {
             if (!page) yield break;
 
