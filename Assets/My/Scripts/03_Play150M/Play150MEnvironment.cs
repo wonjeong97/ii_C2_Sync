@@ -20,11 +20,56 @@ namespace My.Scripts._03_Play150M
         [SerializeField] private Camera leftCamera;
         [SerializeField] private Camera rightCamera;
 
+        [Header("Fog Settings")] 
+        [SerializeField] private bool useFog = true;
+        [SerializeField] private Color fogColor = new Color(0.1f, 0.1f, 0.1f, 1f); 
+        [SerializeField] private FogMode fogMode = FogMode.Linear; 
+        [SerializeField] private float fogStartDistance = 10f; 
+        [SerializeField] private float fogEndDistance = 40f; 
+        
+        private bool _prevFog;
+        private Color _prevFogColor;
+        private FogMode _prevFogMode;
+        private float _prevFogStartDistance;
+        private float _prevFogEndDistance;
+        private float _prevFogDensity;
+        
+        private bool _hasFogBackup;
+
         public void InitEnvironment()
         {
             if (p1Floor) { p1Floor.enableScroll = true; p1Floor.scrollSpeedY = 0f; }
             if (p2Floor) { p2Floor.enableScroll = true; p2Floor.scrollSpeedY = 0f; }
 
+            if (p1Obstacles && leftCamera) p1Obstacles.Init(leftCamera);
+            if (p2Obstacles && rightCamera) p2Obstacles.Init(rightCamera);
+
+            _prevFog = RenderSettings.fog;
+            _prevFogColor = RenderSettings.fogColor;
+            _prevFogMode = RenderSettings.fogMode;
+            _prevFogStartDistance = RenderSettings.fogStartDistance;
+            _prevFogEndDistance = RenderSettings.fogEndDistance;
+            _prevFogDensity = RenderSettings.fogDensity;
+            _hasFogBackup = true;
+
+            // 백업 완료 후 새로운 설정 적용
+            RenderSettings.fog = useFog;
+
+            if (useFog)
+            {
+                RenderSettings.fogColor = fogColor;
+                RenderSettings.fogMode = fogMode;
+
+                if (fogMode == FogMode.Linear)
+                {
+                    RenderSettings.fogStartDistance = fogStartDistance;
+                    RenderSettings.fogEndDistance = fogEndDistance;
+                }
+                else
+                {
+                    RenderSettings.fogDensity = 0.05f;
+                }
+            }
         }
 
         public void ScrollEnvironment(float p1Speed, float p2Speed)
@@ -50,6 +95,17 @@ namespace My.Scripts._03_Play150M
             {
                 p2Frames.ForceRecycleFrameClosestToCamera(rightCamera.transform);
             }
+        }
+
+        private void OnDisable()
+        {   
+            if (!_hasFogBackup) return;
+            RenderSettings.fog = _prevFog;
+            RenderSettings.fogColor = _prevFogColor;
+            RenderSettings.fogMode = _prevFogMode;
+            RenderSettings.fogStartDistance = _prevFogStartDistance;
+            RenderSettings.fogEndDistance = _prevFogEndDistance;
+            RenderSettings.fogDensity = _prevFogDensity; 
         }
     }
 }

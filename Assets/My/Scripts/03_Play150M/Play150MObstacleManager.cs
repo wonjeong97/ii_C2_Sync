@@ -27,23 +27,34 @@ namespace My.Scripts._03_Play150M
         [SerializeField] private float uvLoopSize = 0.025f;
         [SerializeField] private float virtualMetersPerLoop = 5f;
 
+        // [추가] 페이드 설정 변수
+        [Header("Fader Settings")]
+        [SerializeField] private bool useDistanceFade = true;
+        [SerializeField] private float fullyVisibleDist = 10f;
+        [SerializeField] private float invisibleDist = 30f;
+
         // 생성된 장애물 리스트
         private readonly List<GameObject> _spawnedObstacles = new List<GameObject>();
         
         private Vector3 _moveDirection; 
         private Vector3 _laneOffsetVector;
         private float _worldDistPerUV;
+        private Camera _targetCamera; // [추가] 거리 계산 기준 카메라
 
-        private void Start()
+        // [변경] Start() 제거 -> Init()으로 변경하여 외부에서 카메라 주입 후 초기화
+        public void Init(Camera cam)
         {
-            InitializePathVectors();
-            if (virtualDistStartToEnd <= 0) return;
-            GenerateRandomObstacles();
+            _targetCamera = cam;
+
+            if (InitializePathVectors())
+            {
+                GenerateRandomObstacles();
+            }
         }
 
-        private void InitializePathVectors()
+        private bool InitializePathVectors()
         {
-            if (virtualDistStartToEnd <= 0) return;
+            if (virtualDistStartToEnd <= 0) return false;
 
             Vector3 segmentVector = pathEnd - pathStart;
             _moveDirection = -segmentVector.normalized; // 역방향 이동
@@ -67,6 +78,8 @@ namespace My.Scripts._03_Play150M
             // 스크롤 속도 동기화 계수
             float worldDistPerLoop = segmentVector.magnitude * (virtualMetersPerLoop / virtualDistStartToEnd);
             if (uvLoopSize > 0) _worldDistPerUV = worldDistPerLoop / uvLoopSize;
+
+            return true;
         }
 
         /// <summary>
@@ -74,6 +87,8 @@ namespace My.Scripts._03_Play150M
         /// </summary>
         private void GenerateRandomObstacles()
         {
+            if (virtualDistStartToEnd <= 0) return;
+
             float currentDist = startGenDistance;
             Vector3 vectorPerMeter = (pathEnd - pathStart) / virtualDistStartToEnd;
 
@@ -85,19 +100,16 @@ namespace My.Scripts._03_Play150M
 
                 if (currentDist < 50f) // [Easy] 10~50m
                 {
-                    // 간격 넓음, 무조건 1개
                     interval = Random.Range(10f, 15f);
                     count = 1;
                 }
                 else if (currentDist < 100f) // [Normal] 50~100m
                 {
-                    // 간격 보통, 가끔 2개
                     interval = Random.Range(7f, 10f);
                     count = (Random.value > 0.8f) ? 2 : 1; 
                 }
                 else // [Hard] 100~150m
                 {
-                    // 간격 좁음, 자주 2개
                     interval = Random.Range(5f, 7f);
                     count = (Random.value > 0.6f) ? 2 : 1;
                 }
@@ -107,7 +119,6 @@ namespace My.Scripts._03_Play150M
                 if (currentDist >= endGenDistance) break;
 
                 // 2. 장애물 배치 (라인 선택)
-                // 라인 인덱스: -1(좌), 0(중), 1(우)
                 List<int> availableLanes = new List<int> { -1, 0, 1 };
                 
                 // 랜덤으로 라인 섞기
@@ -130,17 +141,42 @@ namespace My.Scripts._03_Play150M
         {
             if (obstaclePrefab == null) return;
 
-            // 위치 계산: 시작점 + (진행방향 * 거리) + (라인오프셋 * 라인인덱스)
+            // 위치 계산
             Vector3 centerPos = pathStart + (vectorPerMeter * dist);
             Vector3 finalPos = centerPos + (_laneOffsetVector * laneIdx);
 
             GameObject obj = Instantiate(obstaclePrefab, transform);
             obj.transform.position = finalPos;
-            
+    
             // HitChecker 설정
             var hitChecker = obj.GetComponent<ObstacleHitChecker>();
             if (hitChecker == null) hitChecker = obj.AddComponent<ObstacleHitChecker>();
-            hitChecker.Setup(playerIndex, laneIdx); // 플레이어 인덱스, 라인 인덱스 전달
+            hitChecker.Setup(playerIndex, laneIdx);
+
+            // 거리 기반 페이더(FrameDistanceFader) 부착 및 설정
+            if (useDistanceFade)
+            {
+                var fader = obj.AddComponent<FrameDistanceFader>();
+        
+                // [Fix] Camera.main이 null일 경우에 대한 안전 장치 추가
+                // _targetCamera -> Camera.main -> obj.transform 순으로 폴백
+                if (_targetCamera != null)
+                {
+                    fader.targetTransform = _targetCamera.transform;
+                }
+                else if (Camera.main != null)
+                {
+                    fader.targetTransform = Camera.main.transform;
+                }
+                else
+                {
+                    // 카메라를 찾을 수 없는 경우, 오류 방지를 위해 자기 자신을 타겟으로 설정
+                    fader.targetTransform = obj.transform;
+                }
+
+                fader.fullyVisibleDist = fullyVisibleDist;
+                fader.invisibleDist = invisibleDist;
+            }
 
             _spawnedObstacles.Add(obj);
         }
@@ -157,9 +193,6 @@ namespace My.Scripts._03_Play150M
                 if (_spawnedObstacles[i] != null)
                 {
                     _spawnedObstacles[i].transform.position += displacement;
-                    
-                    // (옵션) 너무 뒤로 지나가면 제거 or 비활성화 가능
-                    // 여기서는 150m 고정이므로 별도 제거 로직 없이 유지
                 }
             }
         }
