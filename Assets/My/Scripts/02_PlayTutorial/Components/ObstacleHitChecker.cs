@@ -1,5 +1,6 @@
 using System.Collections;
 using My.Scripts._02_PlayTutorial.Managers;
+using My.Scripts._03_Play150M;
 using UnityEngine;
 
 namespace My.Scripts._02_PlayTutorial.Components
@@ -37,53 +38,66 @@ namespace My.Scripts._02_PlayTutorial.Components
         }
 
         private void OnTriggerEnter(Collider other)
-        {
+        {   
             // 이미 충돌 처리가 끝난 장애물에 대해 중복 처리를 방지함
             if (_isHitProcessed) return;
 
             // 플레이어의 실제 판정 범위(Debug Cube 등)와 닿았을 때만 충돌 로직을 수행하기 위해 이름으로 필터링
             if (other.name.Contains("Left") || other.name.Contains("Center") || other.name.Contains("Right"))
-            {
+            {   
                 CheckHitLogic();
             }
         }
 
         /// <summary>
         /// 실제 플레이어 위치와 장애물 위치를 비교하여 최종 피격 여부를 판단함.
+        /// 튜토리얼 및 150M 모드 양쪽을 지원함.
         /// </summary>
         private void CheckHitLogic()
         {
             _isHitProcessed = true;
+            int playerCurrentLane = -999;
+            bool isManagerFound = false;
 
-            if (PlayTutorialManager.Instance == null) return;
+            // 1. 튜토리얼 모드 확인
+            if (PlayTutorialManager.Instance != null)
+            {
+                playerCurrentLane = PlayTutorialManager.Instance.GetCurrentLane(_ownerPlayerIdx);
+                isManagerFound = true;
+            }
+            // 2. 150M 모드 확인 (수정됨: Play150MManager 사용)
+            else if (Play150MManager.Instance != null)
+            {
+                playerCurrentLane = Play150MManager.Instance.GetCurrentLane(_ownerPlayerIdx);
+                isManagerFound = true;
+            }
 
-            // 현재 프레임의 플레이어 라인 위치를 가져와 비교함
-            int playerCurrentLane = PlayTutorialManager.Instance.GetCurrentLane(_ownerPlayerIdx);
-        
+            if (!isManagerFound) return;
+
             // 매니저의 라인 인덱스(0,1,2)와 장애물 생성 데이터의 인덱스(-1,0,1) 체계가 다르므로 변환하여 비교
             int obstacleLaneConverted = _obstacleLaneIndex + 1; 
 
             // 플레이어가 장애물과 같은 라인에 위치하고 있다면 피격으로 판정
             if (playerCurrentLane == obstacleLaneConverted)
             {
-                //Debug.LogError($"<color=red>[HIT] P{_ownerPlayerIdx + 1} 충돌! (PlayerLane: {playerCurrentLane})</color>");
-            
                 // 시각적 피드백(애니메이션) 제공
                 if (_animator != null) 
                 {
                     _animator.SetTrigger("Hit"); 
                 }
 
-                // 게임 로직상 페널티(스턴, 감속 등)를 적용하기 위해 매니저에 알림
-                PlayTutorialManager.Instance.OnPlayerHit(_ownerPlayerIdx);
+                // 게임 로직상 페널티 적용 (매니저 분기 처리)
+                if (PlayTutorialManager.Instance != null)
+                {
+                    PlayTutorialManager.Instance.OnPlayerHit(_ownerPlayerIdx);
+                }
+                else if (Play150MManager.Instance != null)
+                {
+                    Play150MManager.Instance.OnPlayerHit(_ownerPlayerIdx);
+                }
 
                 // 즉시 삭제하지 않고 피격 애니메이션을 보여줄 시간을 확보한 뒤 제거함
                 StartCoroutine(DestroyRoutine());
-            }
-            else
-            {
-                // 플레이어가 다른 라인에 있어 회피에 성공함
-                //Debug.Log($"[PASS] P{_ownerPlayerIdx + 1} 회피 성공.");
             }
         }
 

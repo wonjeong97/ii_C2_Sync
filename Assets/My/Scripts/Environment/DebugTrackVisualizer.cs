@@ -13,7 +13,7 @@ namespace My.Scripts.Environment
     
         [Header("Layer Settings")]
         [Tooltip("큐브에 적용할 레이어 이름 (Unity 에디터에서 추가한 레이어 이름 입력, 예: Left, Right)")]
-        public string targetLayer = "Default"; // ★ 레이어 이름 설정 변수
+        public string targetLayer = "Default";
 
         [Header("Rotation Settings")]
         [Tooltip("배치 라인 회전 (중앙 큐브 기준 좌/우 큐브 위치 회전)")]
@@ -98,7 +98,6 @@ namespace My.Scripts.Environment
 
         private void OnDrawGizmos()
         {
-            // (기즈모 코드는 기존과 동일하므로 생략 - 레이어 설정과 무관)
             if (virtualDistStartToEnd <= 0) return;
             Vector3 segmentVector = pathEnd - pathStart;
             Vector3 forwardDir = segmentVector.normalized;
