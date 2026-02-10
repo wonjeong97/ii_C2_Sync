@@ -37,6 +37,7 @@ namespace My.Scripts._03_Play150M
         private void Start()
         {
             InitializePathVectors();
+            if (virtualDistStartToEnd <= 0) return;
             GenerateRandomObstacles();
         }
 

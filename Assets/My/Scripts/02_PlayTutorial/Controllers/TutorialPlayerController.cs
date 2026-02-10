@@ -97,16 +97,23 @@ namespace My.Scripts._02_PlayTutorial.Controllers
         {
             IsStunned = true; // 스턴 상태 (입력 차단, 이동 정지)
             float elapsed = 0f;
+            float blinkTimer = 0f;
             float blinkInterval = 0.2f; // 깜빡임 간격
 
             while (elapsed < duration)
             {
-                // 알파값 토글 (켜져있으면 끄고, 꺼져있으면 켬)
-                if (characterCanvasGroup) 
-                    characterCanvasGroup.alpha = (characterCanvasGroup.alpha > 0.5f) ? 0.3f : 1.0f;
+                elapsed += Time.deltaTime;
+                blinkTimer += Time.deltaTime;
+
+                if (blinkTimer >= blinkInterval)
+                {
+                    blinkTimer = 0f;
+                    // 알파값 토글 (켜져있으면 끄고, 꺼져있으면 켬)
+                    if (characterCanvasGroup) 
+                        characterCanvasGroup.alpha = (characterCanvasGroup.alpha > 0.5f) ? 0.3f : 1.0f;
+                }
                 
-                yield return new WaitForSeconds(blinkInterval);
-                elapsed += blinkInterval;
+                yield return null;
             }
 
             // 종료 시 상태 복구

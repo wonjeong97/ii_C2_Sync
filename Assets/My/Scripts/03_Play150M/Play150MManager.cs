@@ -32,7 +32,6 @@ namespace My.Scripts._03_Play150M
         [SerializeField] private float targetDistance = 150f;
 
         [Header("Distance Sync")]
-        // [수정] 텍스처 스크롤 속도와 미터 거리 동기화 (210 -> 200)
         [SerializeField] private float metricMultiplier = 200f; 
 
         [Header("Sub Systems")]
@@ -409,14 +408,16 @@ namespace My.Scripts._03_Play150M
 
         private IEnumerator FinishSequence()
         {
+            if (_isGameFinished) yield break;
+    
             _isGameFinished = true;
-            
+    
             // 1. 기존 질문 팝업 닫기
             if (ui)
             {
                 ui.HideQuestionPopup(0, 0.1f);
                 ui.HideQuestionPopup(1, 0.1f);
-                
+        
                 // 열려있던 대기(Waiting) 팝업 닫기
                 ui.HideWaitingPopups();
             }
@@ -429,7 +430,7 @@ namespace My.Scripts._03_Play150M
 
             // 팝업을 읽을 시간(예: 3초) 대기 후 타이틀로 이동
             yield return CoroutineData.GetWaitForSeconds(3.0f);
-            
+    
             if (GameManager.Instance) GameManager.Instance.ReturnToTitle();
         }
     }
