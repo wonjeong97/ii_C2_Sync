@@ -3587,6 +3587,11 @@ MonoBehaviour:
   p2Obstacles: {fileID: 229131172}
   leftCamera: {fileID: 1174883263}
   rightCamera: {fileID: 58588281}
+  useFog: 1
+  fogColor: {r: 1, g: 1, b: 1, a: 1}
+  fogMode: 1
+  fogStartDistance: 10
+  fogEndDistance: 20
 --- !u!114 &823285681
 MonoBehaviour:
   m_ObjectHideFlags: 0
