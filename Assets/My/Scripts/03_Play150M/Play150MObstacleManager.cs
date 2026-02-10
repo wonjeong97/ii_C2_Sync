@@ -147,17 +147,33 @@ namespace My.Scripts._03_Play150M
 
             GameObject obj = Instantiate(obstaclePrefab, transform);
             obj.transform.position = finalPos;
-            
+    
             // HitChecker 설정
             var hitChecker = obj.GetComponent<ObstacleHitChecker>();
             if (hitChecker == null) hitChecker = obj.AddComponent<ObstacleHitChecker>();
             hitChecker.Setup(playerIndex, laneIdx);
 
+            // 거리 기반 페이더(FrameDistanceFader) 부착 및 설정
             if (useDistanceFade)
             {
                 var fader = obj.AddComponent<FrameDistanceFader>();
-                // 타겟 카메라가 없으면 메인 카메라 사용 (안전장치)
-                fader.targetTransform = _targetCamera ? _targetCamera.transform : Camera.main.transform;
+        
+                // [Fix] Camera.main이 null일 경우에 대한 안전 장치 추가
+                // _targetCamera -> Camera.main -> obj.transform 순으로 폴백
+                if (_targetCamera != null)
+                {
+                    fader.targetTransform = _targetCamera.transform;
+                }
+                else if (Camera.main != null)
+                {
+                    fader.targetTransform = Camera.main.transform;
+                }
+                else
+                {
+                    // 카메라를 찾을 수 없는 경우, 오류 방지를 위해 자기 자신을 타겟으로 설정
+                    fader.targetTransform = obj.transform;
+                }
+
                 fader.fullyVisibleDist = fullyVisibleDist;
                 fader.invisibleDist = invisibleDist;
             }

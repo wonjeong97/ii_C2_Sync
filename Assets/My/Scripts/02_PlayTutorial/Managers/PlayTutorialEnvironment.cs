@@ -42,8 +42,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
             if (p1Floor) { p1Floor.enableScroll = true; p1Floor.scrollSpeedY = 0f; }
             if (p2Floor) { p2Floor.enableScroll = true; p2Floor.scrollSpeedY = 0f; }
     
-            RenderSettings.fog = useFog;
-            
+            // [Fix] 안개 설정을 변경하기 전에 먼저 백업합니다.
             _prevFog = RenderSettings.fog;
             _prevFogColor = RenderSettings.fogColor;
             _prevFogMode = RenderSettings.fogMode;
@@ -51,6 +50,9 @@ namespace My.Scripts._02_PlayTutorial.Managers
             _prevFogEndDistance = RenderSettings.fogEndDistance;
             _prevFogDensity = RenderSettings.fogDensity;
             _hasFogBackup = true;
+
+            // 백업 완료 후 새로운 설정 적용
+            RenderSettings.fog = useFog;
 
             if (useFog)
             {
