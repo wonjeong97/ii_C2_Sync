@@ -44,7 +44,7 @@ namespace My.Scripts._03_Play150M
         [SerializeField] private PadDotController padDotController;
 
         [Header("Players")]
-        [SerializeField] private TutorialPlayerController[] players = new TutorialPlayerController[2];
+        [SerializeField] private PlayerController[] players = new PlayerController[2];
 
         private Play150MData _data;
         private bool _gameStarted;

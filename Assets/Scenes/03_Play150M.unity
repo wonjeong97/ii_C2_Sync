@@ -5259,7 +5259,7 @@ GameObject:
   - component: {fileID: 1476780564}
   - component: {fileID: 1476780565}
   m_Layer: 0
-  m_Name: Tutorial_PC_Left
+  m_Name: PlayerController_P1_Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5766,7 +5766,7 @@ GameObject:
   - component: {fileID: 1660530937}
   - component: {fileID: 1660530938}
   m_Layer: 0
-  m_Name: Tutorial_PC_Right
+  m_Name: PlayerController_P2_Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

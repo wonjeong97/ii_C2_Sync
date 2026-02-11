@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-namespace My.Scripts._02_PlayTutorial.Controllers
+namespace My.Scripts.Core
 {
     [Serializable]
     public struct PlayerPhysicsConfig
@@ -17,7 +17,7 @@ namespace My.Scripts._02_PlayTutorial.Controllers
         public float metricMultiplier; // 속도(UV)를 거리(m)로 변환할 비율
     }
 
-    public class TutorialPlayerController : MonoBehaviour
+    public class PlayerController : MonoBehaviour
     {
         [Header("Components")]
         [SerializeField] private RectTransform characterUI;
