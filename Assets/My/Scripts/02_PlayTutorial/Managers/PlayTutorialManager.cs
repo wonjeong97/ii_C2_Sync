@@ -52,7 +52,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
         [SerializeField] private PlayTutorialEnvironment env;
 
         [Header("Players")]
-        [SerializeField] private TutorialPlayerController[] players = new TutorialPlayerController[2];
+        [SerializeField] private PlayerController[] players = new PlayerController[2];
 
         private PlayTutorialData _data;
         private TutorialPhase _currentPhase = TutorialPhase.Intro;
@@ -188,7 +188,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
         /// <summary>
         /// 현재 페이즈에 따라 플레이어의 이동 및 게임 진행 로직을 분기함.
         /// </summary>
-        private void ProcessMoveLogic(TutorialPlayerController player, int laneIdx)
+        private void ProcessMoveLogic(PlayerController player, int laneIdx)
         {
             switch (_currentPhase)
             {
@@ -212,7 +212,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
         /// 페이즈 1(중앙 달리기) 전용 로직.
         /// 두 플레이어가 모두 목표 거리에 도달해야 다음으로 넘어감.
         /// </summary>
-        private void HandlePhase1(TutorialPlayerController player, int laneIdx)
+        private void HandlePhase1(PlayerController player, int laneIdx)
         {
             if (laneIdx != 1) return; // 중앙 라인 입력만 허용
 
@@ -242,7 +242,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
         /// <param name="targetLane">현재 페이즈에서 이동해야 할 목표 라인 인덱스</param>
         /// <param name="targetDist">현재 페이즈의 목표 이동 거리</param>
         /// <param name="nextRoutine">두 플레이어 모두 완료 시 실행할 연출 코루틴 대리자</param>
-        private void HandleRunningPhase(TutorialPlayerController player, int laneIdx, int targetLane, float targetDist,
+        private void HandleRunningPhase(PlayerController player, int laneIdx, int targetLane, float targetDist,
             Func<IEnumerator> nextRoutine)
         {
             // TutorialPlayerController.cs에 정의된 프로퍼티는 PascalCase(PlayerIndex)임

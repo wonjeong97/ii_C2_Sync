@@ -816,6 +816,9 @@ MonoBehaviour:
   virtualDistStartToEnd: 10
   uvLoopSize: 0.025
   virtualMetersPerLoop: 5
+  useDistanceFade: 1
+  fullyVisibleDist: 10
+  invisibleDist: 30
 --- !u!1 &256973626
 GameObject:
   m_ObjectHideFlags: 0
@@ -2673,6 +2676,9 @@ MonoBehaviour:
   virtualDistStartToEnd: 10
   uvLoopSize: 0.025
   virtualMetersPerLoop: 5
+  useDistanceFade: 1
+  fullyVisibleDist: 10
+  invisibleDist: 30
 --- !u!114 &664689255 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3124538023247375177, guid: 1fb3c5c4585b6b04899de4bcc4730837,
@@ -5253,7 +5259,7 @@ GameObject:
   - component: {fileID: 1476780564}
   - component: {fileID: 1476780565}
   m_Layer: 0
-  m_Name: Tutorial_PC_Left
+  m_Name: PlayerController_P1_Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5288,6 +5294,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   characterUI: {fileID: 285932494}
   characterCanvasGroup: {fileID: 740405611349450655}
+  characterAnimator: {fileID: 740405611349450656}
   playerIndex: 0
   currentSpeed: 0
   currentDistance: 0
@@ -5759,7 +5766,7 @@ GameObject:
   - component: {fileID: 1660530937}
   - component: {fileID: 1660530938}
   m_Layer: 0
-  m_Name: Tutorial_PC_Right
+  m_Name: PlayerController_P2_Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5794,6 +5801,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   characterUI: {fileID: 1998430890}
   characterCanvasGroup: {fileID: 1998430891}
+  characterAnimator: {fileID: 1998430892}
   playerIndex: 0
   currentSpeed: 0
   currentDistance: 0
@@ -6645,6 +6653,12 @@ RectTransform:
 --- !u!225 &1998430891 stripped
 CanvasGroup:
   m_CorrespondingSourceObject: {fileID: 5239039991100691014, guid: 214f87b7295377a46b9f07538c95eb53,
+    type: 3}
+  m_PrefabInstance: {fileID: 1998430889}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &1998430892 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 6243162893999853722, guid: 214f87b7295377a46b9f07538c95eb53,
     type: 3}
   m_PrefabInstance: {fileID: 1998430889}
   m_PrefabAsset: {fileID: 0}
@@ -7547,6 +7561,12 @@ PrefabInstance:
 --- !u!225 &740405611349450655 stripped
 CanvasGroup:
   m_CorrespondingSourceObject: {fileID: 5239039991100691014, guid: 214f87b7295377a46b9f07538c95eb53,
+    type: 3}
+  m_PrefabInstance: {fileID: 740405611349450654}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &740405611349450656 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 6243162893999853722, guid: 214f87b7295377a46b9f07538c95eb53,
     type: 3}
   m_PrefabInstance: {fileID: 740405611349450654}
   m_PrefabAsset: {fileID: 0}

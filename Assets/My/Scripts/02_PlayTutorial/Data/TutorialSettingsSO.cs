@@ -1,4 +1,5 @@
 using My.Scripts._02_PlayTutorial.Controllers;
+using My.Scripts.Core;
 using UnityEngine;
 
 namespace My.Scripts._02_PlayTutorial.Data
