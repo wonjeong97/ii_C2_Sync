@@ -43,7 +43,7 @@ namespace My.Scripts._02_PlayTutorial.Controllers
         {
             if (characterAnimator == null)
             {
-                Debug.LogWarning("[PlayerController] characterAnimator is null]");
+                Debug.LogWarning("[PlayerController] characterAnimator is null");
             }
             
             playerIndex = index;
