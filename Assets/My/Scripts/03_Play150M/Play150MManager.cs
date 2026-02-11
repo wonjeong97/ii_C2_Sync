@@ -261,14 +261,14 @@ namespace My.Scripts._03_Play150M
             {
                 _playerFinished[playerIdx] = true;
                 _isInputBlocked[playerIdx] = false; 
-                
+               
+                if (players[playerIdx]) players[playerIdx].SetFinishAnimation();
                 if (ui) 
                 {
                     ui.HideQuestionPopup(playerIdx, 0.1f);
                     ui.SetGaugeFinish(playerIdx); // 게이지 이미지 변경
                 }
-
-                // ★ [추가] 완주 후 대기 팝업 로직
+                
                 // 상대방 인덱스 구하기 (0이면 1, 1이면 0)
                 int otherPlayerIdx = (playerIdx == 0) ? 1 : 0;
 

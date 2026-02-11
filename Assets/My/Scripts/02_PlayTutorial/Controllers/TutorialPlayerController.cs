@@ -21,7 +21,8 @@ namespace My.Scripts._02_PlayTutorial.Controllers
     {
         [Header("Components")]
         [SerializeField] private RectTransform characterUI;
-        [SerializeField] private CanvasGroup characterCanvasGroup; 
+        [SerializeField] private CanvasGroup characterCanvasGroup;
+        [SerializeField] private Animator characterAnimator;
 
         [Header("State (Read Only)")]
         public int playerIndex;
@@ -40,6 +41,11 @@ namespace My.Scripts._02_PlayTutorial.Controllers
 
         public void Setup(int index, Vector2[] lanePositions, PlayerPhysicsConfig config)
         {
+            if (characterAnimator == null)
+            {
+                Debug.LogWarning("[PlayerController] characterAnimator is null]");
+            }
+            
             playerIndex = index;
             _lanePositions = lanePositions;
             _config = config;
@@ -178,6 +184,14 @@ namespace My.Scripts._02_PlayTutorial.Controllers
         public void ForceStop()
         {
             currentSpeed = 0f;
+        }
+        
+        public void SetFinishAnimation()
+        {
+            if (characterAnimator != null)
+            {
+                characterAnimator.SetTrigger("Finish");
+            }
         }
     }
 }
