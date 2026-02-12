@@ -246,7 +246,7 @@ namespace My.Scripts._01_Tutorial.Pages
                 {
                     // 성공 조건 충족
                     isFinished = true;
-                    StartCoroutine(FadeInRoutine(checkImg, 0.1f));
+                    StartCoroutine(FadeInRoutine(checkImg, 1f));
                     Debug.Log($"[TutorialPage3] P{pIdx} 성공! (착지 시간차: {Time.time - firstFootTime:F3}초)");
                 }
                 else

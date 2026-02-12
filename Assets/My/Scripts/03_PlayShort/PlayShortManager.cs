@@ -1,8 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using My.Scripts._02_PlayTutorial.Controllers;
 using My.Scripts._02_PlayTutorial.Data;
-using My.Scripts._03_Play150M.Managers;
 using My.Scripts.Core;
 using My.Scripts.Global;
 using UnityEngine;
@@ -10,11 +9,12 @@ using UnityEngine.UI;
 using Wonjeong.Data;
 using Wonjeong.UI;
 using Wonjeong.Utils;
+using Random = UnityEngine.Random;
 
-namespace My.Scripts._03_Play150M
+namespace My.Scripts._03_PlayShort
 {
-    [System.Serializable]
-    public class Play150MData
+    [Serializable]
+    public class PlayShortData
     {
         public TextSetting startText;
         public TextSetting popupInfoText;
@@ -23,20 +23,19 @@ namespace My.Scripts._03_Play150M
         public TextSetting[] questions;
     }
 
-    public class Play150MManager : MonoBehaviour
+    public class PlayShortManager : MonoBehaviour
     {
-        public static Play150MManager Instance { get; private set; }
+        public static PlayShortManager Instance { get; private set; }
 
         [Header("Settings")]
         [SerializeField] private TutorialSettingsSO settings;
-        [SerializeField] private float targetDistance = 150f;
-
+        
         [Header("Distance Sync")]
         [SerializeField] private float metricMultiplier = 200f; 
 
         [Header("Sub Systems")]
-        [SerializeField] private Play150MUIManager ui; 
-        [SerializeField] private Play150MEnvironment env;
+        [SerializeField] private PlayShortUIManager ui; 
+        [SerializeField] private PlayShortEnvironment env;
         
         [SerializeField] private Text countdownText;
         
@@ -46,7 +45,8 @@ namespace My.Scripts._03_Play150M
         [Header("Players")]
         [SerializeField] private PlayerController[] players = new PlayerController[2];
 
-        private Play150MData _data;
+        private readonly float targetDistance = 200f;
+        private PlayShortData _data;
         private bool _gameStarted;
         private bool _isGameFinished;
 
@@ -58,7 +58,7 @@ namespace My.Scripts._03_Play150M
 
         // 게이지 및 답변 상태 관리 변수
         private readonly int[] _playerStepCounts = new int[2]; 
-        private readonly int[] _lastActiveLane = new int[2] { -1, -1 }; // (0:Yes, 2:No, -1:None)
+        private readonly int[] _lastActiveLane = new int[2] { -1, -1 }; 
 
         private void Awake()
         {
@@ -68,14 +68,10 @@ namespace My.Scripts._03_Play150M
 
         private void Start()
         {
-            _data = JsonLoader.Load<Play150MData>(GameConstants.Path.Play150M);
+            _data = JsonLoader.Load<PlayShortData>(GameConstants.Path.PlayShort);
             
             if (settings == null) { Debug.LogError("Settings Missing"); return; }
-            if (players == null || players.Length < 2)
-            {
-                Debug.LogError("[Play150MManager] Players array must have size 2.");
-                return;
-            }
+            if (players == null || players.Length < 2) return;
 
             InitializeQuestionQueues();
             
@@ -90,8 +86,6 @@ namespace My.Scripts._03_Play150M
 
             _nextMilestones[0] = 10;
             _nextMilestones[1] = 10;
-
-            // 라인 기억 초기화
             _lastActiveLane[0] = -1;
             _lastActiveLane[1] = -1;
 
@@ -131,7 +125,6 @@ namespace My.Scripts._03_Play150M
                 List<int> indices = new List<int>();
                 for (int i = 0; i < questionCount; i++) indices.Add(i);
                 
-                // Fisher-Yates Shuffle
                 for (int i = 0; i < indices.Count; i++)
                 {
                     int rnd = Random.Range(i, indices.Count);
@@ -181,34 +174,30 @@ namespace My.Scripts._03_Play150M
             if (playerIdx < 0 || playerIdx >= 2) return;
             if (_isInputBlocked[playerIdx]) return;
             
-            // [수정] 이미 완주한 플레이어라면 입력 무시 (마지막 팝업 상태여도 조작 불가)
             if (_playerFinished[playerIdx]) return;
 
             var player = players[playerIdx];
             if (player == null) return;
 
-            // 팝업이 떠 있는 정지 상태일 때 (답변 입력 처리)
+            // 팝업 상태 (답변 입력)
             if (_isPlayerPaused[playerIdx])
             {
                 if (player.HandleInput(laneIdx, padIdx))
                 {
                     player.MoveToLane(laneIdx);
 
-                    // [수정] 게이지 처리 (답변 변경 시 초기화 로직 포함)
                     if (laneIdx == 0) // Yes
                     {
-                        // 이전에 No(2)를 밟고 있었다면 리셋
                         if (_lastActiveLane[playerIdx] == 2)
                         {
                             _playerStepCounts[playerIdx] = 0;
-                            ui.UpdateStepGauge(playerIdx, false, 0); // No 게이지 0으로 비움
+                            ui.UpdateStepGauge(playerIdx, false, 0); 
                         }
                         
-                        _lastActiveLane[playerIdx] = 0; // 현재 라인 갱신
+                        _lastActiveLane[playerIdx] = 0; 
                         ui.SetAnswerFeedback(playerIdx, true);
                         _playerStepCounts[playerIdx]++;
                         
-                        // 완료 체크
                         if (ui.UpdateStepGauge(playerIdx, true, _playerStepCounts[playerIdx]))
                         {
                             StartCoroutine(AnswerCompleteRoutine(playerIdx));
@@ -216,18 +205,16 @@ namespace My.Scripts._03_Play150M
                     }
                     else if (laneIdx == 2) // No
                     {
-                        // 이전에 Yes(0)를 밟고 있었다면 리셋
                         if (_lastActiveLane[playerIdx] == 0)
                         {
                             _playerStepCounts[playerIdx] = 0;
-                            ui.UpdateStepGauge(playerIdx, true, 0); // Yes 게이지 0으로 비움
+                            ui.UpdateStepGauge(playerIdx, true, 0); 
                         }
 
-                        _lastActiveLane[playerIdx] = 2; // 현재 라인 갱신
+                        _lastActiveLane[playerIdx] = 2; 
                         ui.SetAnswerFeedback(playerIdx, false);
                         _playerStepCounts[playerIdx]++;
                         
-                        // 완료 체크
                         if (ui.UpdateStepGauge(playerIdx, false, _playerStepCounts[playerIdx]))
                         {
                             StartCoroutine(AnswerCompleteRoutine(playerIdx));
@@ -236,13 +223,12 @@ namespace My.Scripts._03_Play150M
                     else // Center
                     {
                         ui.ResetAnswerFeedback(playerIdx);
-                        // 중앙은 카운트를 올리지 않음
                     }
                 }
                 return; 
             }
             
-            // 일반 달리기 입력 처리
+            // 일반 달리기 입력
             if (player.HandleInput(laneIdx, padIdx))
             {
                 player.MoveAndAccelerate(laneIdx);
@@ -253,33 +239,32 @@ namespace My.Scripts._03_Play150M
         {
             _isInputBlocked[playerIdx] = true;
             
-            // 1초간 정답(노란색) 상태 유지
             yield return CoroutineData.GetWaitForSeconds(1.0f);
             
-            // 완주 판정 (목표 거리 초과)
             if (_nextMilestones[playerIdx] > targetDistance)
             {
                 _playerFinished[playerIdx] = true;
-                _isInputBlocked[playerIdx] = false; 
-               
-                if (players[playerIdx]) players[playerIdx].SetFinishAnimation();
+                _isInputBlocked[playerIdx] = false;
+
+                if (players[playerIdx])
+                {
+                    players[playerIdx].MoveToLane(1);           
+                    players[playerIdx].SetFinishAnimation();    
+                }
                 if (ui) 
                 {
-                    ui.HideQuestionPopup(playerIdx, 0.1f);
-                    ui.SetGaugeFinish(playerIdx); // 게이지 이미지 변경
+                    ui.HideQuestionPopup(playerIdx, 0.5f);
+                    ui.SetGaugeFinish(playerIdx); 
                 }
                 
-                // 상대방 인덱스 구하기 (0이면 1, 1이면 0)
                 int otherPlayerIdx = (playerIdx == 0) ? 1 : 0;
 
-                // 상대방이 아직 안 끝났으면 대기 팝업 표시
                 if (!_playerFinished[otherPlayerIdx])
                 {
                     TextSetting waitData = _data != null ? _data.waitingText : null;
                     if (ui) ui.ShowWaitingPopup(playerIdx, waitData);
                 }
 
-                // 두 플레이어 모두 끝났는지 체크
                 if (_playerFinished[0] && _playerFinished[1])
                 {
                     StartCoroutine(FinishSequence());
@@ -287,7 +272,6 @@ namespace My.Scripts._03_Play150M
             }
             else
             {
-                // 아직 목표에 도달하지 않았다면 게임 재개
                 ResumePlayer(playerIdx);
             }
         }
@@ -299,7 +283,6 @@ namespace My.Scripts._03_Play150M
 
             if (ui) ui.UpdateGauge(playerIdx, currentDist, targetDistance);
             
-            // [수정] 목표 거리(150m)를 포함하도록 조건 변경 (<= targetDistance)
             if (currentDist >= _nextMilestones[playerIdx] && _nextMilestones[playerIdx] <= targetDistance)
             {
                 int milestone = _nextMilestones[playerIdx];
@@ -310,13 +293,13 @@ namespace My.Scripts._03_Play150M
                 if (players[playerIdx]) 
                 {
                     players[playerIdx].ForceStop();
-                    players[playerIdx].MoveToLane(1); 
+                    // [수정] 중앙 이동(MoveToLane(1)) 제거: 현재 라인 유지
                 }
 
-                StartCoroutine(BlockInputRoutine(playerIdx, 1.0f));
+                // [수정] 즉시 입력 차단 후 시퀀스 시작
+                _isInputBlocked[playerIdx] = true;
                 if (padDotController != null) padDotController.SetCenterDotsAlpha(playerIdx, 0f);
 
-                // 팝업 등장 시 상태 초기화
                 _playerStepCounts[playerIdx] = 0;
                 _lastActiveLane[playerIdx] = -1;
 
@@ -331,16 +314,27 @@ namespace My.Scripts._03_Play150M
                 }
 
                 TextSetting infoData = _data != null ? _data.popupInfoText : null;
-                if (ui) ui.ShowQuestionPopup(playerIdx, milestone, questionData, infoData);
+                
+                // [수정] 팝업 시퀀스 코루틴 실행 (2초 대기 -> 페이드 -> 입력 허용)
+                StartCoroutine(QuestionSequenceRoutine(playerIdx, milestone, questionData, infoData));
 
                 if (env) env.RecycleFrameClosestToCamera(playerIdx); 
             }
         }
 
-        private IEnumerator BlockInputRoutine(int playerIdx, float duration)
+        // 팝업 등장 시퀀스 제어
+        private IEnumerator QuestionSequenceRoutine(int playerIdx, int milestone, TextSetting qData, TextSetting infoData)
         {
-            _isInputBlocked[playerIdx] = true;
-            yield return CoroutineData.GetWaitForSeconds(duration);
+            // 1. Page1(질문) 표시 (YesNo 그룹은 숨김 상태)
+            if (ui) ui.ShowQuestionPopup(playerIdx, milestone, qData, infoData);
+
+            // 2. 2초 대기 (입력은 여전히 차단됨)
+            yield return CoroutineData.GetWaitForSeconds(2.0f);
+
+            // 3. YesNo 페이드인 + Page2로 전환 (0.5초)
+            if (ui) yield return StartCoroutine(ui.ShowQuestionPhase2Routine(playerIdx, 0.5f));
+
+            // 4. 입력 허용
             _isInputBlocked[playerIdx] = false;
         }
 
@@ -351,11 +345,13 @@ namespace My.Scripts._03_Play150M
             _isPlayerPaused[playerIdx] = false;
             _isInputBlocked[playerIdx] = false;
             
-            if (ui) ui.HideQuestionPopup(playerIdx, 0.1f);
+            if (ui) ui.HideQuestionPopup(playerIdx, 0.5f);
             
             if (padDotController != null) padDotController.SetCenterDotsAlpha(playerIdx, 1f);
         }
 
+        // ... (나머지 메서드는 기존과 동일) ...
+        
         public int GetCurrentLane(int playerIdx)
         {
             if (playerIdx >= 0 && playerIdx < 2 && players[playerIdx] != null)
@@ -412,13 +408,10 @@ namespace My.Scripts._03_Play150M
     
             _isGameFinished = true;
     
-            // 1. 기존 질문 팝업 닫기
             if (ui)
             {
-                ui.HideQuestionPopup(0, 0.1f);
-                ui.HideQuestionPopup(1, 0.1f);
-        
-                // 열려있던 대기(Waiting) 팝업 닫기
+                ui.HideQuestionPopup(0, 0.5f);
+                ui.HideQuestionPopup(1, 0.5f);
                 ui.HideWaitingPopups();
             }
 
@@ -428,10 +421,16 @@ namespace My.Scripts._03_Play150M
                 ui.ShowCenterFinishPopup(centerData);
             }
 
-            // 팝업을 읽을 시간(예: 3초) 대기 후 타이틀로 이동
-            yield return CoroutineData.GetWaitForSeconds(3.0f);
-    
-            if (GameManager.Instance) GameManager.Instance.ReturnToTitle();
+            yield return CoroutineData.GetWaitForSeconds(5.0f);
+            
+            if (GameManager.Instance) 
+            {
+                GameManager.Instance.ChangeScene(GameConstants.Scene.PlayLong);
+            }
+            else 
+            {
+                UnityEngine.SceneManagement.SceneManager.LoadScene(GameConstants.Scene.PlayLong);
+            }
         }
     }
 }

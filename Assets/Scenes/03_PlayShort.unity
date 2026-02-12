@@ -529,7 +529,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 630, y: 520}
-  m_SizeDelta: {x: 706.95, y: 32.88}
+  m_SizeDelta: {x: 708, y: 23}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &178894936
 MonoBehaviour:
@@ -551,7 +551,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: c3e5123b1841c4548a5ebb352e54bb07, type: 3}
+  m_Sprite: {fileID: 21300000, guid: b7d2742762fe13b4d973c0b52685d197, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -585,7 +585,7 @@ MonoBehaviour:
   pictogram: {fileID: 1743992092}
   gaugeArea: {fileID: 178894935}
   xOffset: 0
-  maxPictogramX: 670
+  maxPictogramX: 685
 --- !u!224 &180042363 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 2092109452677529981, guid: 1fb3c5c4585b6b04899de4bcc4730837,
@@ -808,7 +808,6 @@ MonoBehaviour:
     type: 3}
   playerIndex: 1
   startGenDistance: 10
-  endGenDistance: 150
   laneWidth: 1.5
   useZCompensatedLanes: 1
   pathStart: {x: -3.286, y: -3.5, z: 2.52}
@@ -1541,7 +1540,7 @@ MonoBehaviour:
   virtualMetersPerLoop: 5
   virtualDistStartToEnd: 10
   resetVirtualDistance: -15
-  finishDistance: 150
+  finishDistance: 200
   showDistanceLabel: 1
 --- !u!1 &403722124
 GameObject:
@@ -1937,7 +1936,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -12.5, y: 20}
+  m_AnchoredPosition: {x: 0, y: 20}
   m_SizeDelta: {x: 25, y: 33}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &495210605
@@ -2668,7 +2667,6 @@ MonoBehaviour:
     type: 3}
   playerIndex: 0
   startGenDistance: 10
-  endGenDistance: 150
   laneWidth: 1.5
   useZCompensatedLanes: 1
   pathStart: {x: 3.286, y: -3.5, z: 2.52}
@@ -2679,6 +2677,12 @@ MonoBehaviour:
   useDistanceFade: 1
   fullyVisibleDist: 10
   invisibleDist: 30
+--- !u!225 &659329589 stripped
+CanvasGroup:
+  m_CorrespondingSourceObject: {fileID: 4311165838219870148, guid: 1fb3c5c4585b6b04899de4bcc4730837,
+    type: 3}
+  m_PrefabInstance: {fileID: 694092085}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &664689255 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3124538023247375177, guid: 1fb3c5c4585b6b04899de4bcc4730837,
@@ -3267,7 +3271,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 706.95, y: 32.88}
+  m_SizeDelta: {x: 708, y: 23}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &701294129
 MonoBehaviour:
@@ -3289,12 +3293,12 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 844b111ee5bd6814cbf2b590ab10062d, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 6aec76cecc2e15f49b5876f86d388741, type: 3}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 0
-  m_FillAmount: 0
+  m_FillAmount: 1
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
@@ -3528,7 +3532,7 @@ GameObject:
   - component: {fileID: 823285681}
   - component: {fileID: 823285680}
   m_Layer: 0
-  m_Name: Play150MManager
+  m_Name: PlayShortManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3564,7 +3568,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: 40ce4d821b31e51409721c75a2dfe0a5, type: 2}
-  targetDistance: 150
   metricMultiplier: 199
   ui: {fileID: 823285681}
   env: {fileID: 823285680}
@@ -3617,6 +3620,7 @@ MonoBehaviour:
   textLeftQuestionP1: {fileID: 664689255}
   textLeftQuestionP2: {fileID: 718404828485560103}
   textLeftInfo: {fileID: 718404828485560102}
+  cgLeftYesNo: {fileID: 718404828485560106}
   p1YesImages:
   - {fileID: 924375500}
   - {fileID: 1888281499}
@@ -3638,6 +3642,7 @@ MonoBehaviour:
   textRightQuestionP1: {fileID: 694092087}
   textRightQuestionP2: {fileID: 1211094048}
   textRightInfo: {fileID: 1211094047}
+  cgRightYesNo: {fileID: 659329589}
   p2YesImages:
   - {fileID: 1290909426}
   - {fileID: 1787576810}
@@ -3659,7 +3664,7 @@ MonoBehaviour:
   centerText: {fileID: 1057946599}
   p1Gauge: {fileID: 1276199854}
   p2Gauge: {fileID: 178894938}
-  gaugeFinishSprite: {fileID: 21300000, guid: 1d6ffa6ee796b904e891f6514a1a61cf, type: 3}
+  gaugeFinishSprite: {fileID: 21300000, guid: eb175899f167970428e56f435ce26f52, type: 3}
   popupFinishP1: {fileID: 314139532}
   textFinishP1: {fileID: 827712896}
   popupFinishP2: {fileID: 1658273806}
@@ -3814,7 +3819,7 @@ MonoBehaviour:
   virtualMetersPerLoop: 5
   virtualDistStartToEnd: 10
   resetVirtualDistance: -15
-  finishDistance: 150
+  finishDistance: 200
   showDistanceLabel: 1
 --- !u!1 &902630577
 GameObject:
@@ -4919,7 +4924,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -370, y: 520}
-  m_SizeDelta: {x: 706.95, y: 32.88}
+  m_SizeDelta: {x: 708, y: 23}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1276199852
 MonoBehaviour:
@@ -4941,7 +4946,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: c3e5123b1841c4548a5ebb352e54bb07, type: 3}
+  m_Sprite: {fileID: 21300000, guid: b7d2742762fe13b4d973c0b52685d197, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -4975,7 +4980,7 @@ MonoBehaviour:
   pictogram: {fileID: 1520971910}
   gaugeArea: {fileID: 1276199851}
   xOffset: 0
-  maxPictogramX: 670
+  maxPictogramX: 685
 --- !u!114 &1290909426 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 929003860528321586, guid: 1fb3c5c4585b6b04899de4bcc4730837,
@@ -5345,7 +5350,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 53}
+  m_AnchoredPosition: {x: 0, y: 40}
   m_SizeDelta: {x: 25, y: 25}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1520971911
@@ -6002,7 +6007,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 53}
+  m_AnchoredPosition: {x: 0, y: 40}
   m_SizeDelta: {x: 25, y: 25}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1743992093
@@ -6101,7 +6106,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -12.5, y: 20}
+  m_AnchoredPosition: {x: 0, y: 20}
   m_SizeDelta: {x: 25, y: 33}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1822757598
@@ -6849,7 +6854,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 706.95, y: 32.88}
+  m_SizeDelta: {x: 708, y: 23}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2080499608
 MonoBehaviour:
@@ -6871,7 +6876,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 844b111ee5bd6814cbf2b590ab10062d, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 6aec76cecc2e15f49b5876f86d388741, type: 3}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -7437,6 +7442,12 @@ CanvasGroup:
 --- !u!225 &718404828485560105 stripped
 CanvasGroup:
   m_CorrespondingSourceObject: {fileID: 1460848337700923837, guid: 1fb3c5c4585b6b04899de4bcc4730837,
+    type: 3}
+  m_PrefabInstance: {fileID: 718404828485560101}
+  m_PrefabAsset: {fileID: 0}
+--- !u!225 &718404828485560106 stripped
+CanvasGroup:
+  m_CorrespondingSourceObject: {fileID: 4311165838219870148, guid: 1fb3c5c4585b6b04899de4bcc4730837,
     type: 3}
   m_PrefabInstance: {fileID: 718404828485560101}
   m_PrefabAsset: {fileID: 0}

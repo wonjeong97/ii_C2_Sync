@@ -58,7 +58,7 @@ namespace My.Scripts._01_Tutorial
         protected override void OnAllFinished()
         {
             // 씬 전환 로직은 GameManager에 위임하여 페이드 효과 등 전역적인 전환 처리를 따르도록 함
-            if (GameManager.Instance != null)
+            if (GameManager.Instance)
             {
                 GameManager.Instance.ChangeScene(GameConstants.Scene.PlayTutorial);
             }
