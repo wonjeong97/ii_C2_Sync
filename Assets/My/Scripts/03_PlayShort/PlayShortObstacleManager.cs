@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using My.Scripts._02_PlayTutorial.Components;
 using UnityEngine;
 
-namespace My.Scripts._03_Play150M
+namespace My.Scripts._03_PlayShort
 {
-    public class Play150MObstacleManager : MonoBehaviour
+    public class PlayShortObstacleManager : MonoBehaviour
     {
         [Header("Obstacle Settings")]
         [SerializeField] private GameObject obstaclePrefab;
@@ -12,8 +12,7 @@ namespace My.Scripts._03_Play150M
 
         [Header("Generation Settings")]
         [SerializeField] private float startGenDistance = 10f;
-        [SerializeField] private float endGenDistance = 150f;
-
+        
         [Header("Lane Settings")]
         [SerializeField] private float laneWidth = 1.5f;
         [SerializeField] private bool useZCompensatedLanes = true;
@@ -33,6 +32,8 @@ namespace My.Scripts._03_Play150M
         [SerializeField] private float fullyVisibleDist = 10f;
         [SerializeField] private float invisibleDist = 30f;
 
+        private readonly float endGenDistance = 200;
+        
         // 생성된 장애물 리스트
         private readonly List<GameObject> _spawnedObstacles = new List<GameObject>();
         

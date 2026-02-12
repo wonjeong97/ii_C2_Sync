@@ -21,7 +21,7 @@ public class FrameScrollManager : MonoBehaviour
 
     [Header("Reset Settings")]
     [SerializeField] private float resetVirtualDistance = -5f; 
-    [SerializeField] private float finishDistance = 150f;
+    [SerializeField] private float finishDistance = 200f;
 
     [Header("Options")]
     public bool showDistanceLabel = true;

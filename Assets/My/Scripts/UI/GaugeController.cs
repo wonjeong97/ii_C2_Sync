@@ -10,7 +10,7 @@ public class GaugeController : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private RectTransform gaugeArea; 
     [SerializeField] private float xOffset = 0f;
-    [SerializeField] private float maxPictogramX = 670f; 
+    [SerializeField] private float maxPictogramX = 685F; 
 
     // ★ [추가] 원본 스프라이트 저장용 변수
     private Sprite _originSprite;

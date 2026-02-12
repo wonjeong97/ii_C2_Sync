@@ -1,0 +1,42 @@
+{
+  "introPage": {
+    "introText1": {
+      "name": "Text_Text1",
+      "position": { "x": 0, "y": 250 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "STEP.2\n'우리' 함께 달리기",
+      "fontName": "font4",
+      "fontSize": 60,
+      "fontColor": { "r": 0.2588235, "g": 0.2588235, "b": 0.2588235, "a": 1 }
+    },
+    "introText2": {
+      "name": "Text_Text2",
+      "position": { "x": 0, "y": 250 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "함께라면, 얼마나 멀리 갈 수 있을까요?\n이번에는 우리 함께 달려볼까요?",
+      "fontName": "font4",
+      "fontSize": 60,
+      "fontColor": { "r": 0.2588235, "g": 0.2588235, "b": 0.2588235, "a": 1 }
+    },
+    "introText3": {
+      "name": "Text_Text3",
+      "position": { "x": 0, "y": 250 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "60초 동안 500M 달리면,\n마음 조각 5개를 획득합니다.",
+      "fontName": "font4",
+      "fontSize": 60,
+      "fontColor": { "r": 0.2588235, "g": 0.2588235, "b": 0.2588235, "a": 1 }
+    }
+  },
+  "popupTexts": [
+    {
+      "name": "Text_각자의 중앙 발판",
+      "position": {"x": 0, "y": 0},
+      "scale": {"x": 1, "y": 1, "z": 1},
+      "text": "각자의 중앙 발판으로\n이동해 달려주세요.",
+      "fontName": "font7",
+      "fontSize": 55,
+      "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}
+    }
+  ]
+}

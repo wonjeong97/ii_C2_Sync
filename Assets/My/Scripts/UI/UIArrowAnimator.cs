@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using Wonjeong.Utils;
 
 [RequireComponent(typeof(CanvasGroup))]
 public class UIArrowAnimator : MonoBehaviour
@@ -55,7 +56,7 @@ public class UIArrowAnimator : MonoBehaviour
 
     private IEnumerator LoopRoutine()
     {
-        if (startDelay > 0) yield return new WaitForSeconds(startDelay);
+        if (startDelay > 0) yield return CoroutineData.GetWaitForSeconds(startDelay);
 
         while (true)
         {

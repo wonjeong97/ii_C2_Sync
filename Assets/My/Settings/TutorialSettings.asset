@@ -17,7 +17,9 @@ MonoBehaviour:
     maxScrollSpeed: 0.1
     speedDecay: 2
     stopThreshold: 0.001
-    maxDistance: 150
+    maxDistance: 200
+    useMetricDistance: 0
+    metricMultiplier: 0
   p1LanePositions:
   - {x: -785, y: -432}
   - {x: -500, y: -432}
@@ -28,7 +30,7 @@ MonoBehaviour:
   - {x: 785, y: -432}
   targetDistancePhase1: 10
   targetDistancePhase2: 6
-  targetDistancePhase3: 8
+  targetDistancePhase3: 5
   autoRunSpeedRatio: 0.05
   autoRunSmoothTime: 2
   autoRunDuration: 1.5

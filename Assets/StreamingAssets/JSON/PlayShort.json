@@ -185,6 +185,56 @@
       "fontSize": 43,
       "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
       "alignment": 1
+    },
+    {
+      "name": "Text_Question16",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.질문16",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question17",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.질문17",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question18",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.질문18",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question19",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.질문19",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question20",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.질문20",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
     }
   ]
 }

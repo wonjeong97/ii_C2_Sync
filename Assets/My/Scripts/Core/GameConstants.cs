@@ -9,7 +9,8 @@ namespace My.Scripts.Global
             public const string Title = "00_Title";
             public const string Tutorial = "01_Tutorial";
             public const string PlayTutorial = "02_PlayTutorial";
-            public const string Play150M = "03_Play150M";
+            public const string PlayShort = "03_PlayShort";
+            public const string PlayLong = "04_PlayLong";
         }
 
         /// <summary> 리소스 경로 상수 모음 </summary>
@@ -18,7 +19,8 @@ namespace My.Scripts.Global
             public const string JsonSetting = "Settings"; 
             public const string Tutorial = "JSON/Tutorial";
             public const string PlayTutorial = "JSON/PlayTutorial";
-            public const string Play150M = "JSON/Play150M"; 
+            public const string PlayShort = "JSON/PlayShort";
+            public const string PlayLong = "JSON/PlayLong";
         }
     }
 }

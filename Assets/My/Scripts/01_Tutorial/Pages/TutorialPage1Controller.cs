@@ -52,7 +52,6 @@ namespace My.Scripts._01_Tutorial.Pages
             // 사용자가 내용을 확인하고 다음 단계로 넘어가려는 의도(엔터 또는 클릭)를 확인
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetMouseButtonDown(0))
             {
-                // 부모 클래스의 메서드를 호출하여 현재 스텝 완료 이벤트를 전파
                 CompleteStep(); 
             }
         }
