@@ -1,8 +1,8 @@
 using UnityEngine;
 
-namespace My.Scripts._03_Play150M
+namespace My.Scripts._03_PlayShort
 {
-    public class Play150MEnvironment : MonoBehaviour
+    public class PlayShortEnvironment : MonoBehaviour
     {
         [Header("Floor Settings")] 
         [SerializeField] private TextureAdjuster p1Floor;
@@ -13,8 +13,8 @@ namespace My.Scripts._03_Play150M
         [SerializeField] private FrameScrollManager p2Frames;
 
         [Header("Obstacle Settings")]
-        [SerializeField] private Play150MObstacleManager p1Obstacles; 
-        [SerializeField] private Play150MObstacleManager p2Obstacles;
+        [SerializeField] private PlayShortObstacleManager p1Obstacles; 
+        [SerializeField] private PlayShortObstacleManager p2Obstacles;
 
         [Header("Cameras")] 
         [SerializeField] private Camera leftCamera;

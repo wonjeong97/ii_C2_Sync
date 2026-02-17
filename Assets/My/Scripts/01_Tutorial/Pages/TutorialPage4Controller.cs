@@ -31,9 +31,9 @@ namespace My.Scripts._01_Tutorial.Pages
         private TutorialPage4Data _data;
         
         // 연출 타이밍 상수 (초 단위)
-        private const float FadeInTime = 0.1f;
-        private const float DisplayTime = 3.0f;
-        private const float FadeOutTime = 0.1f;
+        private const float FadeInTime = 1f;
+        private const float DisplayTime = 3f;
+        private const float FadeOutTime = 1f;
 
         /// <summary>
         /// 외부 데이터를 받아 컴포넌트를 초기화함.

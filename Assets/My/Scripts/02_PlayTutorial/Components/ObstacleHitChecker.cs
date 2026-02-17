@@ -1,7 +1,8 @@
 using System.Collections;
 using My.Scripts._02_PlayTutorial.Managers;
-using My.Scripts._03_Play150M;
+using My.Scripts._03_PlayShort;
 using UnityEngine;
+using Wonjeong.Utils;
 
 namespace My.Scripts._02_PlayTutorial.Components
 {
@@ -66,9 +67,9 @@ namespace My.Scripts._02_PlayTutorial.Components
                 isManagerFound = true;
             }
             // 2. 150M 모드 확인 (수정됨: Play150MManager 사용)
-            else if (Play150MManager.Instance != null)
+            else if (PlayShortManager.Instance != null)
             {
-                playerCurrentLane = Play150MManager.Instance.GetCurrentLane(_ownerPlayerIdx);
+                playerCurrentLane = PlayShortManager.Instance.GetCurrentLane(_ownerPlayerIdx);
                 isManagerFound = true;
             }
 
@@ -91,9 +92,9 @@ namespace My.Scripts._02_PlayTutorial.Components
                 {
                     PlayTutorialManager.Instance.OnPlayerHit(_ownerPlayerIdx);
                 }
-                else if (Play150MManager.Instance != null)
+                else if (PlayShortManager.Instance != null)
                 {
-                    Play150MManager.Instance.OnPlayerHit(_ownerPlayerIdx);
+                    PlayShortManager.Instance.OnPlayerHit(_ownerPlayerIdx);
                 }
 
                 // 즉시 삭제하지 않고 피격 애니메이션을 보여줄 시간을 확보한 뒤 제거함
@@ -106,7 +107,7 @@ namespace My.Scripts._02_PlayTutorial.Components
         /// </summary>
         private IEnumerator DestroyRoutine()
         {
-            yield return new WaitForSeconds(hitDuration);
+            yield return CoroutineData.GetWaitForSeconds(hitDuration);
             Destroy(gameObject);
         }
     }

@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Wonjeong.Data;
 using Wonjeong.UI;
+using Wonjeong.Utils;
 
 namespace My.Scripts._02_PlayTutorial.Managers
 {
@@ -134,9 +135,9 @@ namespace My.Scripts._02_PlayTutorial.Managers
             centerText.text = message;
             centerText.gameObject.SetActive(true);
 
-            yield return StartCoroutine(FadeTextAlpha(centerText, 0f, 1f, 0.1f));
-            yield return new WaitForSeconds(duration);
-            yield return StartCoroutine(FadeTextAlpha(centerText, 1f, 0f, 0.1f));
+            yield return StartCoroutine(FadeTextAlpha(centerText, 0f, 1f, 0.5f));
+            yield return CoroutineData.GetWaitForSeconds(duration);
+            yield return StartCoroutine(FadeTextAlpha(centerText, 1f, 0f, 0.5f));
 
             centerText.gameObject.SetActive(false);
         }
@@ -162,10 +163,10 @@ namespace My.Scripts._02_PlayTutorial.Managers
             finalPageText.color = new Color(c.r, c.g, c.b, 0f);
 
             // 2. 페이지 페이드 인
-            yield return StartCoroutine(FadeCanvasGroup(finalPageCanvasGroup, 0f, 1f, 0.1f));
+            yield return StartCoroutine(FadeCanvasGroup(finalPageCanvasGroup, 0f, 1f, 1f));
 
             // 3. 텍스트 순차 재생
-            foreach (var setting in texts)
+            foreach (TextSetting setting in texts)
             {
                 if (setting == null) continue;
 
@@ -180,13 +181,13 @@ namespace My.Scripts._02_PlayTutorial.Managers
                 }
 
                 // 텍스트 페이드 인 (0 -> 1)
-                yield return StartCoroutine(FadeTextAlpha(finalPageText, 0f, 1f, 0.1f));
+                yield return StartCoroutine(FadeTextAlpha(finalPageText, 0f, 1f, 1f));
         
                 // 3초 대기
-                yield return new WaitForSeconds(3.0f);
+                yield return CoroutineData.GetWaitForSeconds(3.0f);
 
                 // 텍스트 페이드 아웃 (1 -> 0)
-                yield return StartCoroutine(FadeTextAlpha(finalPageText, 1f, 0f, 0.1f));
+                yield return StartCoroutine(FadeTextAlpha(finalPageText, 1f, 0f, 1f));
             }
         }
 
