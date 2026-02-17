@@ -40,6 +40,7 @@ namespace My.Scripts.Core
         public float currentDistance;
         public int currentLane = 1; 
         public bool IsStunned { get; private set; }
+        public RectTransform CharacterRect => characterUI;
 
         public event Action<int, float, float> OnDistanceChanged;
 
