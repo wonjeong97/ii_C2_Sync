@@ -257,15 +257,31 @@ namespace My.Scripts._04_PlayLong
         }
         
         /// <summary>
-        /// 진행 중인 미션 팝업을 페이드 아웃시키고 레이캐스트를 차단하여 조작 간섭을 방지.
+        /// 진행 중인 미션 팝업을 페이드 아웃시키고, 완료 후 오브젝트를 비활성화합니다.
         /// </summary>
-        public void HideQuestionPopup(int playerIdx, float duration)
+        /// <param name="duration">페이드 아웃에 걸리는 시간</param>
+        public void HideQuestionPopup(float duration)
         {
-            if (popup != null && popup.gameObject.activeInHierarchy)
+            if (popup && popup.gameObject.activeInHierarchy)
             {
+                // 1. 중복 클릭 방지를 위해 즉시 레이캐스트 차단
                 popup.blocksRaycasts = false; 
-                StartCoroutine(FadeCanvasGroup(popup, popup.alpha, 0f, duration));
+                // 2. 페이드 아웃 및 후처리 코루틴 시작
+                StartCoroutine(HideQuestionPopupRoutine(duration));
             }
+        }
+
+        /// <summary>
+        /// 페이드 아웃 연출이 끝날 때까지 대기한 후 팝업의 활성 상태를 정리합니다.
+        /// </summary>
+        private IEnumerator HideQuestionPopupRoutine(float duration)
+        {
+            // FadeCanvasGroup이 완료될 때까지 대기
+            yield return StartCoroutine(FadeCanvasGroup(popup, popup.alpha, 0f, duration));
+    
+            // 후처리: 오브젝트 비활성화 및 레이캐스트 상태 복구 (다음에 켜질 때를 대비)
+            popup.gameObject.SetActive(false);
+            popup.blocksRaycasts = true; 
         }
     }
 }

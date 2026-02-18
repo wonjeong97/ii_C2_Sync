@@ -69,9 +69,7 @@ namespace My.Scripts._02_PlayTutorial.Components
                     _isHitProcessed = true;
                     isHit = true;
                     
-                    // ★ [핵심] PlayLong에서는 두 플레이어 모두에게 스턴 적용
-                    PlayLongManager.Instance.OnPlayerHit(0); //
-                    PlayLongManager.Instance.OnPlayerHit(1); //
+                    PlayLongManager.Instance.OnBothPlayersHit();
                     
                     Debug.Log($"Red String/Obstacle Hit! P1:{p1Lane}, P2:{p2Lane}, Obstacle:{obstacleLaneConverted}");
                 }

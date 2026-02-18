@@ -123,19 +123,26 @@ namespace My.Scripts._04_PlayLong
             _spawnedObstacles.Add(obj);
         }
 
+        /// <summary>
+        /// 모든 장애물을 지정된 거리만큼 이동시킵니다. 파괴된 객체는 리스트에서 제거합니다.
+        /// </summary>
+        /// <param name="meters">이동할 가상 거리(미터)</param>
         public void MoveObstacles(float meters)
         {
+            // 1. 파괴된 객체(null)를 리스트에서 사전에 제거하여 메모리 누수 방지
+            _spawnedObstacles.RemoveAll(x => !x);
+
             if (_spawnedObstacles.Count == 0) return;
 
+            // 2. 실제 월드 이동량 계산
             float moveDistance = meters * _worldPerVirtualMeter;
             Vector3 displacement = _moveDirection * moveDistance;
 
+            // 3. 살아있는 장애물만 이동 처리
             for (int i = _spawnedObstacles.Count - 1; i >= 0; i--)
             {
-                if (_spawnedObstacles[i] != null)
-                {
-                    _spawnedObstacles[i].transform.position += displacement;
-                }
+                // RemoveAll을 수행했으므로 추가적인 null 체크 없이 안전하게 접근 가능
+                _spawnedObstacles[i].transform.position += displacement;
             }
         }
     }

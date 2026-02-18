@@ -152,15 +152,25 @@ namespace My.Scripts.UI
             float p1HandX, p2HandX;
             if (p1Center.x < p2Center.x)
             {
+                // Player 1이 왼쪽에 있을 때
                 p1HandX = rightHandOffsetX;
                 p2HandX = leftHandOffsetX;
                 _rectTransform.localScale = Vector3.one; 
             }
-            else
+            else if (p1Center.x > p2Center.x)
             {
+                // Player 1이 오른쪽에 있을 때
                 p1HandX = leftHandOffsetX;
                 p2HandX = rightHandOffsetX;
                 _rectTransform.localScale = new Vector3(1f, -1f, 1f); 
+            }
+            else
+            {
+                // 두 플레이어의 X가 겹치는 경우
+                // 실제 게임에서 가능성은 낮기만 예외 처리 함
+                p1HandX = rightHandOffsetX;
+                p2HandX = leftHandOffsetX;
+                _rectTransform.localScale = Vector3.one; 
             }
 
             // 7. 최종 좌표 및 길이 계산

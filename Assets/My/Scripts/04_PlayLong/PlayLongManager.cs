@@ -86,11 +86,25 @@ namespace My.Scripts._04_PlayLong
         }
 
         /// <summary>
+        /// 모든 플레이어의 유효성을 검사하고 한 명이라도 스턴 상태인지 확인합니다.
+        /// </summary>
+        private bool IsAnyPlayerStunned()
+        {
+            if (players == null || players.Length < 2) return true; //
+
+            foreach (var p in players)
+            {
+                if (p == null || p.IsStunned) return true; //
+            }
+            return false;
+        }
+
+        /// <summary>
         /// 붉은 실 등장 연출 및 우측/좌측 이동 미션을 순차적으로 실행하는 코루틴.
         /// </summary>
         private IEnumerator RedStringIntroSequence()
         {
-            _isInputBlocked = true; // 연출 중 조작 간섭 방지
+            _isInputBlocked = true; 
             foreach (var p in players) if (p) p.ForceStop();
 
             yield return StartCoroutine(ui.ShowRedStringStep1(_setting.popupTexts[1]));
@@ -102,11 +116,10 @@ namespace My.Scripts._04_PlayLong
             _isRightMissionActive = true;
             _currentCoopDistance = 0f;
 
-            // 우측 이동 거리 미션 달성 대기
             while (_currentCoopDistance < RequiredRightDistance) yield return null;
 
             _isRightMissionActive = false;
-            foreach (var p in players) if (p) p.ForceStop(); // 미션 완료 시 정적 상태 유도
+            foreach (var p in players) if (p) p.ForceStop(); 
             if (padDotController) padDotController.StopBlinking(new[] { 4, 5, 10, 11 });
 
             yield return CoroutineData.GetWaitForSeconds(0.5f);
@@ -114,14 +127,13 @@ namespace My.Scripts._04_PlayLong
 
             if (padDotController) padDotController.StartBlinking(new[] { 0, 1, 10, 11 });
             _isLeftMissionActive = true;
-            _p1StepCount = _p2StepCount = _syncedStepCount = 0; // 협동 거리 계산을 위한 스텝 초기화
+            _p1StepCount = _p2StepCount = _syncedStepCount = 0; 
             _currentCoopDistance = 0f;
 
-            // P1(좌), P2(우) 협동 6m 달리기 대기
             while (_currentCoopDistance < RequiredLeftDistance) yield return null;
 
             _isLeftMissionActive = false;
-            _isInputBlocked = true; // 최종 장애물 이벤트 전 입력 차단
+            _isInputBlocked = true; 
             foreach (var p in players) if (p) p.ForceStop();
             if (padDotController) padDotController.StopBlinking(new[] { 0, 1, 10, 11 });
 
@@ -140,7 +152,6 @@ namespace My.Scripts._04_PlayLong
                 yield return StartCoroutine(ui.ShowPopupSequence(new[] { _setting.popupTexts[3] }, 2.0f, false));
             }
 
-            // 장애물 소환 및 시야 확보를 위한 대기
             obstacleManager.SpawnSingleObstacle(2.0f, 0);
             yield return CoroutineData.GetWaitForSeconds(1.0f);
 
@@ -155,7 +166,7 @@ namespace My.Scripts._04_PlayLong
                 float stepMove = (totalDistanceToMove / duration) * deltaTime;
                 if (env) env.ScrollByMeter(stepMove);
 
-                if (players[0].IsStunned || players[1].IsStunned) break; // 충돌 발생 시 이동 중단
+                if (IsAnyPlayerStunned()) break; //
                 yield return null;
             }
 
@@ -169,22 +180,24 @@ namespace My.Scripts._04_PlayLong
             int[] centerPads = { 2, 3, 8, 9 };
             if (padDotController) padDotController.StartBlinking(centerPads);
 
-            _isInputBlocked = false; // 시작 전 마지막 준비 입력 허용
+            _isInputBlocked = false; 
             bool p1Ready = false;
             bool p2Ready = false;
 
             while (!p1Ready || !p2Ready)
             {
-                // 두 플레이어가 발판 위에 모두 올라왔는지 확인
-                p1Ready = Input.GetKey(KeyCode.Alpha3) && Input.GetKey(KeyCode.Alpha4);
-                p2Ready = Input.GetKey(KeyCode.Alpha9) && Input.GetKey(KeyCode.Alpha0);
+                if (players != null && players.Length >= 2) //
+                {
+                    p1Ready = Input.GetKey(KeyCode.Alpha3) && Input.GetKey(KeyCode.Alpha4);
+                    p2Ready = Input.GetKey(KeyCode.Alpha9) && Input.GetKey(KeyCode.Alpha0);
+                }
 
                 if (p1Ready && p2Ready) break;
                 yield return null;
             }
 
             if (padDotController) padDotController.StopBlinking(centerPads);
-            ui.HideQuestionPopup(0, 0.5f);
+            ui.HideQuestionPopup(0.5f);
 
             yield return StartCoroutine(StartCountdownSequence());
 
@@ -193,18 +206,14 @@ namespace My.Scripts._04_PlayLong
 
         private IEnumerator StartCountdownSequence()
         {
-            // 1. 3 -> 2 -> 1 카운트다운 진행
             for (int i = 3; i > 0; i--)
             {
-                // 중앙 텍스트에 숫자 표시
                 ui.SetCenterText(i.ToString(), true); 
                 yield return CoroutineData.GetWaitForSeconds(1.0f);
             }
 
-            // 2. JSON에서 정의된 startText("시작!") 표시
             if (_setting.startText != null)
             {
-                // 텍스트 설정(폰트, 색상 등)을 포함하여 중앙에 표시
                 ui.SetCenterText(_setting.startText); 
             }
             else
@@ -213,8 +222,6 @@ namespace My.Scripts._04_PlayLong
             }
 
             yield return CoroutineData.GetWaitForSeconds(1.0f);
-    
-            // 3. 게임 시작 시 텍스트 숨김
             ui.SetCenterText("", false);
         }
 
@@ -235,15 +242,22 @@ namespace My.Scripts._04_PlayLong
             if (_isInputBlocked) return;
 
             bool isAnyActionActive = _isGameActive || _isIntroMissionActive || _isRightMissionActive || _isLeftMissionActive;
-            if (!isAnyActionActive) isAnyActionActive = true;
+            if (!isAnyActionActive) return; //
 
-            if (players[0].IsStunned || players[1].IsStunned) return;
+            if (IsAnyPlayerStunned()) return; //
 
             if (pIdx >= 0 && pIdx < players.Length && players[pIdx])
             {
                 if (players[pIdx].HandleInput(lIdx, padIdx))
                 {
-                    // 각 미션 단계별로 지정된 라인 이외의 이동 명령 필터링
+                    // --- 협동 균형 체크 (이동 명령 전 수행) ---
+                    bool isAnyTutorialMission = _isIntroMissionActive || _isRightMissionActive || _isLeftMissionActive;
+                    if (isAnyTutorialMission)
+                    {
+                        if (pIdx == 0 && _p1StepCount > _p2StepCount) return; //
+                        if (pIdx == 1 && _p2StepCount > _p1StepCount) return; //
+                    }
+
                     if (_isIntroMissionActive && lIdx != 1) return;
                     if (_isRightMissionActive && lIdx != 2) return;
                     if (_isLeftMissionActive)
@@ -260,12 +274,8 @@ namespace My.Scripts._04_PlayLong
                     if (pIdx == 0) _p1LastStepTime = Time.time;
                     else _p2LastStepTime = Time.time;
 
-                    if (_isIntroMissionActive || _isRightMissionActive || _isLeftMissionActive)
+                    if (isAnyTutorialMission)
                     {
-                        // 상대방보다 앞서 나가지 못하게 하여 협동 유도
-                        if (pIdx == 0 && _p1StepCount > _p2StepCount) return;
-                        if (pIdx == 1 && _p2StepCount > _p1StepCount) return;
-
                         if (pIdx == 0) _p1StepCount++;
                         else _p2StepCount++;
 
@@ -334,7 +344,6 @@ namespace My.Scripts._04_PlayLong
         private void Update()
         {
             CheckStepDecay();
-            // 연출 중 물리 엔진 중첩 방지를 위한 조건부 업데이트
             bool isPhysicsActive = (_isGameActive || _isIntroMissionActive || _isRightMissionActive || _isLeftMissionActive) && !_isInputBlocked;
 
             if (isPhysicsActive)
@@ -348,9 +357,6 @@ namespace My.Scripts._04_PlayLong
             if (_currentTime <= 0) FinishGame();
         }
 
-        /// <summary>
-        /// 일정 시간 입력 부재 시 잉여 스텝을 무효화하여 부정행위 방지.
-        /// </summary>
         private void CheckStepDecay()
         {
             float now = Time.time;
@@ -389,13 +395,31 @@ namespace My.Scripts._04_PlayLong
                 return players[playerIdx].currentLane;
             return 1;
         }
+        
+        /// <summary>
+        /// 두 플레이어 모두 장애물이나 붉은 실에 걸렸을 때 호출되는 통합 피격 처리 메서드.
+        /// </summary>
+        public void OnBothPlayersHit()
+        {
+            // 각 플레이어에게 스턴 적용
+            foreach (var p in players)
+            {
+                if (p != null) p.OnHit(2.0f);
+            }
+
+            // 환경 스크롤 즉시 중단 (중복 호출 방지)
+            if (env) env.StopScroll();
+
+            // 협동 스텝 카운트 초기화
+            _p1StepCount = _p2StepCount = _syncedStepCount; 
+        }
 
         public void OnPlayerHit(int playerIdx)
         {
             if (playerIdx >= 0 && playerIdx < players.Length && players[playerIdx] != null)
             {
                 players[playerIdx].OnHit(2.0f);
-                if (env) env.StopScroll(); // 충돌 시 배경 미끄러짐 방지
+                if (env) env.StopScroll(); 
                 _p1StepCount = _p2StepCount = _syncedStepCount;
             }
         }
