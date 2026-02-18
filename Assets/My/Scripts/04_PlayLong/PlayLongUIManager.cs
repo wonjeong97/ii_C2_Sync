@@ -69,7 +69,7 @@ namespace My.Scripts._04_PlayLong
             if (centerText && setting != null)
             {
                 centerText.gameObject.SetActive(true);
-                if (UIManager.Instance != null) 
+                if (UIManager.Instance) 
                     UIManager.Instance.SetText(centerText.gameObject, setting);
                 else 
                     centerText.text = setting.text;
@@ -98,7 +98,7 @@ namespace My.Scripts._04_PlayLong
                 var textData = textDatas[i];
                 if (textData == null) continue;
 
-                if (UIManager.Instance != null) 
+                if (UIManager.Instance) 
                     UIManager.Instance.SetText(popupText.gameObject, textData);
                 else 
                     popupText.text = textData.text;
@@ -127,7 +127,7 @@ namespace My.Scripts._04_PlayLong
         /// <param name="textData">표시할 전체 텍스트 설정.</param>
         public IEnumerator ShowRedStringStep1(TextSetting textData)
         {
-            if (popup == null || popupText == null) yield break;
+            if (textData == null || !popup || !popupText) yield break;
 
             popupText.supportRichText = true;
             string fullText = textData.text; 
@@ -149,7 +149,7 @@ namespace My.Scripts._04_PlayLong
 
             yield return StartCoroutine(FadeTextAlpha(popupText, 0f, 1f, 0.5f));
 
-            if (redStringCanvasGroup != null)
+            if (redStringCanvasGroup)
             {
                 // 두 사람 사이의 연결을 강조하기 위해 붉은 실 이미지를 2초간 서서히 노출
                 yield return StartCoroutine(FadeCanvasGroup(redStringCanvasGroup, 0f, 1f, 2.0f));
@@ -163,7 +163,7 @@ namespace My.Scripts._04_PlayLong
         /// <param name="duration">페이드 인 소요 시간.</param>
         public IEnumerator FadeInSecondLine(TextSetting textData, float duration)
         {
-            if (popupText == null) yield break;
+            if (textData == null || !popupText) yield break;
 
             string fullText = textData.text;
             string[] lines = fullText.Split('\n');
@@ -194,7 +194,7 @@ namespace My.Scripts._04_PlayLong
         /// </summary>
         public IEnumerator BlinkRedString(int count, float duration)
         {
-            if (redStringCanvasGroup == null) yield break;
+            if (!redStringCanvasGroup) yield break;
 
             float waitTime = duration / (count * 2);
             for (int i = 0; i < count; i++)

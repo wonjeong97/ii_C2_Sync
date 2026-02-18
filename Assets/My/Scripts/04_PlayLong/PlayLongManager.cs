@@ -27,6 +27,7 @@ namespace My.Scripts._04_PlayLong
         [Header("Game Settings")] 
         [SerializeField] private float targetDistance = 500f;
         [SerializeField] private float timeLimit = 60f;
+        [SerializeField] private float readyWaitTimeout = 30f;
         [SerializeField] private TutorialSettingsSO baseSettings;
 
         [Tooltip("이 시간 동안 상대방이 밟지 않으면 혼자 쌓은 스텝 횟수가 사라집니다.")] 
@@ -103,7 +104,14 @@ namespace My.Scripts._04_PlayLong
         /// 붉은 실 등장 연출 및 우측/좌측 이동 미션을 순차적으로 실행하는 코루틴.
         /// </summary>
         private IEnumerator RedStringIntroSequence()
-        {
+        {   
+            if (_setting == null || _setting.popupTexts == null)
+            {
+                Debug.LogError("[PlayLongManager] 설정 데이터가 없어 연출을 스킵합니다.");
+                StartInGame();
+                yield break;
+            }
+            
             _isInputBlocked = true; 
             foreach (var p in players) if (p) p.ForceStop();
 
@@ -183,10 +191,21 @@ namespace My.Scripts._04_PlayLong
             _isInputBlocked = false; 
             bool p1Ready = false;
             bool p2Ready = false;
+            
+            // 무한 루프 방지를 위해 타임아웃 추적 추가
+            float readyStartTime = Time.time;
 
             while (!p1Ready || !p2Ready)
             {
-                if (players != null && players.Length >= 2) //
+                // 1. 타임아웃 체크: 지정된 시간(readyWaitTimeout) 초과 시 루프 강제 탈출
+                if (Time.time - readyStartTime > readyWaitTimeout)
+                {
+                    Debug.LogWarning("[PlayLongManager] 준비 시간 초과로 인해 자동으로 게임을 시작합니다.");
+                    break;
+                }
+
+                // 2. 입력 체크
+                if (players != null && players.Length >= 2)
                 {
                     p1Ready = Input.GetKey(KeyCode.Alpha3) && Input.GetKey(KeyCode.Alpha4);
                     p2Ready = Input.GetKey(KeyCode.Alpha9) && Input.GetKey(KeyCode.Alpha0);
@@ -195,7 +214,6 @@ namespace My.Scripts._04_PlayLong
                 if (p1Ready && p2Ready) break;
                 yield return null;
             }
-
             if (padDotController) padDotController.StopBlinking(centerPads);
             ui.HideQuestionPopup(0.5f);
 

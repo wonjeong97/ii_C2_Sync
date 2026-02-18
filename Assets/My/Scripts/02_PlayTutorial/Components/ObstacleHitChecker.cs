@@ -71,7 +71,9 @@ namespace My.Scripts._02_PlayTutorial.Components
                     
                     PlayLongManager.Instance.OnBothPlayersHit();
                     
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.Log($"Red String/Obstacle Hit! P1:{p1Lane}, P2:{p2Lane}, Obstacle:{obstacleLaneConverted}");
+#endif
                 }
             }
             // 2. Tutorial 모드 (개별 판정)
