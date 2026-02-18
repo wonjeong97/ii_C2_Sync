@@ -43,7 +43,7 @@ namespace My.Scripts._02_PlayTutorial.Components
 
         private void CheckHitLogic()
         {
-            int obstacleLaneConverted = _obstacleLaneIndex + 1; 
+            int obstacleLaneConverted = _obstacleLaneIndex; 
             bool isHit = false;
 
             // 1. PlayLong 모드 (통합 장애물 판정)
