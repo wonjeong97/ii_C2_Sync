@@ -1,4 +1,4 @@
-namespace My.Scripts.Global
+namespace My.Scripts.Core
 {
     /// <summary> 게임 전역 상수 관리 클래스 </summary>
     public static class GameConstants
@@ -11,6 +11,7 @@ namespace My.Scripts.Global
             public const string PlayTutorial = "02_PlayTutorial";
             public const string PlayShort = "03_PlayShort";
             public const string PlayLong = "04_PlayLong";
+            public const string Ending = "05_Ending";
         }
 
         /// <summary> 리소스 경로 상수 모음 </summary>
@@ -21,6 +22,7 @@ namespace My.Scripts.Global
             public const string PlayTutorial = "JSON/PlayTutorial";
             public const string PlayShort = "JSON/PlayShort";
             public const string PlayLong = "JSON/PlayLong";
+            public const string Ending = "JSON/Ending";
         }
     }
 }

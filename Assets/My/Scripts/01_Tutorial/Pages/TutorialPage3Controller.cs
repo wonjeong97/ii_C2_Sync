@@ -3,7 +3,6 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using My.Scripts.Core;
-using My.Scripts.Global;
 using Wonjeong.Data;
 using Wonjeong.UI;
 using Wonjeong.Utils; // CoroutineData 사용을 위해 필요

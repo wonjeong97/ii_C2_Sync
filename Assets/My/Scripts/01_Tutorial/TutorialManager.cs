@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using My.Scripts.Core;
-using My.Scripts.Global;   
 using My.Scripts._01_Tutorial.Pages;
 using My.Scripts.Core.FlowSystem;
 using Wonjeong.Utils;     
