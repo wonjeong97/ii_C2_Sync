@@ -9,6 +9,8 @@ namespace My.Scripts._02_PlayTutorial.Components
 {
     public class ObstacleHitChecker : MonoBehaviour
     {
+        private readonly static int Hit = Animator.StringToHash("Hit");
+
         [Header("Settings")]
         public float hitDuration = 2.0f;
 
@@ -16,6 +18,8 @@ namespace My.Scripts._02_PlayTutorial.Components
         private int _obstacleLaneIndex; 
         private bool _isHitProcessed; 
         private Animator _animator;
+        
+        public bool IsStopMove { get; private set; }
 
         private void Awake()
         {
@@ -43,37 +47,34 @@ namespace My.Scripts._02_PlayTutorial.Components
 
         private void CheckHitLogic()
         {
-            int obstacleLaneConverted = _obstacleLaneIndex; 
+            int obstacleLaneConverted = _obstacleLaneIndex + 1; 
             bool isHit = false;
 
-            // 1. PlayLong 모드 (통합 장애물 판정)
             if (PlayLongManager.Instance != null)
             {
-                int p1Lane = PlayLongManager.Instance.GetCurrentLane(0); //
-                int p2Lane = PlayLongManager.Instance.GetCurrentLane(1); //
+                int p1Lane = PlayLongManager.Instance.GetCurrentLane(0); 
+                int p2Lane = PlayLongManager.Instance.GetCurrentLane(1); 
 
-                // [A] 직접 충돌: 누구든 해당 라인에 있는가
+                // [A] 직접 충돌: 통일된 인덱스(0, 1, 2)로 비교
                 bool p1DirectHit = (p1Lane == obstacleLaneConverted);
                 bool p2DirectHit = (p2Lane == obstacleLaneConverted);
 
-                // [B] 붉은 실 충돌: 중앙 장애물일 때 양 끝으로 갈라졌는가
+                // [B] 붉은 실 충돌: 중앙 장애물(변환 후 1)일 때 양 끝(0과 2)으로 갈라졌는가
                 bool redStringHit = false;
                 if (obstacleLaneConverted == 1)
                 {
-                    redStringHit = (p1Lane == 0 && p2Lane == 2) || (p1Lane == 2 && p2Lane == 0); //
+                    redStringHit = (p1Lane == 0 && p2Lane == 2) || (p1Lane == 2 && p2Lane == 0);
                 }
 
-                // 한 명이라도 맞았거나 실에 걸렸다면 판정 성공
                 if (p1DirectHit || p2DirectHit || redStringHit)
                 {
                     _isHitProcessed = true;
-                    isHit = true;
-                    
+                    IsStopMove = true; // ★ 충돌한 순간 이 장애물은 멈춤 상태로 전환
+            
                     PlayLongManager.Instance.OnBothPlayersHit();
-                    
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.Log($"Red String/Obstacle Hit! P1:{p1Lane}, P2:{p2Lane}, Obstacle:{obstacleLaneConverted}");
-#endif
+            
+                    if (_animator != null) _animator.SetTrigger(Hit); 
+                    StartCoroutine(DestroyRoutine());
                 }
             }
             // 2. Tutorial 모드 (개별 판정)

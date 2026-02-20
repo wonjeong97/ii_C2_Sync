@@ -30,7 +30,7 @@
   },
   "popupTexts": [
     {
-      "name": "Text_각자의 중앙 발판",
+      "name": "PopupText_0",
       "position": {"x": 0, "y": 0},
       "scale": {"x": 1, "y": 1, "z": 1},
       "text": "각자의 중앙 발판으로\n이동해 달려주세요.",
@@ -39,7 +39,7 @@
       "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}
     },
     {
-      "name": "Text_끈 연결",
+      "name": "PopupText_1",
       "position": {"x": 0, "y": 0},
       "scale": {"x": 1, "y": 1, "z": 1},
       "text": "두 사람은 이제 끈으로 연결되었습니다.\n함께 오른쪽으로 뛰어볼까요?",
@@ -48,7 +48,7 @@
       "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}
     },
     {
-      "name": "Text_P1왼쪽발판",
+      "name": "PopupText_2",
       "position": {"x": 0, "y": 0},
       "scale": {"x": 1, "y": 1, "z": 1},
       "text": "아영님 왼쪽 발판으로\n이동해서 달려주세요.",
@@ -57,7 +57,7 @@
       "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}
     },
     {
-      "name": "Text_장애물",
+      "name": "PopupText_3",
       "position": {"x": 0, "y": 0},
       "scale": {"x": 1, "y": 1, "z": 1},
       "text": "연결된 끈이 장애물에 부딪히는 경우에도\n2초간 움직일 수 없습니다.",
@@ -66,7 +66,7 @@
       "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}
     },
     {
-      "name": "Text_준비",
+      "name": "PopupText_4",
       "position": {"x": 0, "y": 0},
       "scale": {"x": 1, "y": 1, "z": 1},
       "text": "준비 되셨나요?\n각자의 중앙 발판에 서 주세요.",
@@ -76,12 +76,21 @@
     }
   ],
   "startText": {
-    "name": "Text_시작",
+    "name": "Text_Start",
     "position": {"x": 0, "y": 240},
     "scale": {"x": 1, "y": 1, "z": 1},
     "text": "시작",
     "fontName": "font8",
     "fontSize": 193,
     "fontColor": {"r": 0.2588235, "g": 0.2588235, "b": 0.2588235, "a": 1}
+  },
+  "endText": {
+    "name": "Text_End",
+    "position": {"x": 0, "y": 0},
+    "scale": {"x": 1, "y": 1, "z": 1},
+    "text": "500M 달리기 성공!",
+    "fontName": "font7",
+    "fontSize": 55,
+    "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}
   }
 }

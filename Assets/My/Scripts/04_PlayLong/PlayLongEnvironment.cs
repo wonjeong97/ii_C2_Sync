@@ -1,18 +1,21 @@
+using System.Collections;
 using UnityEngine;
 
 namespace My.Scripts._04_PlayLong
 {
+    /// <summary>
+    /// PlayLong 씬의 바닥, 프레임, 장애물 등 환경 요소의 스크롤을 관리합니다.
+    /// </summary>
     public class PlayLongEnvironment : MonoBehaviour
     {
         [Header("Environment References")]
         [SerializeField] private TextureAdjuster mainFloor;
-
-        [Header("Obstacle Manager")]
         [SerializeField] private PlayLongObstacleManager obstacleManager;
+        [SerializeField] private PlayLongFrameManager frameManager;
 
         [Header("Scroll Settings")]
         [Tooltip("1미터 이동 시 UV 스크롤 변화량")]
-        [SerializeField] private float uvPerMeter = 0.005f; 
+        [SerializeField] private float uvPerMeter = 0.0025f; 
         [Tooltip("스크롤 부드러움 정도")]
         [SerializeField] private float scrollSmoothing = 5.0f;
 
@@ -28,8 +31,9 @@ namespace My.Scripts._04_PlayLong
         private float _prevFogStart;
         private float _prevFogEnd;
 
-        private float _targetOffsetY = 0f;
-        private float _currentOffsetY = 0f;
+        private float _targetOffsetY;
+        private float _currentOffsetY;
+        private bool _isSmoothResetting;
 
         private void Start()
         {
@@ -46,27 +50,27 @@ namespace My.Scripts._04_PlayLong
                 _currentOffsetY = _targetOffsetY;
             }
 
-            if (obstacleManager)
+            Camera targetCam = Camera.main;
+            if (!targetCam)
             {
-                obstacleManager.Init(Camera.main, false);
+                GameObject camObj = GameObject.FindWithTag("MainCamera");
+                if (camObj) targetCam = camObj.GetComponent<Camera>();
             }
+
+            if (!targetCam)
+            {
+                Debug.LogWarning("[PlayLongEnvironment] 메인 카메라를 찾을 수 없어 Fader의 타겟 설정에 문제가 발생할 수 있습니다.");
+            }
+
+            if (obstacleManager) obstacleManager.Init(targetCam, false);
+            if (frameManager) frameManager.Init();
 
             BackupFogSettings();
             ApplyFogSettings();
         }
 
-        /// <summary>
-        /// 스턴 발생 시 호출하여 현재 위치에서 스크롤을 즉시 멈춤
-        /// </summary>
-        public void StopScroll()
-        {
-            // 목표 위치를 현재 위치로 강제 고정하여 Lerp에 의한 미끄러짐 방지
-            _targetOffsetY = _currentOffsetY;
-        }
-
         public void ScrollByMeter(float meters)
         {
-            // 플레이어 중 한 명이라도 스턴 상태라면 새로운 이동 명령을 무시하도록 매니저에서 제어 필요
             if (mainFloor)
             {
                 _targetOffsetY += meters * uvPerMeter;
@@ -75,29 +79,89 @@ namespace My.Scripts._04_PlayLong
 
         private void Update()
         {
-            if (mainFloor)
+            if (mainFloor && !_isSmoothResetting)
             {
                 float prevOffset = _currentOffsetY;
 
-                // 보간 속도(scrollSmoothing)에 의해 스턴 후에도 조금 더 움직일 수 있음
                 _currentOffsetY = Mathf.Lerp(_currentOffsetY, _targetOffsetY, Time.deltaTime * scrollSmoothing);
-            
-                // 두 값의 차이가 아주 작으면 완전히 일치시켜 불필요한 연산 방지
                 if (Mathf.Abs(_targetOffsetY - _currentOffsetY) < 0.0001f) _currentOffsetY = _targetOffsetY;
 
                 mainFloor.offset = new Vector2(mainFloor.offset.x, _currentOffsetY);
                 mainFloor.UpdateUVs();
 
                 float uvDelta = _currentOffsetY - prevOffset;
-
-                if (obstacleManager && uvPerMeter > 0.000001f)
-                {
+                if (uvPerMeter > 0.000001f)
+                {   
                     float movedMeters = uvDelta / uvPerMeter;
-                    obstacleManager.MoveObstacles(movedMeters);
+                    if (obstacleManager) obstacleManager.MoveObstacles(movedMeters);
+                    if (frameManager) frameManager.MoveFrames(movedMeters); 
                 }
             }
         }
 
+        /// <summary>
+        /// 환경 오프셋을 0으로 부드럽게 되돌리며, 중단 시에도 finally를 통해 안전하게 초기화를 보장합니다.
+        /// </summary>
+        public IEnumerator SmoothResetEnvironment(float duration = 1.0f)
+        {
+            _isSmoothResetting = true; 
+            
+            try
+            {
+                float elapsed = 0f;
+                float startOffsetY = _currentOffsetY;
+                float targetOffsetY = 0f; 
+
+                _targetOffsetY = targetOffsetY;
+
+                while (elapsed < duration)
+                {
+                    float prevOffset = _currentOffsetY;
+                    elapsed += Time.deltaTime;
+            
+                    float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
+                    _currentOffsetY = Mathf.Lerp(startOffsetY, targetOffsetY, t);
+
+                    if (mainFloor)
+                    {
+                        mainFloor.offset = new Vector2(mainFloor.offset.x, _currentOffsetY);
+                        mainFloor.UpdateUVs();
+                    }
+
+                    float uvDelta = _currentOffsetY - prevOffset; 
+                    if (uvPerMeter > 0.000001f)
+                    {
+                        float movedMeters = uvDelta / uvPerMeter;
+                        if (frameManager) frameManager.MoveFrames(movedMeters);
+                        if (obstacleManager) obstacleManager.MoveObstacles(movedMeters);
+                    }
+
+                    yield return null;
+                }
+            }
+            finally
+            {
+                ResetEnvironmentScroll();
+                
+                if (frameManager) frameManager.ResetFrames();
+                if (obstacleManager) obstacleManager.ResetObstacles();
+
+                _isSmoothResetting = false;
+            }
+        }
+
+        public void ResetEnvironmentScroll()
+        {
+            _targetOffsetY = 0f;
+            _currentOffsetY = 0f;
+
+            if (mainFloor)
+            {
+                mainFloor.offset = new Vector2(mainFloor.offset.x, 0f);
+                mainFloor.UpdateUVs();
+            }
+        }
+        
         private void BackupFogSettings()
         {
             _prevFog = RenderSettings.fog;
@@ -121,6 +185,9 @@ namespace My.Scripts._04_PlayLong
 
         private void OnDisable()
         {
+            _isSmoothResetting = false;
+            ResetEnvironmentScroll();
+
             RenderSettings.fog = _prevFog;
             RenderSettings.fogColor = _prevFogColor;
             RenderSettings.fogMode = _prevFogMode;

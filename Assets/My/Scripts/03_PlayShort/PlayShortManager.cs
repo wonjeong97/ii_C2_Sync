@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using My.Scripts._02_PlayTutorial.Data;
 using My.Scripts.Core;
-using My.Scripts.Global;
 using UnityEngine;
 using UnityEngine.UI;
 using Wonjeong.Data;

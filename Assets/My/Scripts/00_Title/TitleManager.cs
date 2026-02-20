@@ -1,4 +1,4 @@
-using My.Scripts.Global;
+using My.Scripts.Core;
 using UnityEngine;
 
 namespace My.Scripts._00_Title

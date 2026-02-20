@@ -20,6 +20,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/04_PlayLong.unity
     guid: 8190554f479623140995ae595f49303c
+  - enabled: 1
+    path: Assets/Scenes/05_Ending.unity
+    guid: a8cb7aa27d37d224288a29c0dffeca8f
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: d327f1d509e7686469e8998466ef0822,
       type: 2}

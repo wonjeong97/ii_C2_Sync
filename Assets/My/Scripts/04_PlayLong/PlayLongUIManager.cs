@@ -7,11 +7,11 @@ using Wonjeong.Utils;
 
 namespace My.Scripts._04_PlayLong
 {
-    /// <summary>
-    /// PlayLong 씬의 팝업 메시지 연출, HUD(게이지, 타이머) 갱신, 붉은 실 애니메이션을 관리하는 UI 매니저.
-    /// </summary>
     public class PlayLongUIManager : MonoBehaviour
     {
+        [Header("Formatting Settings")]
+        [SerializeField] private string[] formattedTextNames = new string[] { "PopupText_4" };
+
         [Header("Popup")]
         [SerializeField] private CanvasGroup popup; 
         [SerializeField] private Text popupText;    
@@ -19,39 +19,107 @@ namespace My.Scripts._04_PlayLong
         [Header("HUD")]
         [SerializeField] private Text centerText;
         [SerializeField] private Text timerText;
-        [SerializeField] private GaugeController p1Gauge; 
-        [SerializeField] private GaugeController p2Gauge; 
+        [SerializeField] private CanvasGroup padImagesCG;
         
         [Header("Red String Animation")]
         [SerializeField] private CanvasGroup redStringCanvasGroup;
+        
+        [Header("Side HUD")]
+        [SerializeField] private PlayLongGaugeController p1LongGauge; 
+        [SerializeField] private PlayLongGaugeController p2LongGauge;
+        [SerializeField] private CanvasGroup p1SideDistCG; 
+        [SerializeField] private CanvasGroup p2SideDistCG; 
 
-        /// <summary>
-        /// 씬 시작 시 UI 요소들의 초기 투명도와 활성화 상태를 설정.
-        /// </summary>
-        /// <param name="maxDistance">게이지 최대치 설정을 위한 목표 거리.</param>
+        [Header("Side HUD - Distance Markers")]
+        [SerializeField] private Image[] p1DistMarkers; 
+        [SerializeField] private Image[] p2DistMarkers; 
+
+        [Header("Marker Assets")]
+        [SerializeField] private Sprite[] originalMarkerSprites; 
+        [SerializeField] private Sprite heartFragmentSprite; 
+
+        private readonly static Vector2 OriginalMarkerSize = new Vector2(85f, 35f);
+        private readonly static Vector2 HeartFragmentSize = new Vector2(144f, 138f);
+        
+        private string _originalFullText;
+        private Coroutine _textBlinkCoroutine;
+
         public void InitUI(float maxDistance)
         {
             if (popup)
             {
                 popup.alpha = 0f;
                 popup.gameObject.SetActive(false);
+                popup.blocksRaycasts = true;
             }
             
-            if (redStringCanvasGroup != null)
+            if (redStringCanvasGroup)
             {
                 redStringCanvasGroup.alpha = 0f;
             }
-
-            if (p1Gauge) p1Gauge.UpdateGauge(0, maxDistance);
-            if (p2Gauge) p2Gauge.UpdateGauge(0, maxDistance);
             
             if (centerText) centerText.gameObject.SetActive(false);
             if (timerText) timerText.text = "";
+            
+            if (p1LongGauge) p1LongGauge.ResetGauge();
+            if (p2LongGauge) p2LongGauge.ResetGauge();
+            
+            if (p1SideDistCG) p1SideDistCG.alpha = 0f;
+            if (p2SideDistCG) p2SideDistCG.alpha = 0f;
+            if (padImagesCG) padImagesCG.alpha = 1f;
+
+            ResetDistMarkers();
+        }
+
+        private void ResetDistMarkers()
+        {
+            if (p1DistMarkers == null || p2DistMarkers == null) return;
+
+            int originLen = originalMarkerSprites != null ? originalMarkerSprites.Length : 0;
+            int maxLen = Mathf.Min(p1DistMarkers.Length, p2DistMarkers.Length, originLen);
+
+            for (int i = 0; i < maxLen; i++)
+            {
+                if (originalMarkerSprites != null)
+                {
+                    Sprite origin = originalMarkerSprites[i];
+                    if (origin)
+                    {
+                        if (p1DistMarkers[i]) UpdateMarkerAppearance(p1DistMarkers[i], origin, OriginalMarkerSize);
+                        if (p2DistMarkers[i]) UpdateMarkerAppearance(p2DistMarkers[i], origin, OriginalMarkerSize);
+                    }
+                }
+            }
         }
         
-        /// <summary>
-        /// 중앙 텍스트에 카운트다운 숫자나 "시작" 문구를 표시합니다.
-        /// </summary>
+        public void UpdateDistanceMarkers(float currentDist)
+        {
+            if (p1DistMarkers == null || p2DistMarkers == null) return;
+            
+            int activeCount = Mathf.FloorToInt(currentDist / 100f);
+            int len = Mathf.Min(p1DistMarkers.Length, p2DistMarkers.Length);
+            
+            for (int i = 0; i < len; i++)
+            {
+                if (i < activeCount)
+                {
+                    if (p1DistMarkers[i] && p1DistMarkers[i].sprite != heartFragmentSprite)
+                        UpdateMarkerAppearance(p1DistMarkers[i], heartFragmentSprite, HeartFragmentSize);
+                    
+                    if (p2DistMarkers[i] && p2DistMarkers[i].sprite != heartFragmentSprite)
+                        UpdateMarkerAppearance(p2DistMarkers[i], heartFragmentSprite, HeartFragmentSize);
+                }
+            }
+        }
+
+        private void UpdateMarkerAppearance(Image targetImg, Sprite sprite, Vector2 size)
+        {
+            if (!targetImg || !sprite) return;
+
+            targetImg.sprite = sprite;
+            targetImg.rectTransform.sizeDelta = size;
+        }
+        
         public void SetCenterText(string message, bool isActive)
         {
             if (centerText)
@@ -61,9 +129,6 @@ namespace My.Scripts._04_PlayLong
             }
         }
 
-        /// <summary>
-        /// JSON의 TextSetting 데이터를 중앙 텍스트에 적용합니다.
-        /// </summary>
         public void SetCenterText(TextSetting setting)
         {
             if (centerText && setting != null)
@@ -76,38 +141,55 @@ namespace My.Scripts._04_PlayLong
             }
         }
 
-        /// <summary>
-        /// 여러 텍스트를 순차적으로 표시하며, 텍스트 전환 시 페이드 인/아웃 효과를 적용.
-        /// </summary>
-        /// <param name="textDatas">표시할 텍스트 설정 배열.</param>
-        /// <param name="durationPerText">텍스트 하나가 유지되는 시간.</param>
-        /// <param name="hideAtEnd">시퀀스 종료 후 팝업을 완전히 닫을지 여부.</param>
         public IEnumerator ShowPopupSequence(TextSetting[] textDatas, float durationPerText, bool hideAtEnd = true)
         {
-            if (!popup || !popupText) yield break;
-            if (textDatas == null || textDatas.Length == 0) yield break;
+            if (!popup || !popupText || textDatas == null || textDatas.Length == 0) yield break;
 
             popup.gameObject.SetActive(true);
-            popupText.color = new Color(popupText.color.r, popupText.color.g, popupText.color.b, 0f);
-    
-            // 팝업 창이 부드럽게 나타나도록 전체 알파 제어
+            popupText.supportRichText = true;
+
             yield return StartCoroutine(FadeCanvasGroup(popup, popup.alpha, 1f, 0.5f));
 
             for (int i = 0; i < textDatas.Length; i++)
             {
-                var textData = textDatas[i];
+                TextSetting textData = textDatas[i];
                 if (textData == null) continue;
 
-                if (UIManager.Instance) 
-                    UIManager.Instance.SetText(popupText.gameObject, textData);
-                else 
-                    popupText.text = textData.text;
+                bool applySpecialFormat = false;
+                
+                if (formattedTextNames != null && !string.IsNullOrEmpty(textData.name))
+                {
+                    foreach (string targetName in formattedTextNames)
+                    {
+                        if (textData.name == targetName)
+                        {
+                            applySpecialFormat = true;
+                            break;
+                        }
+                    }
+                }
 
-                // 새 텍스트가 서서히 등장
+                if (applySpecialFormat)
+                {
+                    string[] lines = textData.text.Split('\n');
+                    if (lines.Length >= 2)
+                    {
+                        popupText.text = $"{lines[0]}\n<size=40>{lines[1]}</size>";
+                    }
+                    else
+                    {
+                        popupText.text = textData.text;
+                    }
+                }
+                else
+                {
+                    if (UIManager.Instance) UIManager.Instance.SetText(popupText.gameObject, textData);
+                    else popupText.text = textData.text;
+                }
+
                 yield return StartCoroutine(FadeTextAlpha(popupText, 0f, 1f, 0.5f));
                 yield return CoroutineData.GetWaitForSeconds(durationPerText);
         
-                // 마지막 텍스트가 아니거나, 다음 연출을 위해 팝업을 유지해야 하는 경우가 아닐 때만 퇴장 연출
                 if (i < textDatas.Length - 1 || hideAtEnd)
                 {
                     yield return StartCoroutine(FadeTextAlpha(popupText, 1f, 0f, 0.5f));
@@ -121,55 +203,74 @@ namespace My.Scripts._04_PlayLong
             }
         }
 
-        /// <summary>
-        /// 튜토리얼 Step 2 진입 시 첫 번째 줄 텍스트와 붉은 실 이미지를 페이드 인 시킴.
-        /// </summary>
-        /// <param name="textData">표시할 전체 텍스트 설정.</param>
+        public void StartPopupTextBlinking(float interval = 0.5f)
+        {
+            if (!popupText) return;
+            _originalFullText = popupText.text; 
+    
+            if (_textBlinkCoroutine != null) StopCoroutine(_textBlinkCoroutine);
+            _textBlinkCoroutine = StartCoroutine(BlinkSecondLineRoutine(interval));
+        }
+
+        public void StopPopupTextBlinking()
+        {
+            if (_textBlinkCoroutine != null)
+            {
+                StopCoroutine(_textBlinkCoroutine);
+                _textBlinkCoroutine = null;
+            }
+            if (popupText && !string.IsNullOrEmpty(_originalFullText))
+            {
+                popupText.text = _originalFullText;
+            }
+        }
+
+        private IEnumerator BlinkSecondLineRoutine(float interval)
+        {
+            if (!popupText) yield break;
+
+            string[] lines = _originalFullText.Split('\n');
+            if (lines.Length < 2) yield break;
+
+            bool isVisible = true; 
+            while (true)
+            {
+                if (isVisible)
+                {
+                    popupText.text = _originalFullText;
+                }
+                else
+                {
+                    popupText.text = $"{lines[0]}\n<color=#00000000>{lines[1]}</color>";
+                }
+                yield return CoroutineData.GetWaitForSeconds(interval);
+                isVisible = !isVisible;
+            }
+        }
+
         public IEnumerator ShowRedStringStep1(TextSetting textData)
         {
             if (textData == null || !popup || !popupText) yield break;
-
+            
             popupText.supportRichText = true;
             string fullText = textData.text; 
             string[] lines = fullText.Split('\n');
 
-            // Rich Text 태그를 사용하여 첫 줄은 그대로, 두 번째 줄은 투명하게 설정하여 시각적 분리 유도
-            if (lines.Length >= 2)
-            {
-                popupText.text = $"{lines[0]}\n<color=#00000000>{lines[1]}</color>";
-            }
-            else
-            {
-                popupText.text = fullText;
-            }
-    
-            // 이전 텍스트와의 시각적 간섭을 막기 위해 투명도 초기화 후 페이드 인
-            Color c = popupText.color;
-            popupText.color = new Color(c.r, c.g, c.b, 0f);
+            if (lines.Length >= 2) popupText.text = $"{lines[0]}\n<color=#00000000>{lines[1]}</color>";
+            else popupText.text = fullText;
 
             yield return StartCoroutine(FadeTextAlpha(popupText, 0f, 1f, 0.5f));
-
-            if (redStringCanvasGroup)
-            {
-                // 두 사람 사이의 연결을 강조하기 위해 붉은 실 이미지를 2초간 서서히 노출
-                yield return StartCoroutine(FadeCanvasGroup(redStringCanvasGroup, 0f, 1f, 2.0f));
-            }
+            if (redStringCanvasGroup) yield return StartCoroutine(FadeCanvasGroup(redStringCanvasGroup, 0f, 1f, 2.0f));
         }
 
-        /// <summary>
-        /// 이미 표시 중인 텍스트의 두 번째 줄(미션 안내)만 서서히 나타나게 함.
-        /// </summary>
-        /// <param name="textData">기준이 되는 텍스트 설정.</param>
-        /// <param name="duration">페이드 인 소요 시간.</param>
         public IEnumerator FadeInSecondLine(TextSetting textData, float duration)
         {
             if (textData == null || !popupText) yield break;
-
+            
             string fullText = textData.text;
             string[] lines = fullText.Split('\n');
             if (lines.Length < 2) yield break;
 
-            int reducedSize = 40; // 가독성을 위해 미션 안내 문구의 크기를 조절
             float elapsed = 0f;
             Color originColor = popupText.color;
             string hexColor = ColorUtility.ToHtmlStringRGB(originColor);
@@ -178,24 +279,16 @@ namespace My.Scripts._04_PlayLong
             {
                 elapsed += Time.deltaTime;
                 float alpha = Mathf.Clamp01(elapsed / duration);
-                int alphaByte = Mathf.RoundToInt(alpha * 255);
-                string alphaHex = alphaByte.ToString("X2");
-
-                // 첫 줄은 유지한 채로 두 번째 줄만 실시간으로 계산된 알파값을 Rich Text로 적용
-                popupText.text = $"{lines[0]}\n<size={reducedSize}><color=#{hexColor}{alphaHex}>{lines[1]}</color></size>";
+                string alphaHex = Mathf.RoundToInt(alpha * 255f).ToString("X2");
+                popupText.text = $"{lines[0]}\n<size=40><color=#{hexColor}{alphaHex}>{lines[1]}</color></size>";
                 yield return null;
             }
-
-            popupText.text = $"{lines[0]}\n<size={reducedSize}>{lines[1]}</size>";
+            popupText.text = $"{lines[0]}\n<size=40>{lines[1]}</size>";
         }
 
-        /// <summary>
-        /// 붉은 실 이미지를 지정된 횟수만큼 점멸시켜 사용자 주의를 환기함.
-        /// </summary>
         public IEnumerator BlinkRedString(int count, float duration)
         {
             if (!redStringCanvasGroup) yield break;
-
             float waitTime = duration / (count * 2);
             for (int i = 0; i < count; i++)
             {
@@ -206,25 +299,9 @@ namespace My.Scripts._04_PlayLong
             }
         }
 
-        /// <summary>
-        /// 플레이어별 협동 거리 게이지를 업데이트.
-        /// </summary>
-        public void UpdateGauge(int playerIdx, float current, float max)
-        {
-            if (playerIdx == 0 && p1Gauge) p1Gauge.UpdateGauge(current, max);
-            else if (playerIdx == 1 && p2Gauge) p2Gauge.UpdateGauge(current, max);
-        }
-
-        /// <summary>
-        /// HUD에 현재 남은 시간을 정수 형태의 문자열로 표시.
-        /// </summary>
         public void UpdateTimer(float time)
         {
-            if (timerText)
-            {
-                time = Mathf.Max(0, time);
-                timerText.text = Mathf.CeilToInt(time).ToString();
-            }
+            if (timerText) timerText.text = Mathf.CeilToInt(Mathf.Max(0f, time)).ToString();
         }
 
         private IEnumerator FadeCanvasGroup(CanvasGroup cg, float start, float end, float duration)
@@ -244,44 +321,89 @@ namespace My.Scripts._04_PlayLong
         {
             float t = 0f;
             Color c = txt.color;
-            txt.color = new Color(c.r, c.g, c.b, start);
-            
             while (t < duration)
             {
                 t += Time.deltaTime;
-                float a = Mathf.Lerp(start, end, t / duration);
-                txt.color = new Color(c.r, c.g, c.b, a);
+                txt.color = new Color(c.r, c.g, c.b, Mathf.Lerp(start, end, t / duration));
                 yield return null;
             }
             txt.color = new Color(c.r, c.g, c.b, end);
         }
         
-        /// <summary>
-        /// 진행 중인 미션 팝업을 페이드 아웃시키고, 완료 후 오브젝트를 비활성화합니다.
-        /// </summary>
-        /// <param name="duration">페이드 아웃에 걸리는 시간</param>
         public void HideQuestionPopup(float duration)
         {
             if (popup && popup.gameObject.activeInHierarchy)
             {
-                // 1. 중복 클릭 방지를 위해 즉시 레이캐스트 차단
                 popup.blocksRaycasts = false; 
-                // 2. 페이드 아웃 및 후처리 코루틴 시작
                 StartCoroutine(HideQuestionPopupRoutine(duration));
             }
         }
 
-        /// <summary>
-        /// 페이드 아웃 연출이 끝날 때까지 대기한 후 팝업의 활성 상태를 정리합니다.
-        /// </summary>
         private IEnumerator HideQuestionPopupRoutine(float duration)
         {
-            // FadeCanvasGroup이 완료될 때까지 대기
             yield return StartCoroutine(FadeCanvasGroup(popup, popup.alpha, 0f, duration));
-    
-            // 후처리: 오브젝트 비활성화 및 레이캐스트 상태 복구 (다음에 켜질 때를 대비)
             popup.gameObject.SetActive(false);
             popup.blocksRaycasts = true; 
+        }
+        
+        public IEnumerator FadeTransitionTutorialReady(float duration)
+        {
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float progress = Mathf.Clamp01(elapsed / duration);
+
+                if (p1SideDistCG) p1SideDistCG.alpha = progress;
+                if (p2SideDistCG) p2SideDistCG.alpha = progress;
+
+                if (padImagesCG) padImagesCG.alpha = 1f - progress; 
+        
+                yield return null;
+            }
+    
+            if (p1SideDistCG) p1SideDistCG.alpha = 1f;
+            if (p2SideDistCG) p2SideDistCG.alpha = 1f;
+            if (padImagesCG) padImagesCG.alpha = 0f;
+        }
+        
+        public void UpdateLongCoopGauge(float current, float max)
+        {
+            if (p1LongGauge) p1LongGauge.UpdateGauge(current, max);
+            if (p2LongGauge) p2LongGauge.UpdateGauge(current, max);
+        }
+        
+        public void ShowCenterResultPopup(TextSetting textData)
+        {
+            if (!popup || !popupText || textData == null) return;
+
+            popup.gameObject.SetActive(true);
+            popup.alpha = 1f;
+            popup.blocksRaycasts = true;
+
+            Color c = popupText.color;
+            c.a = 1f;
+            popupText.color = c;
+
+            if (UIManager.Instance)
+                UIManager.Instance.SetText(popupText.gameObject, textData);
+            else
+                popupText.text = textData.text;
+        }
+        
+        public void ShowCenterResultPopup(string message)
+        {
+            if (!popup || !popupText) return;
+
+            popup.gameObject.SetActive(true);
+            popup.alpha = 1f;
+            popup.blocksRaycasts = true;
+    
+            Color c = popupText.color;
+            c.a = 1f;
+            popupText.color = c;
+
+            popupText.text = message;
         }
     }
 }
