@@ -2025,7 +2025,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   targetDistance: 500
-  timeLimit: 60
+  timeLimit: 10
   readyWaitTimeout: 30
   baseSettings: {fileID: 11400000, guid: 40ce4d821b31e51409721c75a2dfe0a5, type: 2}
   stepDecayTime: 0.5

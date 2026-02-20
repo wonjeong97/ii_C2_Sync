@@ -360,18 +360,11 @@ namespace My.Scripts._04_PlayLong
         public void OnBothPlayersHit()
         {
             foreach (var p in players)
-                if (p != null)
-                    p.OnHit(2.0f);
-            if (env) env.StopScroll(); // 강제 정지 대신 부드러운 정지 허용
-            Debug.Log($"[Hit] Stun applied. Syncing to: {_currentCoopDistance}M");
-        }
-
-        public void OnPlayerHit(int playerIdx)
-        {
-            if (playerIdx >= 0 && playerIdx < players.Length && players[playerIdx] != null)
             {
-                players[playerIdx].OnHit(2.0f);
-                if (env) env.StopScroll();
+                if (p != null)
+                {
+                    p.OnHit(2.0f);
+                }
             }
         }
 
@@ -452,7 +445,7 @@ namespace My.Scripts._04_PlayLong
 
             // 4. 페이드아웃 및 엔딩 씬 로드
             // GameManager의 ChangeScene은 내부적으로 FadeOut -> LoadScene -> FadeIn을 수행합니다.
-            if (GameManager.Instance != null)
+            if (GameManager.Instance)
             {
                 // 엔딩 씬 이름은 프로젝트 설정에 맞춰 "05_Ending" 등으로 변경 필요
                 GameManager.Instance.ChangeScene("05_Ending"); 
@@ -485,12 +478,6 @@ namespace My.Scripts._04_PlayLong
         {
             if (InputManager.Instance) InputManager.Instance.OnPadDown -= HandlePadDown;
             if (Instance == this) Instance = null;
-            if (players != null)
-            {
-                foreach (var player in players)
-                    if (player != null)
-                        player.OnDistanceChanged -= (id, cur, max) => { };
-            }
         }
     }
 }

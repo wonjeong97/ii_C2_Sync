@@ -109,9 +109,25 @@ namespace My.Scripts.UI
 
         private Vector2 WorldToCanvas(Vector3 worldPos)
         {
-            Camera cam = (_parentCanvas.renderMode == RenderMode.ScreenSpaceOverlay) ? null : Camera.main;
-            Vector2 screenPos = (cam == null) ? (Vector2)worldPos : cam.WorldToScreenPoint(worldPos);
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(_rectTransform.parent as RectTransform, screenPos, cam, out Vector2 local);
+            // 1. 기준이 될 카메라 획득 (Camera.main이 없으면 현재 카메라로 폴백)
+            Camera refCam = Camera.main ? Camera.main : Camera.current;
+            if (!refCam)
+            {
+                Debug.LogWarning("[RedStringController] WorldToCanvas: 기준 카메라를 찾을 수 없습니다.");
+                return Vector2.zero;
+            }
+
+            // 2. 3D 월드 좌표를 항상 카메라를 통해 스크린 좌표(픽셀 단위)로 변환
+            Vector2 screenPos = refCam.WorldToScreenPoint(worldPos);
+
+            // 3. 캔버스 렌더 모드에 따른 카메라 인자 설정
+            // ScreenSpaceOverlay 모드일 때는 RectTransformUtility에 null을 전달해야 함
+            Camera eventCam = (_parentCanvas.renderMode == RenderMode.ScreenSpaceOverlay) ? null : refCam;
+
+            // 4. 스크린 좌표를 캔버스 내 로컬 좌표로 변환
+            RectTransform parentRect = _rectTransform.parent as RectTransform;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPos, eventCam, out Vector2 local);
+    
             return local;
         }
 

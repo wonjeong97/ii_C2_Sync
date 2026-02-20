@@ -68,7 +68,14 @@ namespace My.Scripts._04_PlayLong
         /// 거리에 따라 난이도가 상승하는 장애물 생성 로직
         /// </summary>
         public void GenerateProgressiveObstacles()
-        {
+        {   
+            // 기존 장애물 정리
+            foreach (GameObject obj in _spawnedObstacles)
+            {
+                if (obj) Destroy(obj);
+            }
+            _spawnedObstacles.Clear();
+            
             float currentDist = startSpawnDistance;
 
             while (currentDist <= maxSpawnDistance)

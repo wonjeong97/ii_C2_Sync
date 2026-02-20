@@ -84,10 +84,10 @@ namespace My.Scripts._04_PlayLong
         /// </summary>
         private void ResetDistMarkers()
         {
-            if (p1DistMarkers == null || originalMarkerSprites == null) return;
-
+            if (p1DistMarkers == null || p2DistMarkers == null || originalMarkerSprites == null) return;
             for (int i = 0; i < p1DistMarkers.Length; i++)
             {
+                if (i >= p2DistMarkers.Length) break;
                 // 인덱스에 매칭되는 원본 스프라이트가 있는지 확인
                 Sprite origin = (i < originalMarkerSprites.Length) ? originalMarkerSprites[i] : null;
                 
@@ -98,16 +98,16 @@ namespace My.Scripts._04_PlayLong
                 }
             }
         }
-
         /// <summary>
         /// 현재 달성 거리에 따라 마커 이미지를 마음조각(144x138)으로 교체함.
         /// </summary>
         public void UpdateDistanceMarkers(float currentDist)
         {
+            if (p1DistMarkers == null || p2DistMarkers == null) return;
             // 100M 단위로 달성 개수 계산 (예: 250M 달성 시 activeCount는 2)
             int activeCount = Mathf.FloorToInt(currentDist / 100f);
-
-            for (int i = 0; i < p1DistMarkers.Length; i++)
+            int len = Mathf.Min(p1DistMarkers.Length, p2DistMarkers.Length);
+            for (int i = 0; i < len; i++)
             {
                 // 1. 달성한 거리(activeCount) 안에 포함되는 인덱스인지 확인
                 if (i < activeCount)

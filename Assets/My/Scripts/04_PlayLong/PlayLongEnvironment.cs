@@ -68,14 +68,6 @@ namespace My.Scripts._04_PlayLong
         }
 
         /// <summary>
-        /// 스턴 발생 시 호출하여 스크롤을 즉시 멈춤.
-        /// </summary>
-        public void StopScroll()
-        {
-           
-        }
-
-        /// <summary>
         /// 가상 미터 단위의 이동량을 입력받아 바닥 스크롤 목표치를 갱신함.
         /// </summary>
         /// <param name="meters">이동할 가상 거리 (예: delta 스텝 * 1.0m)</param>
@@ -107,7 +99,7 @@ namespace My.Scripts._04_PlayLong
                 {   
                     float movedMeters = uvDelta / uvPerMeter;
                     if (obstacleManager) obstacleManager.MoveObstacles(movedMeters);
-                    frameManager.MoveFrames(uvDelta / uvPerMeter);
+                    if (frameManager) frameManager.MoveFrames(movedMeters);
                 }
             }
         }
