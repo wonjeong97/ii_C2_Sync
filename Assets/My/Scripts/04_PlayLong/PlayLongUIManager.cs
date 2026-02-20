@@ -232,10 +232,9 @@ namespace My.Scripts._04_PlayLong
             string[] lines = _originalFullText.Split('\n');
             if (lines.Length < 2) yield break;
 
-            bool isVisible = false; 
+            bool isVisible = true; 
             while (true)
             {
-                isVisible = !isVisible;
                 if (isVisible)
                 {
                     popupText.text = _originalFullText;
@@ -245,6 +244,7 @@ namespace My.Scripts._04_PlayLong
                     popupText.text = $"{lines[0]}\n<color=#00000000>{lines[1]}</color>";
                 }
                 yield return CoroutineData.GetWaitForSeconds(interval);
+                isVisible = !isVisible;
             }
         }
 

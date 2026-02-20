@@ -29,6 +29,7 @@ namespace My.Scripts._04_PlayLong
         private readonly List<GameObject> _spawnedObstacles = new List<GameObject>();
         private Vector3 _moveDirection; 
         private Vector3 _laneOffsetVector;
+        private Vector3 _forwardDir; // Cached forward direction
         private float _worldPerVirtualMeter; 
         private Camera _targetCamera; 
 
@@ -47,11 +48,11 @@ namespace My.Scripts._04_PlayLong
             if (virtualDistStartToEnd <= 0) return false;
 
             Vector3 segmentVector = pathEnd - pathStart;
-            _moveDirection = -segmentVector.normalized; 
+            _forwardDir = segmentVector.normalized;
+            _moveDirection = -_forwardDir; 
             _worldPerVirtualMeter = segmentVector.magnitude / virtualDistStartToEnd;
 
-            Vector3 forwardDir = segmentVector.normalized;
-            Vector3 geomRight = Vector3.Cross(Vector3.up, forwardDir).normalized;
+            Vector3 geomRight = Vector3.Cross(Vector3.up, _forwardDir).normalized;
             
             float correctionFactor = 1.0f;
             if (Mathf.Abs(geomRight.x) > 0.001f) correctionFactor = 1.0f / Mathf.Abs(geomRight.x);
@@ -117,8 +118,7 @@ namespace My.Scripts._04_PlayLong
         {
             if (!obstaclePrefab) return;
 
-            Vector3 pathDir = (pathEnd - pathStart).normalized;
-            Vector3 centerPos = pathStart + (pathDir * (dist * _worldPerVirtualMeter));
+            Vector3 centerPos = pathStart + (_forwardDir * (dist * _worldPerVirtualMeter));
             Vector3 finalPos = centerPos + (_laneOffsetVector * laneIdx);
 
             GameObject obj = Instantiate(obstaclePrefab, transform);
@@ -131,7 +131,9 @@ namespace My.Scripts._04_PlayLong
 
             if (useDistanceFade)
             {
-                FrameDistanceFader fader = obj.AddComponent<FrameDistanceFader>();
+                FrameDistanceFader fader = obj.GetComponent<FrameDistanceFader>();
+                if (!fader) fader = obj.AddComponent<FrameDistanceFader>();
+                
                 if (_targetCamera) fader.targetTransform = _targetCamera.transform;
                 else if (Camera.main) fader.targetTransform = Camera.main.transform;
                 
@@ -148,7 +150,6 @@ namespace My.Scripts._04_PlayLong
 
             float moveDistance = meters * _worldPerVirtualMeter;
             Vector3 displacement = _moveDirection * moveDistance;
-            Vector3 forwardDir = (pathEnd - pathStart).normalized;
 
             for (int i = _spawnedObstacles.Count - 1; i >= 0; i--)
             {
@@ -167,7 +168,7 @@ namespace My.Scripts._04_PlayLong
 
                 obj.transform.position += displacement;
 
-                float distFromStart = Vector3.Dot(obj.transform.position - pathStart, forwardDir);
+                float distFromStart = Vector3.Dot(obj.transform.position - pathStart, _forwardDir);
 
                 if (distFromStart < -5f * _worldPerVirtualMeter)
                 {

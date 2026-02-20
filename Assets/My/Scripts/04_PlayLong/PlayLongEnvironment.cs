@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace My.Scripts._04_PlayLong
 {
+    /// <summary>
+    /// PlayLong 씬의 바닥, 프레임, 장애물 등 환경 요소의 스크롤을 관리합니다.
+    /// </summary>
     public class PlayLongEnvironment : MonoBehaviour
     {
         [Header("Environment References")]
@@ -47,7 +50,19 @@ namespace My.Scripts._04_PlayLong
                 _currentOffsetY = _targetOffsetY;
             }
 
-            if (obstacleManager) obstacleManager.Init(Camera.main, false);
+            Camera targetCam = Camera.main;
+            if (!targetCam)
+            {
+                GameObject camObj = GameObject.FindWithTag("MainCamera");
+                if (camObj) targetCam = camObj.GetComponent<Camera>();
+            }
+
+            if (!targetCam)
+            {
+                Debug.LogWarning("[PlayLongEnvironment] 메인 카메라를 찾을 수 없어 Fader의 타겟 설정에 문제가 발생할 수 있습니다.");
+            }
+
+            if (obstacleManager) obstacleManager.Init(targetCam, false);
             if (frameManager) frameManager.Init();
 
             BackupFogSettings();
@@ -84,47 +99,55 @@ namespace My.Scripts._04_PlayLong
             }
         }
 
+        /// <summary>
+        /// 환경 오프셋을 0으로 부드럽게 되돌리며, 중단 시에도 finally를 통해 안전하게 초기화를 보장합니다.
+        /// </summary>
         public IEnumerator SmoothResetEnvironment(float duration = 1.0f)
         {
             _isSmoothResetting = true; 
             
-            float elapsed = 0f;
-            float startOffsetY = _currentOffsetY;
-            float targetOffsetY = 0f; 
-
-            _targetOffsetY = targetOffsetY;
-
-            while (elapsed < duration)
+            try
             {
-                float prevOffset = _currentOffsetY;
-                elapsed += Time.deltaTime;
-        
-                float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
-                _currentOffsetY = Mathf.Lerp(startOffsetY, targetOffsetY, t);
+                float elapsed = 0f;
+                float startOffsetY = _currentOffsetY;
+                float targetOffsetY = 0f; 
 
-                if (mainFloor)
+                _targetOffsetY = targetOffsetY;
+
+                while (elapsed < duration)
                 {
-                    mainFloor.offset = new Vector2(mainFloor.offset.x, _currentOffsetY);
-                    mainFloor.UpdateUVs();
-                }
-
-                float uvDelta = _currentOffsetY - prevOffset; 
-                if (uvPerMeter > 0.000001f)
-                {
-                    float movedMeters = uvDelta / uvPerMeter;
-                    if (frameManager) frameManager.MoveFrames(movedMeters);
-                    if (obstacleManager) obstacleManager.MoveObstacles(movedMeters);
-                }
-
-                yield return null;
-            }
-
-            ResetEnvironmentScroll();
+                    float prevOffset = _currentOffsetY;
+                    elapsed += Time.deltaTime;
             
-            if (frameManager) frameManager.ResetFrames();
-            if (obstacleManager) obstacleManager.ResetObstacles();
+                    float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
+                    _currentOffsetY = Mathf.Lerp(startOffsetY, targetOffsetY, t);
 
-            _isSmoothResetting = false;
+                    if (mainFloor)
+                    {
+                        mainFloor.offset = new Vector2(mainFloor.offset.x, _currentOffsetY);
+                        mainFloor.UpdateUVs();
+                    }
+
+                    float uvDelta = _currentOffsetY - prevOffset; 
+                    if (uvPerMeter > 0.000001f)
+                    {
+                        float movedMeters = uvDelta / uvPerMeter;
+                        if (frameManager) frameManager.MoveFrames(movedMeters);
+                        if (obstacleManager) obstacleManager.MoveObstacles(movedMeters);
+                    }
+
+                    yield return null;
+                }
+            }
+            finally
+            {
+                ResetEnvironmentScroll();
+                
+                if (frameManager) frameManager.ResetFrames();
+                if (obstacleManager) obstacleManager.ResetObstacles();
+
+                _isSmoothResetting = false;
+            }
         }
 
         public void ResetEnvironmentScroll()
@@ -162,6 +185,9 @@ namespace My.Scripts._04_PlayLong
 
         private void OnDisable()
         {
+            _isSmoothResetting = false;
+            ResetEnvironmentScroll();
+
             RenderSettings.fog = _prevFog;
             RenderSettings.fogColor = _prevFogColor;
             RenderSettings.fogMode = _prevFogMode;

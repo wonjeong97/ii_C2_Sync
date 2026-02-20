@@ -68,7 +68,7 @@ namespace My.Scripts._04_PlayLong
 
         private void Awake()
         {
-            if (Instance == null) Instance = this;
+            if (!Instance) Instance = this;
             else if (Instance != this) Destroy(gameObject);
         }
 
@@ -86,7 +86,7 @@ namespace My.Scripts._04_PlayLong
         {
             if (players == null || players.Length < 2) return true;
 
-            foreach (var p in players)
+            foreach (PlayerController p in players)
             {
                 if (p && p.IsStunned) return true;
             }
@@ -104,13 +104,16 @@ namespace My.Scripts._04_PlayLong
             }
 
             _isInputBlocked = true;
-            foreach (var p in players)
+            foreach (PlayerController p in players)
                 if (p)
                     p.ForceStop();
 
-            yield return StartCoroutine(ui.ShowRedStringStep1(_setting.popupTexts[1]));
-            yield return StartCoroutine(ui.BlinkRedString(2, 2.0f));
-            yield return StartCoroutine(ui.FadeInSecondLine(_setting.popupTexts[1], 2.0f));
+            if (ui)
+            {
+                yield return StartCoroutine(ui.ShowRedStringStep1(_setting.popupTexts[1]));
+                yield return StartCoroutine(ui.BlinkRedString(2, 2.0f));
+                yield return StartCoroutine(ui.FadeInSecondLine(_setting.popupTexts[1], 2.0f));
+            }
 
             if (padDotController) padDotController.StartBlinking(new[] { 4, 5, 10, 11 });
             _isInputBlocked = false;
@@ -120,13 +123,14 @@ namespace My.Scripts._04_PlayLong
             while (_currentCoopDistance < RequiredRightDistance) yield return null;
 
             _isRightMissionActive = false;
-            foreach (var p in players)
+            foreach (PlayerController p in players)
                 if (p)
                     p.ForceStop();
             if (padDotController) padDotController.StopBlinking(new[] { 4, 5, 10, 11 });
 
             yield return CoroutineData.GetWaitForSeconds(0.5f);
-            yield return StartCoroutine(ui.ShowPopupSequence(new[] { _setting.popupTexts[2] }, 2.0f, false));
+            
+            if (ui) yield return StartCoroutine(ui.ShowPopupSequence(new[] { _setting.popupTexts[2] }, 2.0f, false));
 
             if (padDotController) padDotController.StartBlinking(new[] { 0, 1, 10, 11 });
             _isLeftMissionActive = true;
@@ -137,7 +141,7 @@ namespace My.Scripts._04_PlayLong
 
             _isLeftMissionActive = false;
             _isInputBlocked = true;
-            foreach (var p in players)
+            foreach (PlayerController p in players)
                 if (p)
                     p.ForceStop();
             if (padDotController) padDotController.StopBlinking(new[] { 0, 1, 10, 11 });
@@ -149,7 +153,7 @@ namespace My.Scripts._04_PlayLong
         {
             if (!obstacleManager) yield break;
 
-            if (_setting.popupTexts.Length > 3)
+            if (ui && _setting != null && _setting.popupTexts != null && _setting.popupTexts.Length > 3)
             {
                 yield return StartCoroutine(ui.ShowPopupSequence(new[] { _setting.popupTexts[3] }, 2.0f, false));
             }
@@ -178,48 +182,52 @@ namespace My.Scripts._04_PlayLong
 
             if (env) yield return StartCoroutine(env.SmoothResetEnvironment(1.0f));
 
-            if (_setting.popupTexts.Length > 4)
+            if (ui && _setting != null && _setting.popupTexts != null && _setting.popupTexts.Length > 4)
             {
                 yield return StartCoroutine(ui.FadeTransitionTutorialReady(1.0f));
                 yield return StartCoroutine(ui.ShowPopupSequence(new[] { _setting.popupTexts[4] }, 1.0f, false));
             }
 
-            ui.StartPopupTextBlinking(0.5f);
+            if (ui) ui.StartPopupTextBlinking(0.5f);
 
             _isInputBlocked = false;
             bool p1Ready = false;
             bool p2Ready = false;
             float readyStartTime = Time.time;
 
+            // 로컬 이벤트 핸들러를 통한 대기 로직 처리
+            Action<int, int, int> onReadyPadDown = (pIdx, lIdx, padIdx) =>
+            {
+                if (lIdx == 1) // Center lane
+                {
+                    if (pIdx == 0 && !p1Ready)
+                    {
+                        p1Ready = true;
+                        if (players != null && players.Length > 0 && players[0]) players[0].MoveToLane(1);
+                    }
+                    else if (pIdx == 1 && !p2Ready)
+                    {
+                        p2Ready = true;
+                        if (players != null && players.Length > 1 && players[1]) players[1].MoveToLane(1);
+                    }
+                }
+            };
+
+            if (InputManager.Instance) InputManager.Instance.OnPadDown += onReadyPadDown;
+
             while (!p1Ready || !p2Ready)
             {
                 if (Time.time - readyStartTime > readyWaitTimeout) break;
-
-                if (players != null && players.Length >= 2)
-                {
-                    bool p1CurrentInput = Input.GetKey(KeyCode.Alpha3) && Input.GetKey(KeyCode.Alpha4);
-                    bool p2CurrentInput = Input.GetKey(KeyCode.Alpha9) && Input.GetKey(KeyCode.Alpha0);
-
-                    if (p1CurrentInput && !p1Ready)
-                    {
-                        p1Ready = true;
-                        players[0].MoveToLane(1);
-                    }
-
-                    if (p2CurrentInput && !p2Ready)
-                    {
-                        p2Ready = true;
-                        players[1].MoveToLane(1);
-                    }
-                }
-
-                if (p1Ready && p2Ready) break;
-
                 yield return null;
             }
 
-            ui.StopPopupTextBlinking();
-            ui.HideQuestionPopup(0.5f);
+            if (InputManager.Instance) InputManager.Instance.OnPadDown -= onReadyPadDown;
+
+            if (ui)
+            {
+                ui.StopPopupTextBlinking();
+                ui.HideQuestionPopup(0.5f);
+            }
 
             yield return StartCoroutine(StartCountdownSequence());
 
@@ -230,27 +238,27 @@ namespace My.Scripts._04_PlayLong
         {
             for (int i = 3; i > 0; i--)
             {
-                ui.SetCenterText(i.ToString(), true);
+                if (ui) ui.SetCenterText(i.ToString(), true);
                 yield return CoroutineData.GetWaitForSeconds(1.0f);
             }
 
             if (_setting != null && _setting.startText != null)
             {
-                ui.SetCenterText(_setting.startText);
+                if (ui) ui.SetCenterText(_setting.startText);
             }
             else
             {
-                Debug.LogError("[PlayLongManager] StartCountdownSequence: _setting or startText is null");
+                Debug.LogWarning("[PlayLongManager] StartCountdownSequence: _setting or startText is null");
             }
 
             yield return CoroutineData.GetWaitForSeconds(1.0f);
 
-            ui.SetCenterText("", false);
+            if (ui) ui.SetCenterText("", false);
         }
 
         private void StartIntroMission()
         {
-            if (_setting != null && _setting.popupTexts != null && _setting.popupTexts.Length > 0)
+            if (ui && _setting != null && _setting.popupTexts != null && _setting.popupTexts.Length > 0)
             {
                 StartCoroutine(ui.ShowPopupSequence(new[] { _setting.popupTexts[0] }, 3.0f, false));
             }
@@ -332,7 +340,7 @@ namespace My.Scripts._04_PlayLong
                 if (_isIntroMissionActive && _currentCoopDistance >= RequiredIntroDistance)
                 {
                     _isIntroMissionActive = false;
-                    foreach (var p in players)
+                    foreach (PlayerController p in players)
                         if (p)
                             p.ForceStop();
                     _p1StepCount = _p2StepCount = _syncedStepCount = 0;
@@ -347,7 +355,7 @@ namespace My.Scripts._04_PlayLong
 
         public void OnBothPlayersHit()
         {
-            foreach (var p in players)
+            foreach (PlayerController p in players)
             {
                 if (p)
                 {
@@ -356,6 +364,9 @@ namespace My.Scripts._04_PlayLong
             }
         }
 
+        /// <summary>
+        /// 다른 컴포넌트 호환성을 위한 단일 플레이어 충돌 위임 메서드.
+        /// </summary>
         public void OnPlayerHit(int playerIdx)
         {
             OnBothPlayersHit();
@@ -393,7 +404,7 @@ namespace My.Scripts._04_PlayLong
         private void LoadSettings()
         {
             _setting = JsonLoader.Load<Play500MSetting>(GameConstants.Path.PlayLong);
-            if (_setting != null && introPage != null) introPage.SetupData(_setting.introPage);
+            if (_setting != null && introPage) introPage.SetupData(_setting.introPage);
         }
 
         private void StartInGame()
@@ -416,7 +427,7 @@ namespace My.Scripts._04_PlayLong
 
         private IEnumerator FinishGameSequence()
         {
-            foreach (var p in players)
+            foreach (PlayerController p in players)
             {
                 if (p) p.ForceStop();
             }
@@ -466,7 +477,7 @@ namespace My.Scripts._04_PlayLong
         {
             if (baseSettings == null) return;
 
-            var config = baseSettings.physicsConfig;
+            PlayerPhysicsConfig config = baseSettings.physicsConfig;
             config.maxDistance = targetDistance;
             if (players.Length > 0 && players[0]) players[0].Setup(0, p1LongLanePositions, config);
             if (players.Length > 1 && players[1]) players[1].Setup(1, p2LongLanePositions, config);
