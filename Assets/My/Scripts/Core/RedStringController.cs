@@ -18,8 +18,12 @@ namespace My.Scripts.UI
         [SerializeField] private float thicknessNear = 25f; 
         [SerializeField] private float thicknessFar = 13f;
         [SerializeField] private float thicknessLerpSpeed = 10f;
-        [Tooltip("가장 가까운 거리(Index 0)일 때 적용할 Y축 내림 수치")]
-        [SerializeField] private float nearYOffset = 30f;
+        [SerializeField] private float nearYOffset = 30f;   // 손이 맞닿아있을 때 붉은 끈의 y위치를 내릴 값
+        
+        [Header("Hit & Near Offsets")]
+        [SerializeField] private float hitHeightNear = 44f;
+        [SerializeField] private float hitHeightFar = 70f;
+        [SerializeField] private float minWidthForIdx0 = 45f;
 
         [Header("Distance Sprites")]
         [SerializeField] private Sprite[] normalSprites; // 200, 400, 800, 1000, 1400
@@ -54,32 +58,26 @@ namespace My.Scripts.UI
 
         private void UpdateLine()
         {
-            // 1. 플레이어 위치 관계 확인
             Vector2 p1Pos = player1.CharacterRect.anchoredPosition;
             Vector2 p2Pos = player2.CharacterRect.anchoredPosition;
             bool p1IsLeft = p1Pos.x <= p2Pos.x;
 
-            // 2. 캐릭터 거리 계산 및 단계(Index) 판정
             float playerDist = Vector2.Distance(p1Pos, p2Pos);
             int idx = GetThresholdIndex(playerDist);
 
-            // 3. 연결할 손의 월드 좌표 획득
             Vector3 w1 = player1.GetHandWorldPosition(p1IsLeft); 
             Vector3 w2 = player2.GetHandWorldPosition(!p1IsLeft);
 
-            // 4. 월드 좌표를 캔버스 로컬 좌표로 변환
             Vector2 start = WorldToCanvas(w1);
             Vector2 end = WorldToCanvas(w2);
 
-            // 5. 상태에 따른 두께(Height) 및 너비(Width) 보정 로직
             bool isStunned = player1.IsStunned || player2.IsStunned;
             float targetHeight = (idx == 0) ? thicknessNear : thicknessFar;
             
-            // 피격 상태(Stun)일 때 거리 단계별 고정 높이 적용
             if (isStunned)
             {
-                if (idx == 3) targetHeight = 44f;      // hit1000 대응 Height
-                else if (idx == 4) targetHeight = 70f; // hit1400 대응 Height
+                if (idx == 3) targetHeight = hitHeightNear;      
+                else if (idx == 4) targetHeight = hitHeightFar; 
             }
 
             _currentThickness = (isStunned || _wasHit) 
@@ -87,15 +85,17 @@ namespace My.Scripts.UI
                 : Mathf.Lerp(_currentThickness, targetHeight, Time.deltaTime * thicknessLerpSpeed);
             _wasHit = isStunned;
 
-            // 6. 트랜스폼 적용 (위치, 크기, 회전)
+            if (idx == 0)
+            {
+                start.y -= nearYOffset; 
+            }
+
             Vector2 diff = end - start;
             float finalWidth = diff.magnitude;
 
-            // ★ [수정] 가장 가까운 거리(Index 0)일 때 최소 너비 45 보장 및 Y 위치 하향 조정
             if (idx == 0)
             {
-                finalWidth = Mathf.Max(finalWidth, 45f);
-                start.y -= nearYOffset; // 실의 시작점 높이를 조금 내림
+                finalWidth = Mathf.Max(finalWidth, minWidthForIdx0);
             }
 
             _rectTransform.anchoredPosition = start;
@@ -103,28 +103,30 @@ namespace My.Scripts.UI
             _rectTransform.localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(diff.y, diff.x) * Mathf.Rad2Deg);
             _rectTransform.localScale = p1IsLeft ? Vector3.one : new Vector3(1, -1, 1);
 
-            // 7. 스프라이트 업데이트
             UpdateSprite(idx, isStunned);
         }
 
         private Vector2 WorldToCanvas(Vector3 worldPos)
         {
-            // 1. 기준이 될 카메라 획득 (Camera.main이 없으면 현재 카메라로 폴백)
-            Camera refCam = Camera.main ? Camera.main : Camera.current;
+            Camera refCam = null;
+            if (_parentCanvas.renderMode == RenderMode.ScreenSpaceCamera || _parentCanvas.renderMode == RenderMode.WorldSpace)
+            {
+                refCam = _parentCanvas.worldCamera;
+            }
+            if (!refCam)
+            {
+                refCam = Camera.main ? Camera.main : Camera.current;
+            }
+
             if (!refCam)
             {
                 Debug.LogWarning("[RedStringController] WorldToCanvas: 기준 카메라를 찾을 수 없습니다.");
                 return Vector2.zero;
             }
 
-            // 2. 3D 월드 좌표를 항상 카메라를 통해 스크린 좌표(픽셀 단위)로 변환
             Vector2 screenPos = refCam.WorldToScreenPoint(worldPos);
-
-            // 3. 캔버스 렌더 모드에 따른 카메라 인자 설정
-            // ScreenSpaceOverlay 모드일 때는 RectTransformUtility에 null을 전달해야 함
             Camera eventCam = (_parentCanvas.renderMode == RenderMode.ScreenSpaceOverlay) ? null : refCam;
 
-            // 4. 스크린 좌표를 캔버스 내 로컬 좌표로 변환
             RectTransform parentRect = _rectTransform.parent as RectTransform;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPos, eventCam, out Vector2 local);
     
@@ -133,7 +135,21 @@ namespace My.Scripts.UI
 
         private void UpdateSprite(int idx, bool isHit)
         {
-            Sprite s = (normalSprites != null && idx < normalSprites.Length) ? normalSprites[idx] : null;
+            // ★ 수정: Sprite 배열의 인덱스 초과 예외 및 null 참조 방어 로직 (클램프)
+            if (normalSprites == null || normalSprites.Length == 0)
+            {
+                Debug.LogWarning("[RedStringController] normalSprites 배열이 비어있습니다.");
+                _image.sprite = null;
+                return;
+            }
+
+            int clampedIdx = Mathf.Clamp(idx, 0, normalSprites.Length - 1);
+            if (idx >= normalSprites.Length)
+            {
+                Debug.LogWarning($"[RedStringController] idx({idx})가 normalSprites 길이를 초과하여 {clampedIdx}로 클램핑되었습니다.");
+            }
+
+            Sprite s = normalSprites[clampedIdx];
             
             if (isHit)
             {
@@ -141,7 +157,14 @@ namespace My.Scripts.UI
                 else if (idx == 4 && hit1400) s = hit1400;
             }
 
-            if (s && _image.sprite != s) _image.sprite = s;
+            if (!s)
+            {
+                _image.sprite = null;
+            }
+            else if (_image.sprite != s)
+            {
+                _image.sprite = s;
+            }
         }
 
         private int GetThresholdIndex(float d)

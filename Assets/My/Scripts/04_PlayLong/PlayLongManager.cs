@@ -1,8 +1,9 @@
 using System;
 using System.Collections;
-using My.Scripts.Core;
 using My.Scripts._02_PlayTutorial.Data;
+using My.Scripts.Core;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Wonjeong.Data;
 using Wonjeong.Utils;
 
@@ -26,22 +27,17 @@ namespace My.Scripts._04_PlayLong
 
         [Header("Game Settings")]
         [SerializeField] private float targetDistance = 500f;
-
         [SerializeField] private float timeLimit = 60f;
         [SerializeField] private float readyWaitTimeout = 30f;
         [SerializeField] private TutorialSettingsSO baseSettings;
-
-        [Tooltip("이 시간 동안 상대방이 밟지 않으면 혼자 쌓은 스텝 횟수가 사라집니다.")]
-        [SerializeField] private float stepDecayTime = 0.5f;
+        [SerializeField] private float stepDecayTime = 0.5f;    // 설정한 시간 동안 상대방이 밟지 않으면 혼자 쌓은 스탭 횟수가 사라짐.
 
         [Header("Long Mode Lane Positions")]
         [SerializeField] private Vector2[] p1LongLanePositions;
-
         [SerializeField] private Vector2[] p2LongLanePositions;
 
         [Header("Manager References")]
         [SerializeField] private PlayLongUIManager ui;
-
         [SerializeField] private Page_Intro introPage;
         [SerializeField] private PadDotController padDotController;
 
@@ -50,22 +46,21 @@ namespace My.Scripts._04_PlayLong
 
         [Header("Environment")]
         [SerializeField] private PlayLongEnvironment env;
-
         [SerializeField] private PlayLongObstacleManager obstacleManager;
 
         private Play500MSetting _setting;
-        private bool _isGameActive = false;
+        private bool _isGameActive;
         private float _currentTime;
 
-        private bool _isIntroMissionActive = false;
-        private bool _isRightMissionActive = false;
-        private bool _isLeftMissionActive = false;
-        private bool _isInputBlocked = false;
+        private bool _isIntroMissionActive;
+        private bool _isRightMissionActive;
+        private bool _isLeftMissionActive;
+        private bool _isInputBlocked;
 
-        private int _p1StepCount = 0;
-        private int _p2StepCount = 0;
-        private int _syncedStepCount = 0;
-        private float _currentCoopDistance = 0f;
+        private int _p1StepCount;
+        private int _p2StepCount;
+        private int _syncedStepCount;
+        private float _currentCoopDistance;
 
         private float _p1LastStepTime;
         private float _p2LastStepTime;
@@ -96,7 +91,7 @@ namespace My.Scripts._04_PlayLong
 
             foreach (var p in players)
             {
-                if (p != null && p.IsStunned) return true;
+                if (p && p.IsStunned) return true;
             }
 
             return false;
@@ -251,8 +246,14 @@ namespace My.Scripts._04_PlayLong
                 yield return CoroutineData.GetWaitForSeconds(1.0f);
             }
 
-            if (_setting.startText != null) ui.SetCenterText(_setting.startText);
-            else ui.SetCenterText("시작!", true);
+            if (_setting.startText != null)
+            {
+                ui.SetCenterText(_setting.startText);
+            }
+            else
+            {
+                Debug.LogError("[PlayLongManager] StartCountdownSequence: _setting.startText is null");
+            }
 
             yield return CoroutineData.GetWaitForSeconds(1.0f);
 
@@ -376,7 +377,7 @@ namespace My.Scripts._04_PlayLong
                 !_isInputBlocked;
             if (isPhysicsActive)
             {
-                foreach (var p in players)
+                foreach (PlayerController p in players)
                     if (p)
                         p.OnUpdate(false, 0, 0);
             }
@@ -435,27 +436,36 @@ namespace My.Scripts._04_PlayLong
             {
                 bool isSuccess = _currentCoopDistance >= targetDistance;
                 if (isSuccess)
-                    ui.ShowCenterResultPopup(_setting.endText); // 성공 문구
+                {
+                    if (_setting != null && _setting.endText != null)
+                    {
+                        ui.ShowCenterResultPopup(_setting.endText);
+                    }
+                    else
+                    {
+                        Debug.LogError("[PlayLongManager] FinishGameSequence _setting or _setting.endText is null");
+                    }
+                }
                 else
-                    ui.ShowCenterResultPopup("TIME OVER");      // 실패 문구
+                {
+                    ui.ShowCenterResultPopup("TIME OVER");
+                }
             }
 
             // 3. 3초간 대기 (결과 확인 시간)
             yield return CoroutineData.GetWaitForSeconds(3.0f);
 
             // 4. 페이드아웃 및 엔딩 씬 로드
-            // GameManager의 ChangeScene은 내부적으로 FadeOut -> LoadScene -> FadeIn을 수행합니다.
             if (GameManager.Instance)
             {
-                // 엔딩 씬 이름은 프로젝트 설정에 맞춰 "05_Ending" 등으로 변경 필요
-                GameManager.Instance.ChangeScene("05_Ending"); 
+                GameManager.Instance.ChangeScene(GameConstants.Scene.Ending); 
             }
             else
             {
-                // GameManager가 없을 경우의 예외 처리
-                UnityEngine.SceneManagement.SceneManager.LoadScene("05_Ending");
+                SceneManager.LoadScene(GameConstants.Scene.Ending);
             }
         }
+        
         public int GetCurrentLane(int playerIdx)
         {
             if (playerIdx >= 0 && playerIdx < players.Length && players[playerIdx] != null)
