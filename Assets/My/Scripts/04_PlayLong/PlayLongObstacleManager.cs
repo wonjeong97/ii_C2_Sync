@@ -38,11 +38,7 @@ namespace My.Scripts._04_PlayLong
 
             if (InitializePathVectors())
             {
-                // 본 게임 시작 시 Manager에서 호출하도록 설계
-                if (spawnRandom)
-                {
-                    GenerateProgressiveObstacles();
-                }
+                if (spawnRandom) GenerateProgressiveObstacles();
             }
         }
 
@@ -64,17 +60,9 @@ namespace My.Scripts._04_PlayLong
             return true;
         }
 
-        /// <summary>
-        /// 거리에 따라 난이도가 상승하는 장애물 생성 로직
-        /// </summary>
         public void GenerateProgressiveObstacles()
         {   
-            // 기존 장애물 정리
-            foreach (GameObject obj in _spawnedObstacles)
-            {
-                if (obj) Destroy(obj);
-            }
-            _spawnedObstacles.Clear();
+            ResetObstacles();
             
             float currentDist = startSpawnDistance;
 
@@ -83,45 +71,46 @@ namespace My.Scripts._04_PlayLong
                 float interval;
                 int obstacleCount;
 
-                // 1. 거리별 난이도 구간 설정
-                if (currentDist < 150f) // [Easy] 20~150m
+                if (currentDist < 150f)
                 {
-                    interval = Random.Range(15f, 20f); // 넓은 간격
-                    obstacleCount = 1;                 // 장애물 1개
+                    interval = Random.Range(15f, 20f);
+                    obstacleCount = 1;                
                 }
-                else if (currentDist < 350f) // [Normal] 150~350m
+                else if (currentDist < 350f) 
                 {
-                    interval = Random.Range(10f, 15f); // 중간 간격
-                    obstacleCount = (Random.value > 0.7f) ? 2 : 1; // 30% 확률로 2개
+                    interval = Random.Range(10f, 15f); 
+                    obstacleCount = (Random.value > 0.7f) ? 2 : 1; 
                 }
-                else // [Hard] 350~500m
+                else 
                 {
-                    interval = Random.Range(7f, 10f);  // 좁은 간격 (빠른 대응 필요)
-                    obstacleCount = (Random.value > 0.5f) ? 2 : 1; // 50% 확률로 2개
+                    interval = Random.Range(7f, 10f);  
+                    obstacleCount = (Random.value > 0.5f) ? 2 : 1; 
                 }
 
-                // 2. 장애물 배치 실행
                 SpawnRandomLaneObstacles(currentDist, obstacleCount);
-                
                 currentDist += interval;
             }
+        }
+        
+        public void ResetObstacles()
+        {
+            foreach (GameObject obj in _spawnedObstacles)
+            {
+                if (obj) Destroy(obj);
+            }
+            _spawnedObstacles.Clear();
         }
 
         private void SpawnRandomLaneObstacles(float dist, int count)
         {
             List<int> lanes = new List<int> { -1, 0, 1 };
-            // 랜덤 셔플
             for (int i = 0; i < lanes.Count; i++)
             {
                 int rnd = Random.Range(i, lanes.Count);
                 (lanes[i], lanes[rnd]) = (lanes[rnd], lanes[i]);
             }
 
-            // 결정된 개수만큼 배치
-            for (int i = 0; i < count; i++)
-            {
-                SpawnSingleObstacle(dist, lanes[i]);
-            }
+            for (int i = 0; i < count; i++) SpawnSingleObstacle(dist, lanes[i]);
         }
 
         public void SpawnSingleObstacle(float dist, int laneIdx)
@@ -135,15 +124,14 @@ namespace My.Scripts._04_PlayLong
             GameObject obj = Instantiate(obstaclePrefab, transform);
             obj.transform.position = finalPos;
     
-            var hitChecker = obj.GetComponent<ObstacleHitChecker>();
+            ObstacleHitChecker hitChecker = obj.GetComponent<ObstacleHitChecker>();
             if (!hitChecker) hitChecker = obj.AddComponent<ObstacleHitChecker>();
             
-            // PlayLong 모드 전역 판정을 위해 -1 전달
             hitChecker.Setup(-1, laneIdx); 
 
             if (useDistanceFade)
             {
-                var fader = obj.AddComponent<FrameDistanceFader>();
+                FrameDistanceFader fader = obj.AddComponent<FrameDistanceFader>();
                 if (_targetCamera) fader.targetTransform = _targetCamera.transform;
                 else if (Camera.main) fader.targetTransform = Camera.main.transform;
                 
@@ -162,7 +150,6 @@ namespace My.Scripts._04_PlayLong
             Vector3 displacement = _moveDirection * moveDistance;
             Vector3 forwardDir = (pathEnd - pathStart).normalized;
 
-            // 리스트를 역순으로 순회하며 이동 및 파괴 처리
             for (int i = _spawnedObstacles.Count - 1; i >= 0; i--)
             {
                 GameObject obj = _spawnedObstacles[i];
@@ -172,21 +159,16 @@ namespace My.Scripts._04_PlayLong
                     continue;
                 }
 
-                // 1. 충돌 여부 확인: 이미 충돌하여 멈춰야 하는 장애물인지 체크
-                var hitChecker = obj.GetComponent<ObstacleHitChecker>();
+                ObstacleHitChecker hitChecker = obj.GetComponent<ObstacleHitChecker>();
                 if (hitChecker && hitChecker.IsStopMove) 
                 {
-                    // 부딪힌 장애물은 바닥 스크롤(displacement)을 적용하지 않고 그 자리에 고정
                     continue; 
                 }
 
-                // 2. 물리적 위치 이동: 부딪히지 않은 장애물들만 플레이어 쪽으로 이동
                 obj.transform.position += displacement;
 
-                // 3. 카메라 뒤(기준점 0M 보다 뒤)로 넘어갔는지 체크
                 float distFromStart = Vector3.Dot(obj.transform.position - pathStart, forwardDir);
 
-                // 기준점보다 약 5M 뒤로 가면 파괴 (여유 공간 확보)
                 if (distFromStart < -5f * _worldPerVirtualMeter)
                 {
                     Destroy(obj);

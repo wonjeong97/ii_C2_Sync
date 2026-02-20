@@ -4,9 +4,6 @@ using My.Scripts.Core;
 
 namespace My.Scripts.UI
 {
-    /// <summary>
-    /// 캐릭터의 애니메이션 움직임에 맞춰 마주보는 손을 추적하고 붉은 실 UI를 그리는 컨트롤러.
-    /// </summary>
     [RequireComponent(typeof(RectTransform), typeof(Image))]
     public class RedStringController : MonoBehaviour
     {
@@ -18,7 +15,7 @@ namespace My.Scripts.UI
         [SerializeField] private float thicknessNear = 25f; 
         [SerializeField] private float thicknessFar = 13f;
         [SerializeField] private float thicknessLerpSpeed = 10f;
-        [SerializeField] private float nearYOffset = 30f;   // 손이 맞닿아있을 때 붉은 끈의 y위치를 내릴 값
+        [SerializeField] private float nearYOffset = 30f;   
         
         [Header("Hit & Near Offsets")]
         [SerializeField] private float hitHeightNear = 44f;
@@ -26,7 +23,7 @@ namespace My.Scripts.UI
         [SerializeField] private float minWidthForIdx0 = 45f;
 
         [Header("Distance Sprites")]
-        [SerializeField] private Sprite[] normalSprites; // 200, 400, 800, 1000, 1400
+        [SerializeField] private Sprite[] normalSprites; 
         [SerializeField] private Sprite hit1000;
         [SerializeField] private Sprite hit1400;
 
@@ -128,6 +125,12 @@ namespace My.Scripts.UI
             Camera eventCam = (_parentCanvas.renderMode == RenderMode.ScreenSpaceOverlay) ? null : refCam;
 
             RectTransform parentRect = _rectTransform.parent as RectTransform;
+            if (!parentRect)
+            {
+                Debug.LogWarning("[RedStringController] WorldToCanvas: _rectTransform.parent가 없거나 RectTransform이 아닙니다.");
+                return Vector2.zero;
+            }
+
             RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPos, eventCam, out Vector2 local);
     
             return local;
@@ -135,7 +138,6 @@ namespace My.Scripts.UI
 
         private void UpdateSprite(int idx, bool isHit)
         {
-            // ★ 수정: Sprite 배열의 인덱스 초과 예외 및 null 참조 방어 로직 (클램프)
             if (normalSprites == null || normalSprites.Length == 0)
             {
                 Debug.LogWarning("[RedStringController] normalSprites 배열이 비어있습니다.");

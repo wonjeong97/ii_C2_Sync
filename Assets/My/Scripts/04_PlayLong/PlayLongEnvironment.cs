@@ -79,14 +79,14 @@ namespace My.Scripts._04_PlayLong
                 {   
                     float movedMeters = uvDelta / uvPerMeter;
                     if (obstacleManager) obstacleManager.MoveObstacles(movedMeters);
-                    if (frameManager) frameManager.MoveFrames(movedMeters); // ★ 중복된 movedMeters 연산 통합 완료
+                    if (frameManager) frameManager.MoveFrames(movedMeters); 
                 }
             }
         }
 
         public IEnumerator SmoothResetEnvironment(float duration = 1.0f)
         {
-            _isSmoothResetting = true; // 플래그 설정
+            _isSmoothResetting = true; 
             
             float elapsed = 0f;
             float startOffsetY = _currentOffsetY;
@@ -109,21 +109,22 @@ namespace My.Scripts._04_PlayLong
                 }
 
                 float uvDelta = _currentOffsetY - prevOffset; 
-                if (frameManager && uvPerMeter > 0.000001f)
+                if (uvPerMeter > 0.000001f)
                 {
-                    frameManager.MoveFrames(uvDelta / uvPerMeter);
+                    float movedMeters = uvDelta / uvPerMeter;
+                    if (frameManager) frameManager.MoveFrames(movedMeters);
+                    if (obstacleManager) obstacleManager.MoveObstacles(movedMeters);
                 }
 
                 yield return null;
             }
 
             ResetEnvironmentScroll();
-            if (frameManager)
-            {   
-                frameManager.ResetFrames();
-            }
+            
+            if (frameManager) frameManager.ResetFrames();
+            if (obstacleManager) obstacleManager.ResetObstacles();
 
-            _isSmoothResetting = false; // 플래그 해제
+            _isSmoothResetting = false;
         }
 
         public void ResetEnvironmentScroll()
@@ -137,6 +138,7 @@ namespace My.Scripts._04_PlayLong
                 mainFloor.UpdateUVs();
             }
         }
+        
         private void BackupFogSettings()
         {
             _prevFog = RenderSettings.fog;

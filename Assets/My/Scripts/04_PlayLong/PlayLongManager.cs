@@ -9,9 +9,6 @@ using Wonjeong.Utils;
 
 namespace My.Scripts._04_PlayLong
 {
-    /// <summary>
-    /// PlayLong 씬의 전체 게임 흐름과 튜토리얼 미션 시퀀스를 관리하는 클래스.
-    /// </summary>
     public class PlayLongManager : MonoBehaviour
     {
         [Serializable]
@@ -30,7 +27,7 @@ namespace My.Scripts._04_PlayLong
         [SerializeField] private float timeLimit = 60f;
         [SerializeField] private float readyWaitTimeout = 30f;
         [SerializeField] private TutorialSettingsSO baseSettings;
-        [SerializeField] private float stepDecayTime = 0.5f;    // 설정한 시간 동안 상대방이 밟지 않으면 혼자 쌓은 스탭 횟수가 사라짐.
+        [SerializeField] private float stepDecayTime = 0.5f;   
 
         [Header("Long Mode Lane Positions")]
         [SerializeField] private Vector2[] p1LongLanePositions;
@@ -148,24 +145,18 @@ namespace My.Scripts._04_PlayLong
             yield return StartCoroutine(SpawnCenterObstacleEvent());
         }
 
-        /// <summary>
-        /// 중앙 장애물 스폰 이벤트 및 플레이어 대기 로직.
-        /// </summary>
         private IEnumerator SpawnCenterObstacleEvent()
         {
             if (!obstacleManager) yield break;
 
-            // 1. 장애물 등장 안내 문구 표시
             if (_setting.popupTexts.Length > 3)
             {
                 yield return StartCoroutine(ui.ShowPopupSequence(new[] { _setting.popupTexts[3] }, 2.0f, false));
             }
 
-            // 2. 중앙 장애물 스폰
             obstacleManager.SpawnSingleObstacle(2.0f, 0);
             yield return CoroutineData.GetWaitForSeconds(1.0f);
 
-            // 3. while 루프를 이용한 직접 스크롤 제어
             float totalDistanceToMove = 2.0f;
             float duration = 2.0f;
             float elapsed = 0f;
@@ -175,11 +166,9 @@ namespace My.Scripts._04_PlayLong
                 float deltaTime = Time.deltaTime;
                 elapsed += deltaTime;
 
-                // 매 프레임 이동량을 계산하여 환경 매니저에 전달
                 float stepMove = (totalDistanceToMove / duration) * deltaTime;
                 if (env) env.ScrollByMeter(stepMove);
 
-                // 플레이어가 스턴 상태(충돌)가 되면 루프 탈출
                 if (IsAnyPlayerStunned()) break;
 
                 yield return null;
@@ -187,7 +176,6 @@ namespace My.Scripts._04_PlayLong
 
             yield return CoroutineData.GetWaitForSeconds(2.0f);
 
-            // 4. 환경 리셋 및 준비 단계 진행
             if (env) yield return StartCoroutine(env.SmoothResetEnvironment(1.0f));
 
             if (_setting.popupTexts.Length > 4)
@@ -246,13 +234,13 @@ namespace My.Scripts._04_PlayLong
                 yield return CoroutineData.GetWaitForSeconds(1.0f);
             }
 
-            if (_setting.startText != null)
+            if (_setting != null && _setting.startText != null)
             {
                 ui.SetCenterText(_setting.startText);
             }
             else
             {
-                Debug.LogError("[PlayLongManager] StartCountdownSequence: _setting.startText is null");
+                Debug.LogError("[PlayLongManager] StartCountdownSequence: _setting or startText is null");
             }
 
             yield return CoroutineData.GetWaitForSeconds(1.0f);
@@ -275,7 +263,7 @@ namespace My.Scripts._04_PlayLong
         private void HandlePadDown(int pIdx, int lIdx, int padIdx)
         {
             if (_isInputBlocked) return;
-            if (IsAnyPlayerStunned()) return; // 스턴 중 입력 무시
+            if (IsAnyPlayerStunned()) return; 
 
             bool isAnyActionActive =
                 _isGameActive || _isIntroMissionActive || _isRightMissionActive || _isLeftMissionActive;
@@ -317,7 +305,6 @@ namespace My.Scripts._04_PlayLong
                         _p2StepCount++;
                     }
 
-                    // 2. 동기화 스텝에 맞춰 정확히 1M 단위로 거리 반영
                     ProcessCoopStepSync();
                 }
             }
@@ -331,7 +318,7 @@ namespace My.Scripts._04_PlayLong
                 int delta = currentSynced - _syncedStepCount;
                 _syncedStepCount = currentSynced;
 
-                float addMeters = delta * 1.0f; // 정수 단위 이동
+                float addMeters = delta * 1.0f; 
                 _currentCoopDistance += addMeters;
 
                 if (_isGameActive && ui)
@@ -362,11 +349,16 @@ namespace My.Scripts._04_PlayLong
         {
             foreach (var p in players)
             {
-                if (p != null)
+                if (p)
                 {
                     p.OnHit(2.0f);
                 }
             }
+        }
+
+        public void OnPlayerHit(int playerIdx)
+        {
+            OnBothPlayersHit();
         }
 
         private void Update()
@@ -416,7 +408,6 @@ namespace My.Scripts._04_PlayLong
 
         private void FinishGame()
         {
-            // 중복 실행 방지 및 종료 시퀀스 시작
             if (!_isGameActive) return;
             _isGameActive = false;
 
@@ -425,13 +416,11 @@ namespace My.Scripts._04_PlayLong
 
         private IEnumerator FinishGameSequence()
         {
-            // 1. 모든 플레이어 정지 처리
             foreach (var p in players)
             {
                 if (p) p.ForceStop();
             }
 
-            // 2. 결과에 따른 중앙 팝업 출력
             if (ui)
             {
                 bool isSuccess = _currentCoopDistance >= targetDistance;
@@ -443,7 +432,8 @@ namespace My.Scripts._04_PlayLong
                     }
                     else
                     {
-                        Debug.LogError("[PlayLongManager] FinishGameSequence _setting or _setting.endText is null");
+                        Debug.LogWarning("[PlayLongManager] FinishGameSequence _setting or _setting.endText is null. Using fallback text.");
+                        ui.ShowCenterResultPopup("SUCCESS");
                     }
                 }
                 else
@@ -452,10 +442,8 @@ namespace My.Scripts._04_PlayLong
                 }
             }
 
-            // 3. 3초간 대기 (결과 확인 시간)
             yield return CoroutineData.GetWaitForSeconds(3.0f);
 
-            // 4. 페이드아웃 및 엔딩 씬 로드
             if (GameManager.Instance)
             {
                 GameManager.Instance.ChangeScene(GameConstants.Scene.Ending); 
@@ -468,7 +456,7 @@ namespace My.Scripts._04_PlayLong
         
         public int GetCurrentLane(int playerIdx)
         {
-            if (playerIdx >= 0 && playerIdx < players.Length && players[playerIdx] != null)
+            if (playerIdx >= 0 && playerIdx < players.Length && players[playerIdx])
                 return players[playerIdx].currentLane;
 
             return 1;

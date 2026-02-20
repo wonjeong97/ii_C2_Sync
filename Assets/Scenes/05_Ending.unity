@@ -532,6 +532,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1747783570}
     m_Modifications:
+    - target: {fileID: 1293613217789595690, guid: 214f87b7295377a46b9f07538c95eb53,
+        type: 3}
+      propertyPath: m_Alpha
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2595518514696748669, guid: 214f87b7295377a46b9f07538c95eb53,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -15
+      objectReference: {fileID: 0}
     - target: {fileID: 4632899339886126751, guid: 214f87b7295377a46b9f07538c95eb53,
         type: 3}
       propertyPath: m_Pivot.x
@@ -657,8 +667,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Character_P2
       objectReference: {fileID: 0}
+    - target: {fileID: 9093818429568112734, guid: 214f87b7295377a46b9f07538c95eb53,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -15
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 5664399236974819946, guid: 214f87b7295377a46b9f07538c95eb53, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 214f87b7295377a46b9f07538c95eb53, type: 3}
@@ -1070,6 +1086,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1747783570}
     m_Modifications:
+    - target: {fileID: 1293613217789595690, guid: 214f87b7295377a46b9f07538c95eb53,
+        type: 3}
+      propertyPath: m_Alpha
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2595518514696748669, guid: 214f87b7295377a46b9f07538c95eb53,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -15
+      objectReference: {fileID: 0}
     - target: {fileID: 4632899339886126751, guid: 214f87b7295377a46b9f07538c95eb53,
         type: 3}
       propertyPath: m_Pivot.x
@@ -1195,8 +1221,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Character_P1
       objectReference: {fileID: 0}
+    - target: {fileID: 9093818429568112734, guid: 214f87b7295377a46b9f07538c95eb53,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -15
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 5664399236974819946, guid: 214f87b7295377a46b9f07538c95eb53, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 214f87b7295377a46b9f07538c95eb53, type: 3}
