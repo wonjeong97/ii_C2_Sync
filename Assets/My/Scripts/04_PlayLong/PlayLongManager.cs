@@ -195,10 +195,9 @@ namespace My.Scripts._04_PlayLong
             bool p2Ready = false;
             float readyStartTime = Time.time;
 
-            // 로컬 이벤트 핸들러를 통한 대기 로직 처리
             Action<int, int, int> onReadyPadDown = (pIdx, lIdx, padIdx) =>
             {
-                if (lIdx == 1) // Center lane
+                if (lIdx == 1) 
                 {
                     if (pIdx == 0 && !p1Ready)
                     {
@@ -362,14 +361,6 @@ namespace My.Scripts._04_PlayLong
                     p.OnHit(2.0f);
                 }
             }
-        }
-
-        /// <summary>
-        /// 다른 컴포넌트 호환성을 위한 단일 플레이어 충돌 위임 메서드.
-        /// </summary>
-        public void OnPlayerHit(int playerIdx)
-        {
-            OnBothPlayersHit();
         }
 
         private void Update()
