@@ -79,6 +79,39 @@ namespace My.Scripts._04_PlayLong
             InitializePlayers();
             if (InputManager.Instance) InputManager.Instance.OnPadDown += HandlePadDown;
 
+            StartCoroutine(InitialFlowRoutine());
+        }
+        
+        /// <summary>
+        /// 게임 시작 시 인트로 페이지 연출을 대기한 후 미션 시작.
+        /// </summary>
+        private IEnumerator InitialFlowRoutine()
+        {
+            if (introPage)
+            {
+                bool isIntroDone = false;
+        
+                Action<int> onComplete = (info) => isIntroDone = true;
+                introPage.onStepComplete += onComplete;
+        
+                // 인트로 활성화
+                introPage.OnEnter();
+        
+                float waitStartTime = Time.time;
+                while (!isIntroDone)
+                {
+                    if (Time.time - waitStartTime > readyWaitTimeout)
+                    {
+                        Debug.LogWarning("[PlayLongManager] InitialFlowRoutine timed out waiting for introPage.");
+                        break;
+                    }
+                    yield return null;
+                }
+        
+                introPage.onStepComplete -= onComplete;
+                introPage.OnExit();
+            }
+
             StartIntroMission();
         }
 
@@ -447,7 +480,8 @@ namespace My.Scripts._04_PlayLong
             yield return CoroutineData.GetWaitForSeconds(3.0f);
 
             if (GameManager.Instance)
-            {
+            {   
+                GameManager.Instance.lastPlayDistance = _currentCoopDistance;
                 GameManager.Instance.ChangeScene(GameConstants.Scene.Ending); 
             }
             else

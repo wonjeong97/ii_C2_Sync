@@ -1,0 +1,53 @@
+{
+  "page1": {
+      "distanceFormatText": {
+        "name": "Text_Distance",
+        "position": {"x": 0, "y": 110},
+        "scale": {"x": 1, "y": 1, "z": 1},
+        "text": "우리는 함께\n<b><size=85>{0}M</size></b>를 달려갔어요!",
+        "fontName": "font4",
+        "fontSize": 61,
+        "fontColor": {"r": 1, "g": 1, "b": 1  , "a": 1}
+      }
+  },
+  "page2": {
+    "topTextFormat": {
+      "name": "Text_Top",
+      "position": {"x": 0, "y": 260},
+      "scale": {"x": 1, "y": 1, "z": 1},
+      "text": "‘우리’는 마음조각\n<b><size=70>{0}개</size></b>를 받았습니다.",
+      "fontName": "font4",
+      "fontSize": 61,
+      "fontColor": {"r": 0.1960784, "g": 0.1960784, "b": 0.1960784  , "a": 1}
+    },
+    "bottomTextFormat": {
+      "name": "Text_Bottom",
+      "position": {"x": 0, "y": -400},
+      "scale": {"x": 1, "y": 1, "z": 1},
+      "text": "‘우리’의 마음조각 {0}/20\n",
+      "fontName": "font4",
+      "fontSize": 48,
+      "fontColor": {"r": 0.1960784, "g": 0.1960784, "b": 0.1960784  , "a": 1}
+    }
+  },
+  "page3": {
+    "resultText": {
+      "name": "Text_Result",
+      "position": {"x": 0, "y": -350},
+      "scale": {"x": 1, "y": 1, "z": 1},
+      "text": "체험이 완료되었습니다.\n카드에 표시된 블록으로 이동해 주세요.",
+      "fontName": "font4",
+      "fontSize": 55,
+      "fontColor": {"r": 0.196, "g": 0.196, "b": 0.196, "a": 1}
+    },
+    "allFinishedText": {
+      "name": "Text_AllEnd",
+      "position": {"x": 0, "y": -350},
+      "scale": {"x": 1, "y": 1, "z": 1},
+      "text": "모든 체험이 완료되었습니다.\n결과 출력 공간으로 이동해 주세요.",
+      "fontName": "font4",
+      "fontSize": 55,
+      "fontColor": {"r": 0.196, "g": 0.196, "b": 0.196, "a": 1}
+    }
+  }
+}

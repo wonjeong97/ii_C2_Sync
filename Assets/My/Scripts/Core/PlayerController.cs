@@ -69,7 +69,7 @@ namespace My.Scripts.Core
         private Coroutine _stunCoroutine;
         private Coroutine _moveCoroutine;
 
-        private static readonly int RunSpeedParam = Animator.StringToHash("RunSpeed");
+        private readonly static int RunSpeedParam = Animator.StringToHash("RunSpeed");
 
         /// <summary>
         /// 초기 데이터 및 좌표 설정을 수행합니다.
@@ -100,20 +100,20 @@ namespace My.Scripts.Core
         }
 
         /// <summary>
-        /// 요청된 방향에 따른 손의 현재 월드 좌표를 반환합니다. 
+        /// 요청된 방향에 따른 손의 UI 글로벌 좌표를 반환합니다.
         /// Bone이 할당되지 않은 경우 지정된 UI 오프셋을 캐릭터 좌표에 더해 계산합니다.
         /// </summary>
         /// <param name="isRightHand">true면 오른손, false면 왼손</param>
-        public Vector3 GetHandWorldPosition(bool isRightHand)
+        public Vector3 GetHandUIPosition(bool isRightHand)
         {
             Transform target = isRightHand ? rightHandTransform : leftHandTransform;
-            
-            // 1. 애니메이션 Bone이 할당되어 있다면 해당 월드 좌표 반환
-            if (target != null) return target.position;
+    
+            // 1. 애니메이션 Bone이 할당되어 있다면 해당 UI 글로벌 좌표 반환
+            if (target) return target.position;
 
-            // 2. Bone이 없다면 캐릭터 UI 위치 기준 상대 좌표(-86 또는 86)를 월드 좌표로 변환하여 반환
+            // 2. Bone이 없다면 캐릭터 UI 위치 기준 상대 좌표를 UI 글로벌 좌표로 변환하여 반환
             Vector2 offset = isRightHand ? rightHandDefaultOffset : leftHandDefaultOffset;
-            if (characterUI == null) return transform.position;
+            if (!characterUI) return transform.position;
 
             return characterUI.TransformPoint(offset);
         }
@@ -254,17 +254,24 @@ namespace My.Scripts.Core
             // 이동(점프) 중이거나 현재 위치와 같은 라인이면 무시
             if (_moveCoroutine != null || currentLane == laneIdx) return;
         
+            // ★ [추가] 이동할 칸 수 계산 (1칸 이동인지 2칸 건너뛰기인지 확인)
+            int laneDiff = Mathf.Max(1, Mathf.Abs(laneIdx - currentLane));
             currentLane = laneIdx;
 
             if (characterUI)
             {
                 Vector2 startPos = characterUI.anchoredPosition;
                 Vector2 targetPos = _lanePositions[laneIdx];
-                _moveCoroutine = StartCoroutine(MoveLaneRoutine(startPos, targetPos, jumpDuration));
+                
+                // ★ [추가] 이동하는 칸 수에 비례하여 점프 높이와 체공 시간을 증가시킴
+                float actualArcHeight = jumpArcHeight * laneDiff; 
+                float actualDuration = jumpDuration * (1f + 0.3f * (laneDiff - 1)); // 2칸 이동 시 시간 1.3배
+
+                _moveCoroutine = StartCoroutine(MoveLaneRoutine(startPos, targetPos, actualDuration, actualArcHeight));
             }
         }
 
-        private IEnumerator MoveLaneRoutine(Vector2 startPos, Vector2 targetPos, float duration)
+        private IEnumerator MoveLaneRoutine(Vector2 startPos, Vector2 targetPos, float duration, float arcHeight)
         {
             float elapsed = 0f;
             while (elapsed < duration)
@@ -276,13 +283,12 @@ namespace My.Scripts.Core
                 Vector2 currentPos = Vector2.Lerp(startPos, targetPos, t);
 
                 // 포물선 효과 적용
-                float heightOffset = Mathf.Sin(t * Mathf.PI) * jumpArcHeight;
+                float heightOffset = Mathf.Sin(t * Mathf.PI) * arcHeight;
                 currentPos.y += heightOffset;
-
                 characterUI.anchoredPosition = currentPos;
                 yield return null;
             }
-
+            
             characterUI.anchoredPosition = targetPos;
             _moveCoroutine = null; 
         }
