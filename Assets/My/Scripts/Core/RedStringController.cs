@@ -62,11 +62,11 @@ namespace My.Scripts.UI
             float playerDist = Vector2.Distance(p1Pos, p2Pos);
             int idx = GetThresholdIndex(playerDist);
 
-            Vector3 w1 = player1.GetHandWorldPosition(p1IsLeft); 
-            Vector3 w2 = player2.GetHandWorldPosition(!p1IsLeft);
+            Vector3 w1 = player1.GetHandUIPosition(p1IsLeft); 
+            Vector3 w2 = player2.GetHandUIPosition(!p1IsLeft);
 
-            Vector2 start = WorldToCanvas(w1);
-            Vector2 end = WorldToCanvas(w2);
+            Vector2 start = _rectTransform.parent.InverseTransformPoint(w1);
+            Vector2 end = _rectTransform.parent.InverseTransformPoint(w2);
 
             bool isStunned = player1.IsStunned || player2.IsStunned;
             float targetHeight = (idx == 0) ? thicknessNear : thicknessFar;
@@ -84,7 +84,8 @@ namespace My.Scripts.UI
 
             if (idx == 0)
             {
-                start.y -= nearYOffset; 
+                start.y -= nearYOffset;
+                end.y -= nearYOffset;
             }
 
             Vector2 diff = end - start;
@@ -101,39 +102,6 @@ namespace My.Scripts.UI
             _rectTransform.localScale = p1IsLeft ? Vector3.one : new Vector3(1, -1, 1);
 
             UpdateSprite(idx, isStunned);
-        }
-
-        private Vector2 WorldToCanvas(Vector3 worldPos)
-        {
-            Camera refCam = null;
-            if (_parentCanvas.renderMode == RenderMode.ScreenSpaceCamera || _parentCanvas.renderMode == RenderMode.WorldSpace)
-            {
-                refCam = _parentCanvas.worldCamera;
-            }
-            if (!refCam)
-            {
-                refCam = Camera.main ? Camera.main : Camera.current;
-            }
-
-            if (!refCam)
-            {
-                Debug.LogWarning("[RedStringController] WorldToCanvas: 기준 카메라를 찾을 수 없습니다.");
-                return Vector2.zero;
-            }
-
-            Vector2 screenPos = refCam.WorldToScreenPoint(worldPos);
-            Camera eventCam = (_parentCanvas.renderMode == RenderMode.ScreenSpaceOverlay) ? null : refCam;
-
-            RectTransform parentRect = _rectTransform.parent as RectTransform;
-            if (!parentRect)
-            {
-                Debug.LogWarning("[RedStringController] WorldToCanvas: _rectTransform.parent가 없거나 RectTransform이 아닙니다.");
-                return Vector2.zero;
-            }
-
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPos, eventCam, out Vector2 local);
-    
-            return local;
         }
 
         private void UpdateSprite(int idx, bool isHit)
