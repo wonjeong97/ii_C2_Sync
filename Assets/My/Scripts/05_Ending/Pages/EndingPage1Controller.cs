@@ -1,11 +1,12 @@
 using System;
 using System.Collections;
 using My.Scripts.Core;
+using My.Scripts.UI;
 using UnityEngine;
 using UnityEngine.UI;
 using Wonjeong.Data;
 using Wonjeong.UI;
-using Wonjeong.Utils; // CoroutineData 사용
+using Wonjeong.Utils;
 
 namespace My.Scripts._05_Ending.Pages
 {
@@ -86,7 +87,7 @@ namespace My.Scripts._05_Ending.Pages
             // 1. 피켓과 캐릭터 페이드인 (1초)
             if (picketAndCharsCg)
             {
-                yield return StartCoroutine(FadeCanvasGroup(picketAndCharsCg, 0f, 1f, 1.0f));
+                yield return StartCoroutine(UIUtils.FadeCanvasGroup(picketAndCharsCg, 0f, 1f, 1.0f));
             }
 
             // 2. 결과 텍스트 페이드인 (1초)
@@ -119,30 +120,11 @@ namespace My.Scripts._05_Ending.Pages
         public override void OnExit()
         {
             base.OnExit();
-            
-            if (_particleRoutine != null)
-            {
-                StopCoroutine(_particleRoutine);
-                _particleRoutine = null;
-            }
-            
             StopAllCoroutines();
+            _particleRoutine = null;
         }
 
         // --- Utility Coroutines ---
-
-        private IEnumerator FadeCanvasGroup(CanvasGroup cg, float start, float end, float duration)
-        {
-            float elapsed = 0f;
-            cg.alpha = start;
-            while (elapsed < duration)
-            {
-                elapsed += Time.deltaTime;
-                cg.alpha = Mathf.Lerp(start, end, elapsed / duration);
-                yield return null;
-            }
-            cg.alpha = end;
-        }
 
         private IEnumerator FadeTextAlpha(Text txt, float start, float end, float duration)
         {

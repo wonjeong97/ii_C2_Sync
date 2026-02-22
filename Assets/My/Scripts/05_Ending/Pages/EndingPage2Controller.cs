@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using My.Scripts.Core;
+using My.Scripts.UI;
 using UnityEngine;
 using UnityEngine.UI;
 using Wonjeong.Data;
@@ -38,6 +39,7 @@ namespace My.Scripts._05_Ending.Pages
 
         protected override void SetupData(EndingPage2Data data)
         {
+            if (data == null) return;
             _data = data;
         }
 
@@ -71,12 +73,12 @@ namespace My.Scripts._05_Ending.Pages
                 }
             }
 
-            // ★ 4. 조각 이미지 스프라이트 및 투명도(Alpha) 갱신
+            // 4. 조각 이미지 스프라이트 및 투명도(Alpha) 갱신
             if (heartImages != null)
             {
                 for (int i = 0; i < heartImages.Length; i++)
                 {
-                    if (heartImages[i] != null)
+                    if (heartImages[i])
                     {
                         bool isGot = i < fragments;
                         
@@ -103,7 +105,7 @@ namespace My.Scripts._05_Ending.Pages
             // 1. 중간 마음조각 이미지들 페이드인 (1초)
             if (heartsCg)
             {
-                yield return StartCoroutine(FadeCanvasGroup(heartsCg, 0f, 1f, 1.0f));
+                yield return StartCoroutine(UIUtils.FadeCanvasGroup(heartsCg, 0f, 1f, 1.0f));
             }
 
             // 2. 1초 대기
@@ -112,7 +114,7 @@ namespace My.Scripts._05_Ending.Pages
             // 3. 상단, 하단 텍스트 페이드인 (1초)
             if (textsCg)
             {
-                yield return StartCoroutine(FadeCanvasGroup(textsCg, 0f, 1f, 1.0f));
+                yield return StartCoroutine(UIUtils.FadeCanvasGroup(textsCg, 0f, 1f, 1.0f));
             }
 
             // 4. 2초 대기 후 완료
@@ -125,20 +127,6 @@ namespace My.Scripts._05_Ending.Pages
         {
             base.OnExit();
             StopAllCoroutines();
-        }
-
-        // --- Utility Coroutine ---
-        private IEnumerator FadeCanvasGroup(CanvasGroup cg, float start, float end, float duration)
-        {
-            float elapsed = 0f;
-            cg.alpha = start;
-            while (elapsed < duration)
-            {
-                elapsed += Time.deltaTime;
-                cg.alpha = Mathf.Lerp(start, end, elapsed / duration);
-                yield return null;
-            }
-            cg.alpha = end;
         }
     }
 }

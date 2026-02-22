@@ -97,8 +97,14 @@ namespace My.Scripts._04_PlayLong
                 // 인트로 활성화
                 introPage.OnEnter();
         
+                float waitStartTime = Time.time;
                 while (!isIntroDone)
                 {
+                    if (Time.time - waitStartTime > readyWaitTimeout)
+                    {
+                        Debug.LogWarning("[PlayLongManager] InitialFlowRoutine timed out waiting for introPage.");
+                        break;
+                    }
                     yield return null;
                 }
         

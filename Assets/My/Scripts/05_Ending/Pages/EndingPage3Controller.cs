@@ -35,7 +35,7 @@ namespace My.Scripts._05_Ending.Pages
             // 엔딩의 다양성을 위해 50% 확률로 일반 엔딩과 특별 엔딩(Red Line)을 분기합니다.
             // # TODO: 현재는 랜덤이지만, 추후 API에 따라 변경 필요
             int randomValue = UnityEngine.Random.Range(0, 2);
-            TextSetting textToUse = data.resultText;
+            TextSetting textToUse;
 
             if (randomValue == 1 && data.allFinishedText != null)
             {
@@ -104,20 +104,31 @@ namespace My.Scripts._05_Ending.Pages
         /// <summary>
         /// 이미지의 FillAmount를 조절하여 게이지가 차오르는 듯한 연출을 수행합니다. (붉은 실 연출용)
         /// </summary>
-        private IEnumerator FillImageRoutine(Image t, float s, float e, float d)
+        private IEnumerator FillImageRoutine(Image image, float start, float end, float duration)
         {
-            if (!t) yield break;
+            if (!image) yield break;
             float time = 0f;
-            t.fillAmount = s;
+            image.fillAmount = start;
             
-            while (time < d)
+            while (time < duration)
             {
                 time += Time.deltaTime;
-                t.fillAmount = Mathf.Lerp(s, e, time / d);
+                image.fillAmount = Mathf.Lerp(start, end, time / duration);
                 yield return null;
             }
 
-            t.fillAmount = e;
+            image.fillAmount = end;
+        }
+        
+        public override void OnExit()
+        {
+            base.OnExit();
+            StopAllCoroutines();
+            if (redLineImage)
+            {
+                redLineImage.fillAmount = 0f;
+                redLineImage.gameObject.SetActive(false);
+            }
         }
     }
 }

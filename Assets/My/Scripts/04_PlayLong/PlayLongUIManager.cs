@@ -1,4 +1,5 @@
 using System.Collections;
+using My.Scripts.UI;
 using UnityEngine;
 using UnityEngine.UI;
 using Wonjeong.Data;
@@ -152,7 +153,7 @@ namespace My.Scripts._04_PlayLong
             popup.gameObject.SetActive(true);
             popupText.supportRichText = true;
 
-            yield return StartCoroutine(FadeCanvasGroup(popup, popup.alpha, 1f, 0.5f));
+            yield return StartCoroutine(UIUtils.FadeCanvasGroup(popup, popup.alpha, 1f, 0.5f));
 
             for (int i = 0; i < textDatas.Length; i++)
             {
@@ -203,7 +204,7 @@ namespace My.Scripts._04_PlayLong
 
             if (hideAtEnd)
             {
-                yield return StartCoroutine(FadeCanvasGroup(popup, 1f, 0f, 0.5f));
+                yield return StartCoroutine(UIUtils.FadeCanvasGroup(popup, 1f, 0f, 0.5f));
 
                 popup.gameObject.SetActive(false);
             }
@@ -271,7 +272,7 @@ namespace My.Scripts._04_PlayLong
 
             yield return StartCoroutine(FadeTextAlpha(popupText, 0f, 1f, 0.5f));
 
-            if (redStringCanvasGroup) yield return StartCoroutine(FadeCanvasGroup(redStringCanvasGroup, 0f, 1f, 2.0f));
+            if (redStringCanvasGroup) yield return StartCoroutine(UIUtils.FadeCanvasGroup(redStringCanvasGroup, 0f, 1f, 2.0f));
         }
 
         public IEnumerator FadeInSecondLine(TextSetting textData, float duration)
@@ -318,20 +319,6 @@ namespace My.Scripts._04_PlayLong
             if (timerText) timerText.text = Mathf.CeilToInt(Mathf.Max(0f, time)).ToString();
         }
 
-        private IEnumerator FadeCanvasGroup(CanvasGroup cg, float start, float end, float duration)
-        {
-            float t = 0f;
-            cg.alpha = start;
-            while (t < duration)
-            {
-                t += Time.deltaTime;
-                cg.alpha = Mathf.Lerp(start, end, t / duration);
-                yield return null;
-            }
-
-            cg.alpha = end;
-        }
-
         private IEnumerator FadeTextAlpha(Text txt, float start, float end, float duration)
         {
             float t = 0f;
@@ -357,7 +344,7 @@ namespace My.Scripts._04_PlayLong
 
         private IEnumerator HideQuestionPopupRoutine(float duration)
         {
-            yield return StartCoroutine(FadeCanvasGroup(popup, popup.alpha, 0f, duration));
+            yield return StartCoroutine(UIUtils.FadeCanvasGroup(popup, popup.alpha, 0f, duration));
 
             popup.gameObject.SetActive(false);
             popup.blocksRaycasts = true;

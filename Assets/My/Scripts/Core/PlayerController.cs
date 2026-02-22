@@ -282,15 +282,12 @@ namespace My.Scripts.Core
                 // 직선 이동 보간
                 Vector2 currentPos = Vector2.Lerp(startPos, targetPos, t);
 
-                // 포물선 효과 적용 (사인 곡선 유지, 동적 높이 적용)
+                // 포물선 효과 적용
                 float heightOffset = Mathf.Sin(t * Mathf.PI) * arcHeight;
                 currentPos.y += heightOffset;
-                Debug.Log($"{currentPos.y}");
                 characterUI.anchoredPosition = currentPos;
                 yield return null;
             }
-            
-            
             
             characterUI.anchoredPosition = targetPos;
             _moveCoroutine = null; 

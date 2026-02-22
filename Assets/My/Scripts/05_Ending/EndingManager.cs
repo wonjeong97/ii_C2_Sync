@@ -42,7 +42,7 @@ namespace My.Scripts._05_Ending
             // 인스펙터에 등록된 페이지 배열에 순차적으로 데이터 주입
             if (pages != null && pages.Length > 0)
             {
-                if (pages.Length > 0 && pages[0] is EndingPage1Controller page1) 
+                if (pages[0] is EndingPage1Controller page1) 
                     page1.SetupData(setting.page1);
                 
                 if (pages.Length > 1 && pages[1] is EndingPage2Controller page2) 
