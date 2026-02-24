@@ -78,18 +78,19 @@ namespace My.Scripts._02_PlayTutorial.Managers
 
         public void StopArrowFadeOut(int playerIdx, bool isRight, float duration)
         {
-            UIArrowAnimator target = null;
+            UIArrowAnimator target;
             if (playerIdx == 0) target = isRight ? p1RightArrow : p1LeftArrow;
             else target = isRight ? p2RightArrow : p2LeftArrow;
 
-            if (target != null && target.gameObject.activeSelf)
+            if (target && target.gameObject.activeSelf)
                 target.FadeOutAndStop(duration);
         }
 
         // --- Popup & Text Control (Tutorial Generic) ---
 
         public void ShowPopupImmediately(string text)
-        {
+        {   
+            SoundManager.Instance?.PlaySFX("공통_7");
             if (popupText) popupText.text = text;
             if (popup)
             {
@@ -112,6 +113,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
         {   
             if (!popup) yield break;
             if (!popup.gameObject.activeInHierarchy) popup.gameObject.SetActive(true);
+            SoundManager.Instance?.PlaySFX("공통_7");
             yield return StartCoroutine(FadeCanvasGroup(popup, 0f, 1f, duration));
         }
 
@@ -134,7 +136,8 @@ namespace My.Scripts._02_PlayTutorial.Managers
 
             centerText.text = message;
             centerText.gameObject.SetActive(true);
-
+            SoundManager.Instance?.PlaySFX("공통_20");
+            
             yield return StartCoroutine(FadeTextAlpha(centerText, 0f, 1f, 0.5f));
             yield return CoroutineData.GetWaitForSeconds(duration);
             yield return StartCoroutine(FadeTextAlpha(centerText, 1f, 0f, 0.5f));
@@ -180,6 +183,11 @@ namespace My.Scripts._02_PlayTutorial.Managers
                     finalPageText.text = setting.text;
                 }
 
+                
+                if (finalPageText.gameObject.name == "Text_Step1")
+                {
+                    SoundManager.Instance?.PlaySFX("공통_13");
+                }
                 // 텍스트 페이드 인 (0 -> 1)
                 yield return StartCoroutine(FadeTextAlpha(finalPageText, 0f, 1f, 1f));
         

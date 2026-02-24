@@ -1,5 +1,6 @@
 using My.Scripts.Core;
 using UnityEngine;
+using Wonjeong.UI;
 
 namespace My.Scripts._00_Title
 {
@@ -8,7 +9,16 @@ namespace My.Scripts._00_Title
     /// </summary>
     public class TitleManager : MonoBehaviour
     {
-        private bool _isTransitioning; 
+        private bool _isTransitioning;
+
+        private void Start()
+        {
+            SoundManager.Instance?.PlayBGM("MainBGM");
+            if (GameManager.Instance)
+            {
+                GameManager.Instance.IsAutoProgressing = true;
+            }
+        }
 
         void Update()
         {

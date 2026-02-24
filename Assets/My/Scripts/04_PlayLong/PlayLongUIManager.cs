@@ -1,6 +1,7 @@
 using System.Collections;
 using My.Scripts.UI;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using Wonjeong.Data;
 using Wonjeong.UI;
@@ -20,7 +21,7 @@ namespace My.Scripts._04_PlayLong
         [Header("HUD")]
         [SerializeField] private Text centerText;
         [SerializeField] private Text timerText;
-        [SerializeField] private CanvasGroup padImagesCG;
+        [SerializeField] private CanvasGroup padImagesCg;
 
         [Header("Red String Animation")]
         [SerializeField] private CanvasGroup redStringCanvasGroup;
@@ -28,8 +29,8 @@ namespace My.Scripts._04_PlayLong
         [Header("Side HUD")]
         [SerializeField] private PlayLongGaugeController p1LongGauge;
         [SerializeField] private PlayLongGaugeController p2LongGauge;
-        [SerializeField] private CanvasGroup p1SideDistCG;
-        [SerializeField] private CanvasGroup p2SideDistCG;
+        [SerializeField] private CanvasGroup p1SideDistCg;
+        [SerializeField] private CanvasGroup p2SideDistCg;
 
         [Header("Side HUD - Distance Markers")]
         [SerializeField] private Image[] p1DistMarkers;
@@ -44,6 +45,8 @@ namespace My.Scripts._04_PlayLong
 
         private string _originalFullText;
         private Coroutine _textBlinkCoroutine;
+        
+        private int _lastActiveMarkerCount;
 
         public void InitUI(float maxDistance)
         {
@@ -60,15 +63,16 @@ namespace My.Scripts._04_PlayLong
             }
 
             if (centerText) centerText.gameObject.SetActive(false);
-            if (timerText) timerText.text = "";
+            if (timerText) timerText.text = "60";
 
             if (p1LongGauge) p1LongGauge.ResetGauge();
             if (p2LongGauge) p2LongGauge.ResetGauge();
 
-            if (p1SideDistCG) p1SideDistCG.alpha = 0f;
-            if (p2SideDistCG) p2SideDistCG.alpha = 0f;
-            if (padImagesCG) padImagesCG.alpha = 1f;
+            if (p1SideDistCg) p1SideDistCg.alpha = 0f;
+            if (p2SideDistCg) p2SideDistCg.alpha = 0f;
+            if (padImagesCg) padImagesCg.alpha = 1f;
 
+            _lastActiveMarkerCount = 0;
             ResetDistMarkers();
         }
 
@@ -98,8 +102,15 @@ namespace My.Scripts._04_PlayLong
             if (p1DistMarkers == null || p2DistMarkers == null) return;
 
             int activeCount = Mathf.FloorToInt(currentDist / 100f);
+            
+            if (activeCount > _lastActiveMarkerCount)
+            {
+                SoundManager.Instance?.PlaySFX("달리기_3");
+                _lastActiveMarkerCount = activeCount;
+            }
+            
             int len = Mathf.Min(p1DistMarkers.Length, p2DistMarkers.Length);
-
+            
             for (int i = 0; i < len; i++)
             {
                 if (i < activeCount)
@@ -152,7 +163,7 @@ namespace My.Scripts._04_PlayLong
 
             popup.gameObject.SetActive(true);
             popupText.supportRichText = true;
-
+            
             yield return StartCoroutine(UIUtils.FadeCanvasGroup(popup, popup.alpha, 1f, 0.5f));
 
             for (int i = 0; i < textDatas.Length; i++)
@@ -358,17 +369,17 @@ namespace My.Scripts._04_PlayLong
                 elapsed += Time.deltaTime;
                 float progress = Mathf.Clamp01(elapsed / duration);
 
-                if (p1SideDistCG) p1SideDistCG.alpha = progress;
-                if (p2SideDistCG) p2SideDistCG.alpha = progress;
+                if (p1SideDistCg) p1SideDistCg.alpha = progress;
+                if (p2SideDistCg) p2SideDistCg.alpha = progress;
 
-                if (padImagesCG) padImagesCG.alpha = 1f - progress;
+                if (padImagesCg) padImagesCg.alpha = 1f - progress;
 
                 yield return null;
             }
 
-            if (p1SideDistCG) p1SideDistCG.alpha = 1f;
-            if (p2SideDistCG) p2SideDistCG.alpha = 1f;
-            if (padImagesCG) padImagesCG.alpha = 0f;
+            if (p1SideDistCg) p1SideDistCg.alpha = 1f;
+            if (p2SideDistCg) p2SideDistCg.alpha = 1f;
+            if (padImagesCg) padImagesCg.alpha = 0f;
         }
 
         public void UpdateLongCoopGauge(float current, float max)

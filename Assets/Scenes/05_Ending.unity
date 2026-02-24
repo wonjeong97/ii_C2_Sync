@@ -1011,7 +1011,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   reporter: {fileID: 0}
   firstTaggedPlayer: 0
-  lastPlayDistance: 170
+  lastPlayDistance: 500
 --- !u!4 &1183436242
 Transform:
   m_ObjectHideFlags: 0

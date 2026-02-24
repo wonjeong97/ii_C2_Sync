@@ -68,7 +68,7 @@ namespace My.Scripts._01_Tutorial.Pages
         /// </summary>
         private IEnumerator AutoPassRoutine()
         {
-            // 사용자가 텍스트를 읽을 시간을 부여하기 위해 3초간 대기
+            SoundManager.Instance?.PlaySFX("공통_6");
             yield return CoroutineData.GetWaitForSeconds(3.0f);
 
             // 대기 시간 동안 사용자가 이미 스킵하지 않았을 경우에만 완료 처리

@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using Wonjeong.UI;
+using Wonjeong.Utils;
 
 namespace My.Scripts.Core
 {
@@ -70,6 +72,11 @@ namespace My.Scripts.Core
         private Coroutine _moveCoroutine;
 
         private readonly static int RunSpeedParam = Animator.StringToHash("RunSpeed");
+        private readonly static int Finish = Animator.StringToHash("Finish");
+        private readonly static int Jump = Animator.StringToHash("Jump");
+        private readonly static int Idle = Animator.StringToHash("Idle");
+        
+        public Animator CharacterAnimator => characterAnimator;
 
         /// <summary>
         /// 초기 데이터 및 좌표 설정을 수행합니다.
@@ -254,7 +261,6 @@ namespace My.Scripts.Core
             // 이동(점프) 중이거나 현재 위치와 같은 라인이면 무시
             if (_moveCoroutine != null || currentLane == laneIdx) return;
         
-            // ★ [추가] 이동할 칸 수 계산 (1칸 이동인지 2칸 건너뛰기인지 확인)
             int laneDiff = Mathf.Max(1, Mathf.Abs(laneIdx - currentLane));
             currentLane = laneIdx;
 
@@ -263,10 +269,10 @@ namespace My.Scripts.Core
                 Vector2 startPos = characterUI.anchoredPosition;
                 Vector2 targetPos = _lanePositions[laneIdx];
                 
-                // ★ [추가] 이동하는 칸 수에 비례하여 점프 높이와 체공 시간을 증가시킴
                 float actualArcHeight = jumpArcHeight * laneDiff; 
                 float actualDuration = jumpDuration * (1f + 0.3f * (laneDiff - 1)); // 2칸 이동 시 시간 1.3배
-
+                
+                SoundManager.Instance?.PlaySFX("달리기_1");
                 _moveCoroutine = StartCoroutine(MoveLaneRoutine(startPos, targetPos, actualDuration, actualArcHeight));
             }
         }
@@ -301,9 +307,21 @@ namespace My.Scripts.Core
         
         public void SetFinishAnimation()
         {
-            if (characterAnimator != null)
+            if (characterAnimator)
             {
-                characterAnimator.SetTrigger("Finish");
+                characterAnimator.SetTrigger(Finish);
+                characterAnimator.SetTrigger(Jump);
+            }
+        }
+
+        public IEnumerator SetFinishRoutine()
+        {
+            if (characterAnimator)
+            {
+                characterAnimator.SetTrigger(Finish);
+                characterAnimator.SetTrigger(Jump);
+                yield return CoroutineData.GetWaitForSeconds(1.0f);
+                characterAnimator.SetTrigger(Idle);
             }
         }
     }

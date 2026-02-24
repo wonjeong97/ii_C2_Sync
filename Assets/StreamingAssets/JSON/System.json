@@ -1,0 +1,29 @@
+{
+  "inactivityWarningText": {
+    "name": "Text_1",
+    "position": {"x": 0, "y": 0},
+    "scale": {"x": 1, "y": 1, "z": 1},
+    "text": "움직여주세요.",
+    "fontName": "font6",
+    "fontSize": 55,
+    "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}
+  },
+  "inactivityResetText": {
+    "name": "Text_2",
+    "position": {"x": 0, "y": 0},
+    "scale": {"x": 1, "y": 1, "z": 1},
+    "text": "동작이 인식 되지 않아 초기화 됩니다.",
+    "fontName": "font6",
+    "fontSize": 55,
+    "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}
+  },
+  "tagText": {
+    "name": "Text_2",
+    "position": {"x": 0, "y": 0},
+    "scale": {"x": 1, "y": 1, "z": 1},
+    "text": "태그해주세요.",
+    "fontName": "font6",
+    "fontSize": 55,
+    "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}
+  }
+}

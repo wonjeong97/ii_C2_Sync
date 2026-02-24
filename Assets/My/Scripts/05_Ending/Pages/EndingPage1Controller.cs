@@ -58,7 +58,6 @@ namespace My.Scripts._05_Ending.Pages
             float dist = GameManager.Instance ? GameManager.Instance.lastPlayDistance : 0f;
             int finalDistance = Mathf.FloorToInt(dist);
 
-            // 패턴 매칭 병합 취소: 기존의 명시적 null 체크 방식으로 복구
             if (_data != null && _data.distanceFormatText != null && distanceTextUI)
             {
                 if (UIManager.Instance) 
@@ -83,7 +82,8 @@ namespace My.Scripts._05_Ending.Pages
         /// 정의된 순서대로 페이드 인 및 애니메이션을 실행하는 코루틴.
         /// </summary>
         private IEnumerator EntranceSequence(int finalDistance)
-        {
+        {   
+            SoundManager.Instance?.PlayBGM("MainBGM");
             // 1. 피켓과 캐릭터 페이드인 (1초)
             if (picketAndCharsCg)
             {
@@ -99,9 +99,13 @@ namespace My.Scripts._05_Ending.Pages
             // 3. 500M 만점 달성 시 파티클 점멸 시작
             if (finalDistance >= 500 && particleCg)
             {
+                SoundManager.Instance?.PlaySFX("달리기_4");
                 particleCg.gameObject.SetActive(true);
-                // IDE 경고 해결: 코루틴 변수 할당 후 재사용
                 _particleRoutine = StartCoroutine(BlinkRoutine(particleCg, 0.5f));
+            }
+            else
+            {
+                SoundManager.Instance?.PlaySFX("달리기_5");
             }
 
             // 4. 두 캐릭터 점프 애니메이션 트리거

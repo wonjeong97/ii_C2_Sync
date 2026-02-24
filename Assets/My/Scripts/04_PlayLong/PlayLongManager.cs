@@ -5,6 +5,7 @@ using My.Scripts.Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Wonjeong.Data;
+using Wonjeong.UI;
 using Wonjeong.Utils;
 
 namespace My.Scripts._04_PlayLong
@@ -61,6 +62,7 @@ namespace My.Scripts._04_PlayLong
 
         private float _p1LastStepTime;
         private float _p2LastStepTime;
+        private float _lastHitSoundTime = -1f;
 
         private const float RequiredIntroDistance = 6.0f;
         private const float RequiredRightDistance = 10.0f;
@@ -79,9 +81,46 @@ namespace My.Scripts._04_PlayLong
             InitializePlayers();
             if (InputManager.Instance) InputManager.Instance.OnPadDown += HandlePadDown;
 
+            // 게임 시작 시 인트로 컷신이 나오므로 글로벌 방치 타이머를 일시 정지함
+            SetAutoProgressing(true);
             StartCoroutine(InitialFlowRoutine());
         }
         
+        private void OnDestroy()
+        {
+            if (InputManager.Instance) InputManager.Instance.OnPadDown -= HandlePadDown;
+            if (Instance == this) Instance = null;
+
+            // 씬이 파괴될 때 글로벌 방치 타이머를 기본 상태(동작)로 복구함
+            if (GameManager.Instance)
+            {
+                GameManager.Instance.IsAutoProgressing = false;
+            }
+        }
+
+        /// <summary>
+        /// 게임 매니저의 글로벌 방치 타이머 상태를 제어함.
+        /// 연출 구간에서는 타이머를 끄고(true), 실제 플레이 구간에서는 켬(false).
+        /// </summary>
+        /// <param name="isAuto">true: 타이머 멈춤(자동 연출 중), false: 타이머 가동(사용자 입력 대기)</param>
+        private void SetAutoProgressing(bool isAuto)
+        {
+            if (GameManager.Instance)
+            {
+                GameManager.Instance.IsAutoProgressing = isAuto;
+                
+                // 사용자가 직접 움직여야 하는 구간이 새롭게 시작될 때, 온전한 20초를 보장하기 위해 리셋함
+                if (!isAuto)
+                {
+                    GameManager.Instance.ResetInactivityTimer();
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[PlayLongManager] GameManager.Instance를 찾을 수 없습니다.");
+            }
+        }
+
         /// <summary>
         /// 게임 시작 시 인트로 페이지 연출을 대기한 후 미션 시작.
         /// </summary>
@@ -94,7 +133,6 @@ namespace My.Scripts._04_PlayLong
                 Action<int> onComplete = (info) => isIntroDone = true;
                 introPage.onStepComplete += onComplete;
         
-                // 인트로 활성화
                 introPage.OnEnter();
         
                 float waitStartTime = Time.time;
@@ -131,15 +169,19 @@ namespace My.Scripts._04_PlayLong
         {
             if (_setting == null || _setting.popupTexts == null)
             {
-                Debug.LogError("[PlayLongManager] 설정 데이터가 없어 연출을 스킵합니다.");
-                StartInGame();
+                Debug.LogError("[PlayLongManager] 설정 데이터가 없습니다.");
                 yield break;
             }
 
             _isInputBlocked = true;
+            
+            // 레드라인 컷신 시작, 타이머 정지
+            SetAutoProgressing(true);
+            
             foreach (PlayerController p in players)
-                if (p)
-                    p.ForceStop();
+            {
+                if (p) p.ForceStop();
+            }
 
             if (ui)
             {
@@ -153,12 +195,21 @@ namespace My.Scripts._04_PlayLong
             _isRightMissionActive = true;
             _currentCoopDistance = 0f;
 
+            // 우측 이동 미션 대기, 타이머 가동
+            SetAutoProgressing(false);
+
             while (_currentCoopDistance < RequiredRightDistance) yield return null;
 
             _isRightMissionActive = false;
+            
+            // 미션 완료 후 다음 텍스트 연출 대기, 타이머 정지
+            SetAutoProgressing(true);
+            
             foreach (PlayerController p in players)
-                if (p)
-                    p.ForceStop();
+            {
+                if (p) p.ForceStop();
+            }
+                
             if (padDotController) padDotController.StopBlinking(new[] { 4, 5, 10, 11 });
 
             yield return CoroutineData.GetWaitForSeconds(0.5f);
@@ -170,13 +221,22 @@ namespace My.Scripts._04_PlayLong
             _p1StepCount = _p2StepCount = _syncedStepCount = 0;
             _currentCoopDistance = 0f;
 
+            // 좌측 이동 미션 대기, 타이머 가동
+            SetAutoProgressing(false);
+
             while (_currentCoopDistance < RequiredLeftDistance) yield return null;
 
             _isLeftMissionActive = false;
             _isInputBlocked = true;
+            
+            // 좌측 미션 완료 및 자동 회피 컷신 진입, 타이머 정지
+            SetAutoProgressing(true);
+            
             foreach (PlayerController p in players)
-                if (p)
-                    p.ForceStop();
+            {
+                if (p) p.ForceStop();
+            }
+                
             if (padDotController) padDotController.StopBlinking(new[] { 0, 1, 10, 11 });
 
             yield return StartCoroutine(SpawnCenterObstacleEvent());
@@ -228,6 +288,9 @@ namespace My.Scripts._04_PlayLong
             bool p2Ready = false;
             float readyStartTime = Time.time;
 
+            // 두 플레이어가 중앙 발판을 밟아 준비 완료할 때까지 대기, 방치 타이머 가동
+            SetAutoProgressing(false);
+
             Action<int, int, int> onReadyPadDown = (pIdx, lIdx, padIdx) =>
             {
                 if (lIdx == 1) 
@@ -255,6 +318,9 @@ namespace My.Scripts._04_PlayLong
 
             if (InputManager.Instance) InputManager.Instance.OnPadDown -= onReadyPadDown;
 
+            // 준비 완료 후 카운트다운 연출 시작, 타이머 정지
+            SetAutoProgressing(true);
+
             if (ui)
             {
                 ui.StopPopupTextBlinking();
@@ -262,18 +328,22 @@ namespace My.Scripts._04_PlayLong
             }
 
             yield return StartCoroutine(StartCountdownSequence());
-
+            
+            yield return CoroutineData.GetWaitForSeconds(0.1f);
             StartInGame();
         }
 
         private IEnumerator StartCountdownSequence()
         {
+            if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_10_3초");
             for (int i = 3; i > 0; i--)
             {
                 if (ui) ui.SetCenterText(i.ToString(), true);
                 yield return CoroutineData.GetWaitForSeconds(1.0f);
             }
-
+            
+            yield return CoroutineData.GetWaitForSeconds(0.1f);
+            if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_14");
             if (_setting != null && _setting.startText != null)
             {
                 if (ui) ui.SetCenterText(_setting.startText);
@@ -291,13 +361,17 @@ namespace My.Scripts._04_PlayLong
         private void StartIntroMission()
         {
             if (ui && _setting != null && _setting.popupTexts != null && _setting.popupTexts.Length > 0)
-            {
+            {   
+                if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_7");
                 StartCoroutine(ui.ShowPopupSequence(new[] { _setting.popupTexts[0] }, 3.0f, false));
             }
 
             _isIntroMissionActive = true;
             _currentCoopDistance = 0f;
             _p1LastStepTime = _p2LastStepTime = Time.time;
+            
+            // 첫 미션 입력 대기, 방치 타이머 가동
+            SetAutoProgressing(false);
         }
 
         private void HandlePadDown(int pIdx, int lIdx, int padIdx)
@@ -309,7 +383,7 @@ namespace My.Scripts._04_PlayLong
                 _isGameActive || _isIntroMissionActive || _isRightMissionActive || _isLeftMissionActive;
             if (!isAnyActionActive) return;
 
-            if (pIdx >= 0 && pIdx < players.Length && players[pIdx])
+            if (players != null && pIdx >= 0 && pIdx < players.Length && players[pIdx])
             {
                 if (players[pIdx].HandleInput(lIdx, padIdx))
                 {
@@ -373,8 +447,9 @@ namespace My.Scripts._04_PlayLong
                 {
                     _isIntroMissionActive = false;
                     foreach (PlayerController p in players)
-                        if (p)
-                            p.ForceStop();
+                    {
+                        if (p) p.ForceStop();
+                    }
                     _p1StepCount = _p2StepCount = _syncedStepCount = 0;
                     StartCoroutine(RedStringIntroSequence());
                 }
@@ -386,13 +461,15 @@ namespace My.Scripts._04_PlayLong
         }
 
         public void OnBothPlayersHit()
-        {
+        {   
+            if (Time.time - _lastHitSoundTime > 0.1f)
+            {
+                if (SoundManager.Instance) SoundManager.Instance.PlaySFX("달리기_2");
+                _lastHitSoundTime = Time.time;
+            }
             foreach (PlayerController p in players)
             {
-                if (p)
-                {
-                    p.OnHit(2.0f);
-                }
+                if (p) p.OnHit(2.0f);
             }
         }
 
@@ -402,11 +479,13 @@ namespace My.Scripts._04_PlayLong
             bool isPhysicsActive =
                 (_isGameActive || _isIntroMissionActive || _isRightMissionActive || _isLeftMissionActive) &&
                 !_isInputBlocked;
+                
             if (isPhysicsActive)
             {
                 foreach (PlayerController p in players)
-                    if (p)
-                        p.OnUpdate(false, 0, 0);
+                {
+                    if (p) p.OnUpdate(false, 0, 0);
+                }
             }
 
             if (!_isGameActive) return;
@@ -432,13 +511,17 @@ namespace My.Scripts._04_PlayLong
         }
 
         private void StartInGame()
-        {
+        {   
+            if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_15_60초");   
             _currentTime = timeLimit;
             _isGameActive = true;
             _p1StepCount = _p2StepCount = _syncedStepCount = 0;
             _currentCoopDistance = 0f;
             _p1LastStepTime = _p2LastStepTime = Time.time;
             if (obstacleManager) obstacleManager.GenerateProgressiveObstacles();
+            
+            // 본 게임 달리기 시작, 타이머 가동
+            SetAutoProgressing(false);
         }
 
         private void FinishGame()
@@ -451,6 +534,9 @@ namespace My.Scripts._04_PlayLong
 
         private IEnumerator FinishGameSequence()
         {
+            // 종료 연출 진행 중이므로 타이머 정지
+            SetAutoProgressing(true);
+
             foreach (PlayerController p in players)
             {
                 if (p) p.ForceStop();
@@ -462,17 +548,19 @@ namespace My.Scripts._04_PlayLong
                 if (isSuccess)
                 {
                     if (_setting != null && _setting.endText != null)
-                    {
+                    {   
+                        if (SoundManager.Instance) SoundManager.Instance.PlaySFX("달리기_4");
                         ui.ShowCenterResultPopup(_setting.endText);
                     }
                     else
                     {
-                        Debug.LogWarning("[PlayLongManager] FinishGameSequence _setting or _setting.endText is null. Using fallback text.");
+                        Debug.LogWarning("[PlayLongManager] FinishGameSequence _setting or _setting.endText is null.");
                         ui.ShowCenterResultPopup("SUCCESS");
                     }
                 }
                 else
-                {
+                {   
+                    if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_18");
                     ui.ShowCenterResultPopup("TIME OVER");
                 }
             }
@@ -492,7 +580,7 @@ namespace My.Scripts._04_PlayLong
         
         public int GetCurrentLane(int playerIdx)
         {
-            if (playerIdx >= 0 && playerIdx < players.Length && players[playerIdx])
+            if (players != null && playerIdx >= 0 && playerIdx < players.Length && players[playerIdx])
                 return players[playerIdx].currentLane;
 
             return 1;
@@ -504,14 +592,8 @@ namespace My.Scripts._04_PlayLong
 
             PlayerPhysicsConfig config = baseSettings.physicsConfig;
             config.maxDistance = targetDistance;
-            if (players.Length > 0 && players[0]) players[0].Setup(0, p1LongLanePositions, config);
-            if (players.Length > 1 && players[1]) players[1].Setup(1, p2LongLanePositions, config);
-        }
-
-        private void OnDestroy()
-        {
-            if (InputManager.Instance) InputManager.Instance.OnPadDown -= HandlePadDown;
-            if (Instance == this) Instance = null;
+            if (players != null && players.Length > 0 && players[0]) players[0].Setup(0, p1LongLanePositions, config);
+            if (players != null && players.Length > 1 && players[1]) players[1].Setup(1, p2LongLanePositions, config);
         }
     }
 }

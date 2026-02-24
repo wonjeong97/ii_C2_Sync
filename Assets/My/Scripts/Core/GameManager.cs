@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using Wonjeong.Data;
 using Wonjeong.Reporter;
 using Wonjeong.UI;
@@ -8,28 +10,60 @@ using Wonjeong.Utils;
 
 namespace My.Scripts.Core
 {
-    /// <summary> 게임 전반적인 상태 및 씬 전환 관리 매니저 </summary>
+    /// <summary>
+    /// 방치 팝업에 띄울 텍스트의 종류를 구분하기 위한 열거형.
+    /// </summary>
+    public enum InactivityTextType
+    {
+        Warning,
+        Tag
+    }
+
+    [Serializable]
+    public class SystemData
+    {
+        public TextSetting inactivityWarningText;
+        public TextSetting inactivityResetText;
+        public TextSetting tagText;
+    }
+
+    /// <summary> 게임 전반적인 상태, 씬 전환 및 글로벌 방치 타이머를 관리하는 매니저 </summary>
     public class GameManager : MonoBehaviour
     {
-        public static GameManager Instance; // 싱글톤 인스턴스
+        public static GameManager Instance; 
 
-        [SerializeField] private Reporter reporter; // 로그 리포터 참조
+        [SerializeField] private Reporter reporter; 
 
-        private float _currentInactivityTimer; // 현재 비활성 시간 타이머
-        private bool _isTransitioning; // 씬 전환 중 여부
-        private float _inactivityLimit = 60f; // 비활성 제한 시간
-        private float _fadeTime = 1.0f; // 페이드 시간
+        [Header("System Popup (Inactivity)")]
+        [Tooltip("방치 시 띄울 시스템 팝업 프리팹 (Canvas - 팝업 이미지 - 팝업 텍스트 구조)")]
+        public GameObject systemPopupPrefab;
 
-        // 플레이어 태그 정보 (0: 없음, 1: Player1, 2: Player2)
-        public int firstTaggedPlayer = 0;
-        
         [Header("Debug / Testing")]
         public float lastPlayDistance = 100f;
+        
+        private bool isAutoProgressing = false; 
 
-        /// <summary> 싱글톤 초기화 </summary>
+        private SystemData _systemData; 
+        private float _currentInactivityTimer; 
+        private bool _isTransitioning; 
+        private float _fadeTime = 1.0f; 
+
+        public int firstTaggedPlayer = 0;
+        
+        private bool _isInactivitySequenceRunning;
+        private Coroutine _inactivityCoroutine;
+        private Coroutine _popupFadeCoroutine;
+
+        private CanvasGroup _systemPopupCg;
+        private Text _systemPopupText;
+        
+        public bool IsAutoProgressing { get => isAutoProgressing; set => isAutoProgressing = value; }
+        
+        public InactivityTextType CurrentInactivityTextType { get; set; } = InactivityTextType.Warning;
+
         private void Awake()
         {
-            if (Instance == null)
+            if (!Instance)
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
@@ -40,174 +74,270 @@ namespace My.Scripts.Core
                 return;
             }
 
-            if (reporter == null)
-            {
-                reporter = FindObjectOfType<Reporter>();
-            }
+            if (!reporter) reporter = FindObjectOfType<Reporter>();
         }
 
-        /// <summary> 초기 설정 및 커서 숨김 </summary>
         private void Start()
         {
             Cursor.visible = false;
             LoadSettings();
 
-            if (reporter != null && reporter.show)
+            if (reporter && reporter.show) reporter.show = false;
+
+            if (systemPopupPrefab)
             {
-                reporter.show = false;
+                GameObject popupInstance = Instantiate(systemPopupPrefab, transform);
+                
+                _systemPopupCg = popupInstance.GetComponent<CanvasGroup>();
+                if (!_systemPopupCg)
+                {
+                    _systemPopupCg = popupInstance.AddComponent<CanvasGroup>();
+                    Debug.LogWarning("[GameManager] 팝업 프리팹 최상위에 CanvasGroup이 없어 자동 추가했습니다.");
+                }
+                
+                _systemPopupText = popupInstance.GetComponentInChildren<Text>();
+                if (!_systemPopupText)
+                {
+                    Debug.LogWarning("[GameManager] 팝업 프리팹 하위에서 Text 컴포넌트를 찾을 수 없습니다.");
+                }
+
+                if (_systemPopupCg)
+                {
+                    _systemPopupCg.alpha = 0f;
+                    _systemPopupCg.gameObject.SetActive(false);
+                }
             }
         }
 
-        /// <summary> 설정 파일 로드 </summary>
         private void LoadSettings()
         {
-            Settings settings = JsonLoader.Load<Settings>(GameConstants.Path.JsonSetting); // 상수 사용
-            if (settings != null)
-            {
-                _inactivityLimit = settings.inactivityTime;
-                _fadeTime = settings.fadeTime;
-            }
-            else
-            {
-                // 로드 실패 시 기본값 설정 (안전장치)
-                _inactivityLimit = 60f;
-                _fadeTime = 1.0f;
-            }
+            Settings settings = JsonLoader.Load<Settings>(GameConstants.Path.JsonSetting); 
+            if (settings != null) _fadeTime = settings.fadeTime;
+            else _fadeTime = 1.0f;
+
+            _systemData = JsonLoader.Load<SystemData>(GameConstants.Path.System);
         }
 
-        /// <summary> 입력 감지 및 비활성 체크 </summary>
         private void Update()
         {
-            // D키: 리포터(로그) 제어
             if (Input.GetKeyDown(KeyCode.D) && reporter)
             {
                 reporter.showGameManagerControl = !reporter.showGameManagerControl;
                 if (reporter.show) reporter.show = false;
             }
-            // M키: 마우스 커서 토글
-            else if (Input.GetKeyDown(KeyCode.M))
-            {
-                Cursor.visible = !Cursor.visible;
-            }
+            else if (Input.GetKeyDown(KeyCode.M)) Cursor.visible = !Cursor.visible;
 
             if (_isTransitioning) return;
 
             HandleInactivity();
         }
 
-        /// <summary> 사용자 입력 부재 감지 </summary>
         private void HandleInactivity()
         {
-            // 현재 씬이 이미 Title이라면 비활성 타이머를 돌리지 않음
-            if (SceneManager.GetActiveScene().name == GameConstants.Scene.Title)
+            if (SceneManager.GetActiveScene().name == GameConstants.Scene.Title || isAutoProgressing)
             {
-                _currentInactivityTimer = 0f;
+                ResetInactivityTimer();
                 return;
             }
 
-            // 입력 감지 시 타이머 초기화
-            if (Input.anyKey || Input.touchCount > 0)
+            // 발판을 밟고만 있는 상태(Input.anyKey)가 타이머를 무한정 리셋하는 것을 막고, 
+            // 실제 새로운 물리적 동작이나 마우스 클릭(anyKeyDown)이 일어날 때만 초기화하도록 개선함.
+            if (Input.anyKeyDown || Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
             {
-                _currentInactivityTimer = 0f;
+                ResetInactivityTimer();
             }
             else
             {
-                _currentInactivityTimer += Time.deltaTime;
-                if (_currentInactivityTimer >= _inactivityLimit)
+                if (!_isInactivitySequenceRunning)
                 {
-                    ReturnToTitle();
+                    _currentInactivityTimer += Time.deltaTime;
+                    
+                    // # TODO: 하드코딩된 방치 기준 시간(20f)을 외부 환경 변수로 분리하여 관리할 것
+                    if (_currentInactivityTimer >= 20f)
+                    {
+                        _inactivityCoroutine = StartCoroutine(InactivitySequenceRoutine());
+                    }
                 }
             }
         }
+
+        /// <summary>
+        /// 방치 타이머를 초기화하고, 재생 중이던 팝업, 코루틴, 사운드 등 관련된 연출을 모두 즉시 중지시킴.
+        /// </summary>
+        public void ResetInactivityTimer()
+        {
+            _currentInactivityTimer = 0f;
+            
+            if (_isInactivitySequenceRunning)
+            {
+                _isInactivitySequenceRunning = false;
+                
+                if (_inactivityCoroutine != null) 
+                    StopCoroutine(_inactivityCoroutine);
+                
+                if (_systemPopupCg)
+                {
+                    if (_popupFadeCoroutine != null) 
+                        StopCoroutine(_popupFadeCoroutine);
+                        
+                    _systemPopupCg.alpha = 0f;
+                    _systemPopupCg.gameObject.SetActive(false);
+                }
+
+                if (SoundManager.Instance)
+                {
+                    SoundManager.Instance.StopSFX();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 특정 페이지(예: 점프 튜토리얼)에서 로직상 방치 상태로 판단되었을 때 팝업 시퀀스를 강제 실행함.
+        /// </summary>
+        public void ForceInactivitySequence()
+        {
+            if (!_isInactivitySequenceRunning)
+            {
+                _currentInactivityTimer = 20f; 
+                _inactivityCoroutine = StartCoroutine(InactivitySequenceRoutine());
+            }
+        }
+
+        private IEnumerator InactivitySequenceRoutine()
+        {
+            _isInactivitySequenceRunning = true;
+
+            TextSetting targetText = null;
+            if (_systemData != null)
+            {
+                if (CurrentInactivityTextType == InactivityTextType.Tag)
+                {
+                    targetText = _systemData.tagText;
+                }
+                else
+                {
+                    targetText = _systemData.inactivityWarningText;
+                }
+            }
+
+            if (targetText != null && _systemPopupText)
+            {
+                if (UIManager.Instance)
+                {
+                    UIManager.Instance.SetText(_systemPopupText.gameObject, targetText);
+                }
+                else
+                {
+                    _systemPopupText.text = targetText.text;
+                    Debug.LogWarning("[GameManager] UIManager.Instance가 존재하지 않아 기본 text에만 할당합니다.");
+                }
+            }
+            else if (_systemPopupText) 
+            {
+                _systemPopupText.text = "움직여주세요"; 
+                Debug.LogWarning("[GameManager] 출력할 텍스트 데이터를 찾을 수 없어 폴백 텍스트를 사용합니다.");
+            }
+
+            _popupFadeCoroutine = StartCoroutine(FadeSystemPopup(0f, 1f, 0.5f));
+            yield return _popupFadeCoroutine;
+
+            yield return new WaitForSeconds(3.0f);
+            _popupFadeCoroutine = StartCoroutine(FadeSystemPopup(1f, 0f, 0.5f));
+            yield return _popupFadeCoroutine;
+
+            if (SoundManager.Instance)
+            {
+                SoundManager.Instance.PlaySFX("공통_15_10초");
+            }
+
+            yield return new WaitForSeconds(10.0f);
+
+            if (_systemData != null && _systemData.inactivityResetText != null && _systemPopupText)
+            {
+                if (UIManager.Instance)
+                {
+                    UIManager.Instance.SetText(_systemPopupText.gameObject, _systemData.inactivityResetText);
+                }
+                else
+                {
+                    _systemPopupText.text = _systemData.inactivityResetText.text;
+                }
+            }
+            else if (_systemPopupText) 
+            {
+                _systemPopupText.text = "동작이 인식 되지 않아 초기화 됩니다"; 
+            }
+
+            _popupFadeCoroutine = StartCoroutine(FadeSystemPopup(0f, 1f, 0.5f));
+            yield return _popupFadeCoroutine;
+
+            yield return new WaitForSeconds(3.0f);
+
+            _isInactivitySequenceRunning = false;
+            ReturnToTitle();
+        }
+
+        private IEnumerator FadeSystemPopup(float start, float end, float duration)
+        {
+            if (!_systemPopupCg) yield break;
+
+            _systemPopupCg.gameObject.SetActive(true);
+            _systemPopupCg.alpha = start;
+            
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                _systemPopupCg.alpha = Mathf.Lerp(start, end, elapsed / duration);
+                yield return null;
+            }
+
+            _systemPopupCg.alpha = end;
+            if (end <= 0f) _systemPopupCg.gameObject.SetActive(false);
+        }
     
-        /// <summary> 씬 전환 요청 </summary>
         public void ChangeScene(string sceneName)
         {
             if (_isTransitioning) return;
             
             _isTransitioning = true;
+            ResetInactivityTimer();
             Debug.Log($"[GameManager] Scene Transition Requested: {sceneName}");
             StartCoroutine(ChangeSceneRoutine(sceneName));
         }
 
-        /// <summary> 페이드 효과를 포함한 씬 전환 코루틴 </summary>
         private IEnumerator ChangeSceneRoutine(string sceneName)
         {
-            // 1. FadeManager 체크
             if (!FadeManager.Instance)
             {
-                Debug.LogWarning("[GameManager] FadeManager instance not found. Loading immediately.");
                 SceneManager.LoadScene(sceneName);
                 _isTransitioning = false;
                 yield break;
             }
 
-            // 2. 페이드 아웃
             bool fadeDone = false;
             FadeManager.Instance.FadeOut(_fadeTime, () => { fadeDone = true; });
             while (!fadeDone) yield return null;
 
-            // 3. 비동기 씬 로드
             AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
-            // 씬 로딩 완료 대기
             while (asyncLoad != null && !asyncLoad.isDone) yield return null;
 
-            Debug.Log($"[GameManager] {sceneName} Loaded.");
-
-            // 4. 페이드 인
             FadeManager.Instance.FadeIn(_fadeTime);
             _isTransitioning = false;
         }
 
-        /// <summary> 타이틀 화면 복귀 </summary>
         public void ReturnToTitle()
         {
             if (_isTransitioning) return;
             
-            Debug.Log("[GameManager] Inactivity Detected: Returning to Title...");
+            Debug.Log("[GameManager] Returning to Title...");
 
-            // 상태 초기화
             firstTaggedPlayer = 0; 
-            _currentInactivityTimer = 0f;
+            isAutoProgressing = false;
+            CurrentInactivityTextType = InactivityTextType.Warning; 
+            ResetInactivityTimer();
 
-            // 공통 메서드 호출
             ChangeScene(GameConstants.Scene.Title);
-        }
-
-        /// <summary> 타이틀 복귀 코루틴 (별도 구현) </summary>
-        private IEnumerator ReturnToTitleRoutine()
-        {
-            if (FadeManager.Instance == null)
-            {
-                Debug.LogError("[GameManager] FadeManager instance not found. Force loading Title.");
-                SceneManager.LoadScene(GameConstants.Scene.Title);
-                _isTransitioning = false;
-                yield break;
-            }
-
-            // 1. 페이드 아웃 시작
-            bool fadeDone = false;
-            FadeManager.Instance.FadeOut(_fadeTime, () => { fadeDone = true; });
-
-            // 페이드 아웃 완료 대기
-            while (!fadeDone) yield return null;
-
-            // 2. 게임 상태 초기화 (중요)
-            firstTaggedPlayer = 0; // 태그 정보 리셋
-            _currentInactivityTimer = 0f;
-
-            // 3. 타이틀 씬 비동기 로드
-            // GameConstants.Scene.Title 사용 ("Title")
-            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(GameConstants.Scene.Title);
-
-            // 씬 로딩 완료 대기
-            while (asyncLoad != null && !asyncLoad.isDone) yield return null;
-
-            Debug.Log("[GameManager] Title Scene Loaded.");
-
-            // 4. 페이드 인 및 상태 복구
-            FadeManager.Instance.FadeIn(_fadeTime);
-            _isTransitioning = false;
         }
     }
 }

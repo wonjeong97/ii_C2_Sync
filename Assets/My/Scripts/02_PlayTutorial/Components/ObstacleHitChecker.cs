@@ -3,6 +3,7 @@ using My.Scripts._02_PlayTutorial.Managers;
 using My.Scripts._03_PlayShort;
 using My.Scripts._04_PlayLong;
 using UnityEngine;
+using Wonjeong.UI;
 using Wonjeong.Utils;
 
 namespace My.Scripts._02_PlayTutorial.Components
@@ -18,6 +19,7 @@ namespace My.Scripts._02_PlayTutorial.Components
         private int _obstacleLaneIndex; 
         private bool _isHitProcessed; 
         private Animator _animator;
+        private static float _lastSoundPlayTime = -1f;
         
         public bool IsStopMove { get; private set; }
 
@@ -69,7 +71,7 @@ namespace My.Scripts._02_PlayTutorial.Components
                 if (p1DirectHit || p2DirectHit || redStringHit)
                 {
                     _isHitProcessed = true;
-                    IsStopMove = true; // ★ 충돌한 순간 이 장애물은 멈춤 상태로 전환
+                    IsStopMove = true;
             
                     PlayLongManager.Instance.OnBothPlayersHit();
             
@@ -85,7 +87,7 @@ namespace My.Scripts._02_PlayTutorial.Components
                 {
                     _isHitProcessed = true;
                     isHit = true;
-                    PlayTutorialManager.Instance.OnPlayerHit(_ownerPlayerIdx); //
+                    PlayTutorialManager.Instance.OnPlayerHit(_ownerPlayerIdx);
                 }
             }
             // 3. PlayShort 모드 (개별 판정)
@@ -96,13 +98,17 @@ namespace My.Scripts._02_PlayTutorial.Components
                 {
                     _isHitProcessed = true;
                     isHit = true;
-                    PlayShortManager.Instance.OnPlayerHit(_ownerPlayerIdx); //
+                    PlayShortManager.Instance.OnPlayerHit(_ownerPlayerIdx);
                 }
             }
 
             if (isHit)
-            {
-                if (_animator != null) _animator.SetTrigger("Hit"); 
+            {       
+                if (_animator != null) _animator.SetTrigger(Hit);
+                if (Time.time - _lastSoundPlayTime > 0.1f)
+                {
+                    _lastSoundPlayTime = Time.time;
+                }
                 StartCoroutine(DestroyRoutine());
             }
         }

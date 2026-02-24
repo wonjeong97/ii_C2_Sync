@@ -4502,7 +4502,13 @@ MonoBehaviour:
   characterUI: {fileID: 285932494}
   characterCanvasGroup: {fileID: 740405611349450655}
   characterAnimator: {fileID: 740405611349450656}
+  leftHandTransform: {fileID: 0}
+  rightHandTransform: {fileID: 0}
+  leftHandDefaultOffset: {x: -86, y: -33}
+  rightHandDefaultOffset: {x: 86, y: -33}
   runSpeedMultiplier: 5
+  jumpArcHeight: 50
+  jumpDuration: 0.25
   playerIndex: 0
   currentSpeed: 0
   currentDistance: 0
@@ -4729,7 +4735,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1.2
-  m_Text: text
+  m_Text: Text
 --- !u!222 &1572212063
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4897,7 +4903,13 @@ MonoBehaviour:
   characterUI: {fileID: 1998430890}
   characterCanvasGroup: {fileID: 1998430891}
   characterAnimator: {fileID: 1998430892}
+  leftHandTransform: {fileID: 0}
+  rightHandTransform: {fileID: 0}
+  leftHandDefaultOffset: {x: -86, y: -33}
+  rightHandDefaultOffset: {x: 86, y: -33}
   runSpeedMultiplier: 5
+  jumpArcHeight: 50
+  jumpDuration: 0.25
   playerIndex: 0
   currentSpeed: 0
   currentDistance: 0
@@ -5633,6 +5645,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1943723057}
     m_Modifications:
+    - target: {fileID: 1293613217789595690, guid: 214f87b7295377a46b9f07538c95eb53,
+        type: 3}
+      propertyPath: m_Alpha
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4632899339886126751, guid: 214f87b7295377a46b9f07538c95eb53,
         type: 3}
       propertyPath: m_Pivot.x
@@ -6193,6 +6210,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1943723057}
     m_Modifications:
+    - target: {fileID: 1293613217789595690, guid: 214f87b7295377a46b9f07538c95eb53,
+        type: 3}
+      propertyPath: m_Alpha
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4632899339886126751, guid: 214f87b7295377a46b9f07538c95eb53,
         type: 3}
       propertyPath: m_Pivot.x
