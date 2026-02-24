@@ -2028,7 +2028,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   targetDistance: 500
-  timeLimit: 10
+  timeLimit: 60
   readyWaitTimeout: 30
   baseSettings: {fileID: 11400000, guid: 40ce4d821b31e51409721c75a2dfe0a5, type: 2}
   stepDecayTime: 0.5
@@ -2087,12 +2087,12 @@ MonoBehaviour:
   popupText: {fileID: 1572212062}
   centerText: {fileID: 1057946599}
   timerText: {fileID: 220464645}
-  padImagesCG: {fileID: 1849251622}
+  padImagesCg: {fileID: 1849251622}
   redStringCanvasGroup: {fileID: 409546768}
   p1LongGauge: {fileID: 1276199854}
   p2LongGauge: {fileID: 1102768813}
-  p1SideDistCG: {fileID: 1970250514}
-  p2SideDistCG: {fileID: 1895801199}
+  p1SideDistCg: {fileID: 1970250514}
+  p2SideDistCg: {fileID: 1895801199}
   p1DistMarkers:
   - {fileID: 552871642}
   - {fileID: 2144781073}

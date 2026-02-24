@@ -83,16 +83,16 @@ namespace My.Scripts._05_Ending.Pages
             // 3. 분기별 연출
             if (_isAllFinished && redLineImage)
             {
-                // 특별 엔딩: 붉은 실이 차오르는 연출 (2초)
+                // 특별 엔딩: 붉은 실이 차오르는 연출
                 yield return StartCoroutine(FillImageRoutine(redLineImage, 0f, 1f, 2.0f));
-                // TODO: SoundManager.Instance?.FadeOutBGM(5.0f);
+                SoundManager.Instance?.FadeOutBGM(5.0f);
                 yield return CoroutineData.GetWaitForSeconds(5.0f);
             }
             else
             {   
                 // 일반 엔딩: 텍스트만 보여준 채 대기
                 yield return CoroutineData.GetWaitForSeconds(2.0f);
-                // TODO: SoundManager.Instance?.FadeOutBGM(5.0f);
+                SoundManager.Instance?.FadeOutBGM(5.0f);
                 yield return CoroutineData.GetWaitForSeconds(5.0f);
             }
             

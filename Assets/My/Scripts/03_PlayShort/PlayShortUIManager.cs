@@ -96,7 +96,6 @@ namespace My.Scripts._03_PlayShort
             HidePopupImmediate(popupCenter);
         }
         
-        // ... (중략: HideWaitingPopups, ShowCenterFinishPopup, SetGaugeFinish, ShowWaitingPopup 등 기존 동일) ...
         public void HideWaitingPopups()
         {
             if (popupFinishP1 && popupFinishP1.gameObject.activeSelf)
@@ -131,10 +130,12 @@ namespace My.Scripts._03_PlayShort
         {
             CanvasGroup targetPopup = (playerIdx == 0) ? popupFinishP1 : popupFinishP2;
             Text targetText = (playerIdx == 0) ? textFinishP1 : textFinishP2;
-            if (targetPopup == null) return;
+            if (!targetPopup) return;
             ApplyTextSetting(targetText, textData);
             targetPopup.gameObject.SetActive(true);
             targetPopup.alpha = 0f;
+            
+            SoundManager.Instance?.PlaySFX("공통_7");
             StartCoroutine(FadeCanvasGroup(targetPopup, 0f, 1f, 0.1f));
         }
 
@@ -167,16 +168,15 @@ namespace My.Scripts._03_PlayShort
             CanvasGroup targetPage2 = (playerIdx == 0) ? cgLeftPage2 : cgRightPage2;
             CanvasGroup targetYesNo = (playerIdx == 0) ? cgLeftYesNo : cgRightYesNo;
 
-            if (targetPopup == null) return;
+            if (!targetPopup) return;
 
             ResetAnswerFeedback(playerIdx);
             ResetGaugeImages(playerIdx);
 
-            // [수정] 팝업 초기화: Page1 활성화(SetActive true), Page2 & YesNo 숨기기
             if (targetPage1) 
             {
                 targetPage1.alpha = 1f;
-                targetPage1.gameObject.SetActive(true); // ★ 중요: 비활성화된 오브젝트 다시 켜기
+                targetPage1.gameObject.SetActive(true);
             }
             if (targetPage2) 
             {
@@ -191,7 +191,7 @@ namespace My.Scripts._03_PlayShort
 
             if (targetDistText) targetDistText.text = $"{distance}M";
             ApplyTextSetting(targetQueP1, questionData);
-            if (targetQueP2 != null) targetQueP2.text = (questionData != null) ? questionData.text : "";
+            if (targetQueP2) targetQueP2.text = (questionData != null) ? questionData.text : "";
             ApplyTextSetting(targetInfo, infoData);
 
             targetPopup.gameObject.SetActive(true);
@@ -217,7 +217,6 @@ namespace My.Scripts._03_PlayShort
             yield return CoroutineData.GetWaitForSeconds(duration);
         }
 
-        // ... (중략: 게이지 이미지 리셋 함수들) ...
         private void ResetGaugeImages(int playerIdx)
         {
             Image[] yesImgs = (playerIdx == 0) ? p1YesImages : p2YesImages;
@@ -233,7 +232,11 @@ namespace My.Scripts._03_PlayShort
         private void ClearImages(Image[] imgs)
         {
             if (imgs == null) return;
-            foreach (var img in imgs) { if (img != null) img.fillAmount = 0f; }
+
+            foreach (Image img in imgs)
+            {
+                if (img) img.fillAmount = 0f;
+            }
         }
 
         public bool UpdateStepGauge(int playerIdx, bool isYesLane, int stepCount)
@@ -254,7 +257,7 @@ namespace My.Scripts._03_PlayShort
             float totalFillNeeded = stepCount * 0.5f;
             for (int i = targetImages.Length - 1; i >= 0; i--)
             {
-                if (targetImages[i] == null) continue;
+                if (!targetImages[i]) continue;
                 float amount = Mathf.Clamp01(totalFillNeeded);
                 targetImages[i].fillAmount = amount;
                 totalFillNeeded -= 1.0f;
@@ -262,6 +265,7 @@ namespace My.Scripts._03_PlayShort
             if (stepCount >= 10)
             {
                 if (targetIcon) targetIcon.color = activeColor;
+                SoundManager.Instance?.PlaySFX("공통_22");
                 return true; 
             }
             return false; 
@@ -270,7 +274,7 @@ namespace My.Scripts._03_PlayShort
         public void HideQuestionPopup(int playerIdx, float duration)
         {
             CanvasGroup targetPopup = (playerIdx == 0) ? popupQuestionLeft : popupQuestionRight;
-            if (targetPopup != null && targetPopup.gameObject.activeInHierarchy)
+            if (targetPopup && targetPopup.gameObject.activeInHierarchy)
             {
                 targetPopup.blocksRaycasts = false; 
                 StartCoroutine(FadeCanvasGroup(targetPopup, targetPopup.alpha, 0f, duration));
@@ -279,10 +283,10 @@ namespace My.Scripts._03_PlayShort
 
         private void ApplyTextSetting(Text targetText, TextSetting setting)
         {
-            if (targetText == null) return;
+            if (!targetText) return;
             if (setting != null)
             {
-                if (UIManager.Instance != null) UIManager.Instance.SetText(targetText.gameObject, setting);
+                if (UIManager.Instance) UIManager.Instance.SetText(targetText.gameObject, setting);
                 else targetText.text = setting.text;
             }
             else targetText.text = ""; 
@@ -295,9 +299,6 @@ namespace My.Scripts._03_PlayShort
 
             if (targetYes) targetYes.color = isYes ? activeColor : Color.white;
             if (targetNo) targetNo.color = !isYes ? activeColor : Color.white;
-
-            // ★ [수정] 입력 시마다 페이지 전환을 호출하지 않음 (깜빡임 방지)
-            // SwitchPageState(playerIdx, true);  <-- 제거됨
         }
 
         public void ResetAnswerFeedback(int playerIdx)
@@ -317,8 +318,7 @@ namespace My.Scripts._03_PlayShort
             if (!p1 || !p2) return;
 
             if (runningPageRoutines[playerIdx] != null) StopCoroutine(runningPageRoutines[playerIdx]);
-
-            // 순차적 페이드 (FadeOut 0.5s -> FadeIn 0.5s)
+            
             if (toPage2) 
                 runningPageRoutines[playerIdx] = StartCoroutine(SequentialPageTransition(p1, p2, 0.5f, 0.5f));
             else 

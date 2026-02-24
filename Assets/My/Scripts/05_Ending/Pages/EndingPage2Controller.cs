@@ -105,6 +105,7 @@ namespace My.Scripts._05_Ending.Pages
             // 1. 중간 마음조각 이미지들 페이드인 (1초)
             if (heartsCg)
             {
+                SoundManager.Instance?.PlaySFX("공통_6");
                 yield return StartCoroutine(UIUtils.FadeCanvasGroup(heartsCg, 0f, 1f, 1.0f));
             }
 

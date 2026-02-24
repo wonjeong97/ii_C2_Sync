@@ -17,6 +17,7 @@ namespace My.Scripts.Core
         /// <summary> 리소스 경로 상수 모음 </summary>
         public static class Path
         {
+            public const string System = "JSON/System";
             public const string JsonSetting = "Settings"; 
             public const string Tutorial = "JSON/Tutorial";
             public const string PlayTutorial = "JSON/PlayTutorial";

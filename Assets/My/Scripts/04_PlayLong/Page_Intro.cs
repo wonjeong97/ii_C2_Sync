@@ -52,7 +52,8 @@ namespace My.Scripts._04_PlayLong
         {
             // --- 1. 첫 번째 텍스트 연출 ---
             if (_data.introText1 != null)
-            {
+            {   
+                SoundManager.Instance?.PlaySFX("공통_13");
                 UIManager.Instance.SetText(textIntro.gameObject, _data.introText1);
             }
             SetTextAlpha(1f);
