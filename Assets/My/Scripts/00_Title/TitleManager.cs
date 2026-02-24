@@ -14,10 +14,6 @@ namespace My.Scripts._00_Title
         private void Start()
         {
             SoundManager.Instance?.PlayBGM("MainBGM");
-            if (GameManager.Instance)
-            {
-                GameManager.Instance.IsAutoProgressing = true;
-            }
         }
 
         void Update()

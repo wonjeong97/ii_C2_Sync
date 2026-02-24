@@ -182,9 +182,8 @@ namespace My.Scripts._02_PlayTutorial.Managers
                 {
                     finalPageText.text = setting.text;
                 }
-
                 
-                if (finalPageText.gameObject.name == "Text_Step1")
+                if (setting.name == "Text_Step1")
                 {
                     SoundManager.Instance?.PlaySFX("공통_13");
                 }

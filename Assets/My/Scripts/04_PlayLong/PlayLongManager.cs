@@ -467,6 +467,7 @@ namespace My.Scripts._04_PlayLong
                 if (SoundManager.Instance) SoundManager.Instance.PlaySFX("달리기_2");
                 _lastHitSoundTime = Time.time;
             }
+            if (players == null) return;
             foreach (PlayerController p in players)
             {
                 if (p) p.OnHit(2.0f);
