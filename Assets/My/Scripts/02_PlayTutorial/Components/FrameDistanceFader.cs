@@ -14,7 +14,7 @@ namespace My.Scripts._02_PlayTutorial.Components
 
         [Header("Fading Settings")]
         [Tooltip("이 거리보다 가까우면 완전히 선명하게 보임 (Alpha 1)")]
-        public float fullyVisibleDist = 10f; 
+        public float fullyVisibleDist = 20f; 
 
         [Tooltip("이 거리보다 멀어지면 완전히 투명해짐 (Alpha 0)")]
         public float invisibleDist = 30f; 
@@ -44,7 +44,7 @@ namespace My.Scripts._02_PlayTutorial.Components
                 }
             }
 
-            // ★ 2. 자식 오브젝트에 있는 모든 Text 컴포넌트를 찾아서 색상 저장
+            // 2. 자식 오브젝트에 있는 모든 Text 컴포넌트를 찾아서 색상 저장
             _childTexts = GetComponentsInChildren<Text>();
             if (_childTexts != null && _childTexts.Length > 0)
             {
@@ -68,7 +68,7 @@ namespace My.Scripts._02_PlayTutorial.Components
 
         private void Update()
         {
-            if (targetTransform == null) return;
+            if (!targetTransform) return;
 
             // 1. Z축 거리 계산 (절댓값)
             float distance = Mathf.Abs(transform.position.z - targetTransform.position.z);
@@ -83,13 +83,13 @@ namespace My.Scripts._02_PlayTutorial.Components
         private void SetAlpha(float alpha)
         {
             // (1) 프레임 본체(Sprite/Mesh) 투명도 조절
-            if (_spriteRenderer != null)
+            if (_spriteRenderer)
             {
                 Color c = _originColor;
                 c.a = alpha;
                 _spriteRenderer.color = c;
             }
-            else if (_meshRenderer != null)
+            else if (_meshRenderer)
             {
                 Color c = _originColor;
                 c.a = alpha;
@@ -104,7 +104,7 @@ namespace My.Scripts._02_PlayTutorial.Components
             {
                 for (int i = 0; i < _childTexts.Length; i++)
                 {
-                    if (_childTexts[i] != null)
+                    if (_childTexts[i])
                     {
                         Color c = _originTextColors[i]; // 원래 색상 가져오기
                         c.a = alpha;                    // 투명도만 덮어쓰기
@@ -112,6 +112,14 @@ namespace My.Scripts._02_PlayTutorial.Components
                     }
                 }
             }
+        }
+        
+        public void ForceUpdateAlpha()
+        {
+            if (targetTransform == null) return;
+            float distance = Mathf.Abs(transform.position.z - targetTransform.position.z);
+            float alpha = Mathf.InverseLerp(invisibleDist, fullyVisibleDist, distance);
+            SetAlpha(alpha);
         }
     }
 }
