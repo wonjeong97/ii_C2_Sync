@@ -139,6 +139,7 @@ namespace My.Scripts._04_PlayLong
                 
                 fader.fullyVisibleDist = fullyVisibleDist;
                 fader.invisibleDist = invisibleDist;
+                fader.ForceUpdateAlpha();
             }
 
             _spawnedObstacles.Add(obj);

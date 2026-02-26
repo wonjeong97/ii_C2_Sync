@@ -2,7 +2,7 @@
   "page1": {
     "descriptionText": {
       "name": "Text_Description",
-      "position": {"x": 1000, "y": -963},
+      "position": {"x": 960, "y": -860},
       "scale": {"x": 1, "y": 1, "z": 1},
       "text": "두 사람 모두 태그하면, 체험이 시작됩니다.",
       "fontName": "font4",
@@ -13,7 +13,7 @@
   "page2": {
     "descriptionText": {
       "name": "Text_Description",
-      "position": {"x": 1000, "y": -963},
+      "position": {"x": 960, "y": -860},
       "scale": {"x": 1, "y": 1, "z": 1},
       "text": "체험 후 최대 5개의 마음 조각을 받을 수 있습니다.",
       "fontName": "font4",
@@ -24,7 +24,7 @@
   "page3": {
     "descriptionText": {
       "name": "Text_Description",
-      "position": {"x": 1000, "y": -963},
+      "position": {"x": 960, "y": -860},
       "scale": {"x": 1, "y": 1, "z": 1},
       "text": "각자의 자리 가운데 두 개의 발판 위에\n한발씩 올라서서 <color=#DC2525>제자리 점프하면</color>, 시작됩니다.",
       "fontName": "font4",
@@ -33,34 +33,34 @@
     }
   },
   "page4": {
-  "descriptionTexts": [
-    {
-      "name": "Text_Description1",
-      "position": {"x": 1000, "y": -383.06},
-      "scale": {"x": 1, "y": 1, "z": 1},
-      "text": "이 공간에서는 두 사람이 함께 같은 방향을 보고 달리게 됩니다.",
-      "fontName": "font4",
-      "fontSize": 60,
-      "fontColor": {"r": 0.2588235, "g": 0.254902, "b": 0.2588235, "a": 1}
-    },
-    {
-      "name": "Text_Description2",
-      "position": {"x": 1000, "y": -383.06},
-      "scale": {"x": 1, "y": 1, "z": 1},
-      "text": "장애물을 피해 목표 지점까지 달려보세요.\n발판을 이동하며 장애물을 피할 수 있습니다.",
-      "fontName": "font4",
-      "fontSize": 60,
-      "fontColor": {"r": 0.2588235, "g": 0.254902, "b": 0.2588235, "a": 1}
-    },
-    {
-      "name": "Text_Description3",
-      "position": {"x": 1000, "y": -383.06},
-      "scale": {"x": 1, "y": 1, "z": 1},
-      "text": "어떻게 달려야 하는지\n연습해 볼까요?",
-      "fontName": "font4",
-      "fontSize": 60,
-      "fontColor": {"r": 0.2588235, "g": 0.254902, "b": 0.2588235, "a": 1}
-    }
-  ]
+    "descriptionTexts": [
+      {
+        "name": "Text_Description1",
+        "position": {"x": 960, "y": -383.06},
+        "scale": {"x": 1, "y": 1, "z": 1},
+        "text": "이 공간에서는 두 사람이 함께 같은 방향을 보고 달리게 됩니다.",
+        "fontName": "font4",
+        "fontSize": 60,
+        "fontColor": {"r": 0.2588235, "g": 0.254902, "b": 0.2588235, "a": 1}
+      },
+      {
+        "name": "Text_Description2",
+        "position": {"x": 960, "y": -383.06},
+        "scale": {"x": 1, "y": 1, "z": 1},
+        "text": "장애물을 피해 목표 지점까지 달려보세요.\n발판을 이동하며 장애물을 피할 수 있습니다.",
+        "fontName": "font4",
+        "fontSize": 60,
+        "fontColor": {"r": 0.2588235, "g": 0.254902, "b": 0.2588235, "a": 1}
+      },
+      {
+        "name": "Text_Description3",
+        "position": {"x": 960, "y": -383.06},
+        "scale": {"x": 1, "y": 1, "z": 1},
+        "text": "어떻게 달려야 하는지\n연습해 볼까요?",
+        "fontName": "font4",
+        "fontSize": 60,
+        "fontColor": {"r": 0.2588235, "g": 0.254902, "b": 0.2588235, "a": 1}
+      }
+    ]
   }
 }

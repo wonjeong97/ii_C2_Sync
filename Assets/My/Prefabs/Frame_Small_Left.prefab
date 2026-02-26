@@ -202,7 +202,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   targetTransform: {fileID: 0}
-  fullyVisibleDist: 30
+  fullyVisibleDist: 20
   invisibleDist: 40
 --- !u!114 &7944016904464758034
 MonoBehaviour:

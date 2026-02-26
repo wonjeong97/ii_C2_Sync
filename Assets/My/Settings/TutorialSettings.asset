@@ -21,13 +21,13 @@ MonoBehaviour:
     useMetricDistance: 0
     metricMultiplier: 0
   p1LanePositions:
-  - {x: -785, y: -432}
-  - {x: -500, y: -432}
-  - {x: -215, y: -432}
+  - {x: -750, y: -370}
+  - {x: -480, y: -370}
+  - {x: -210, y: -370}
   p2LanePositions:
-  - {x: 215, y: -432}
-  - {x: 500, y: -432}
-  - {x: 785, y: -432}
+  - {x: 210, y: -370}
+  - {x: 480, y: -370}
+  - {x: 750, y: -370}
   targetDistancePhase1: 10
   targetDistancePhase2: 6
   targetDistancePhase3: 5
