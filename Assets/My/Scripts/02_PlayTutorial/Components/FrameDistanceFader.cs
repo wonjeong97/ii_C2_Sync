@@ -23,7 +23,6 @@ namespace My.Scripts._02_PlayTutorial.Components
         private MeshRenderer _meshRenderer;
         private Color _originColor;
 
-        // ★ 텍스트 페이딩을 위한 변수 추가
         private Text[] _childTexts; 
         private Color[] _originTextColors;
 
@@ -82,7 +81,7 @@ namespace My.Scripts._02_PlayTutorial.Components
 
         private void SetAlpha(float alpha)
         {
-            // (1) 프레임 본체(Sprite/Mesh) 투명도 조절
+            // 프레임 본체(Sprite/Mesh) 투명도 조절
             if (_spriteRenderer)
             {
                 Color c = _originColor;
@@ -99,7 +98,7 @@ namespace My.Scripts._02_PlayTutorial.Components
                     _meshRenderer.material.SetColor("_BaseColor", c);
             }
 
-            // ★ (2) 자식 텍스트들의 투명도 조절
+            // 자식 텍스트들의 투명도 조절
             if (_childTexts != null)
             {
                 for (int i = 0; i < _childTexts.Length; i++)
@@ -116,7 +115,11 @@ namespace My.Scripts._02_PlayTutorial.Components
         
         public void ForceUpdateAlpha()
         {
-            if (targetTransform == null) return;
+            if (!targetTransform)
+            {
+                if (Camera.main) targetTransform = Camera.main.transform;
+                else return;
+            }
             float distance = Mathf.Abs(transform.position.z - targetTransform.position.z);
             float alpha = Mathf.InverseLerp(invisibleDist, fullyVisibleDist, distance);
             SetAlpha(alpha);
