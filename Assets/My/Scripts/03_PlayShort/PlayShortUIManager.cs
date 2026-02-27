@@ -71,8 +71,11 @@ namespace My.Scripts._03_PlayShort
         [SerializeField] private CanvasGroup popupCenter;
         [SerializeField] private Text textCenter;
 
-        private Coroutine[] runningPageRoutines = new Coroutine[2];
+        private readonly Coroutine[] runningPageRoutines = new Coroutine[2];
         private readonly Color activeColor = new Color(248f/255f, 237f/255f, 166f/255f);
+        
+        private float[] _lastInputTime = new float[2];
+        private readonly Coroutine[] _infoFadeRoutines = new Coroutine[2];
         
         public void InitUI(float maxDistance)
         {
@@ -200,10 +203,34 @@ namespace My.Scripts._03_PlayShort
             StartCoroutine(FadeCanvasGroup(targetPopup, 0f, 1f, 1.0f)); 
         }
 
-        public IEnumerator ShowQuestionPhase2Routine(int playerIdx, float duration)
+        public IEnumerator ShowQuestionPhase2Routine(int playerIdx, float duration, int distance)
         {
             CanvasGroup targetYesNo = (playerIdx == 0) ? cgLeftYesNo : cgRightYesNo;
-            
+            Text targetInfo = (playerIdx == 0) ? textLeftInfo : textRightInfo; 
+
+            // 기존에 돌고 있던 텍스트 제어 코루틴 중지
+            if (_infoFadeRoutines[playerIdx] != null)
+            {
+                StopCoroutine(_infoFadeRoutines[playerIdx]);
+                _infoFadeRoutines[playerIdx] = null;
+            }
+
+            if (distance > 10)
+            {
+                // 20M 이상: 게이지를 다 채우지 않은 상태에서 3초간 반응이 없을 때만 등장시키는 코루틴 실행
+                _infoFadeRoutines[playerIdx] = StartCoroutine(InactivityInfoFadeRoutine(playerIdx, targetInfo, 3.0f, 0.5f));
+            }
+            else
+            {
+                // 10M (처음): 페이지 전환 시 바로 보이도록 Alpha 1을 고정
+                if (targetInfo)
+                {
+                    Color c = targetInfo.color;
+                    c.a = 1f;
+                    targetInfo.color = c;
+                }
+            }
+
             // 1. YesNo 그룹 페이드 인
             if (targetYesNo)
             {
@@ -215,6 +242,35 @@ namespace My.Scripts._03_PlayShort
             SwitchPageState(playerIdx, true); 
 
             yield return CoroutineData.GetWaitForSeconds(duration);
+        }
+        
+        /// <summary>
+        /// 3초 동안 입력이 없으면 텍스트를 표시하고, 입력이 들어오면 텍스트를 즉시 숨깁니다.
+        /// </summary>
+        private IEnumerator InactivityInfoFadeRoutine(int playerIdx, Text infoText, float waitTime, float fadeDuration)
+        {
+            if (!infoText) yield break;
+
+            // 초기에는 안 보이는 상태로 설정
+            Color c = infoText.color;
+            c.a = 0f;
+            infoText.color = c;
+
+            _lastInputTime[playerIdx] = Time.time;
+
+            while (true)
+            {
+                float idleTime = Time.time - _lastInputTime[playerIdx];
+
+                // 3초간 방치되었다면 페이드 인 시키고 감시 루프를 완전히 종료함
+                if (idleTime >= waitTime)
+                {
+                    yield return StartCoroutine(FadeTextAlpha(infoText, infoText.color.a, 1f, fadeDuration));
+                    yield break; 
+                }
+
+                yield return null;
+            }
         }
 
         private void ResetGaugeImages(int playerIdx)
@@ -271,8 +327,27 @@ namespace My.Scripts._03_PlayShort
             return false; 
         }
 
+        /// <summary>
+        /// 질문 팝업을 숨기고 관련된 진행 중인 상태들을 초기화함.
+        /// </summary>
         public void HideQuestionPopup(int playerIdx, float duration)
         {
+            // 팝업을 닫을 때 진행 중이던 방치 텍스트 코루틴이 있다면 정리함
+            if (_infoFadeRoutines[playerIdx] != null)
+            {
+                StopCoroutine(_infoFadeRoutines[playerIdx]);
+                _infoFadeRoutines[playerIdx] = null;
+            }
+
+            // 다음 팝업 호출 시 이전 텍스트가 남아 보이지 않도록 즉시 투명화 처리함
+            Text targetInfo = (playerIdx == 0) ? textLeftInfo : textRightInfo;
+            if (targetInfo)
+            {
+                Color c = targetInfo.color;
+                c.a = 0f;
+                targetInfo.color = c;
+            }
+
             CanvasGroup targetPopup = (playerIdx == 0) ? popupQuestionLeft : popupQuestionRight;
             if (targetPopup && targetPopup.gameObject.activeInHierarchy)
             {
@@ -334,6 +409,18 @@ namespace My.Scripts._03_PlayShort
             yield return CoroutineData.GetWaitForSeconds(duration);
             yield return StartCoroutine(FadeTextAlpha(centerText, 1f, 0f, 1.0f));
             centerText.gameObject.SetActive(false);
+        }
+        
+        /// <summary>
+        /// 외부(Manager)에서 사용자 입력이 발생했음을 알림.
+        /// 방치 타이머를 현재 시간으로 갱신함.
+        /// </summary>
+        public void NotifyInput(int playerIdx)
+        {
+            if (playerIdx >= 0 && playerIdx < 2)
+            {
+                _lastInputTime[playerIdx] = Time.time;
+            }
         }
         
         private IEnumerator SequentialPageTransition(CanvasGroup fromGroup, CanvasGroup toGroup, float fadeOutTime, float fadeInTime)
