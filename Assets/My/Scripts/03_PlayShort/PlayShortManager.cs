@@ -219,6 +219,7 @@ namespace My.Scripts._03_PlayShort
             // 팝업 질문 답변을 고르는 과정도 사용자 입력에 해당하므로 글로벌 방치 타이머가 가동(리셋)됨.
             if (_isPlayerPaused[playerIdx])
             {
+                if (ui) ui.NotifyInput(playerIdx);
                 if (player.HandleInput(laneIdx, padIdx))
                 {
                     player.MoveToLane(laneIdx);
@@ -370,7 +371,7 @@ namespace My.Scripts._03_PlayShort
             yield return CoroutineData.GetWaitForSeconds(2.0f);
 
             // 3. YesNo 페이드인 + Page2로 전환 (0.5초)
-            if (ui) yield return StartCoroutine(ui.ShowQuestionPhase2Routine(playerIdx, 0.5f));
+            if (ui) yield return StartCoroutine(ui.ShowQuestionPhase2Routine(playerIdx, 0.5f, milestone));
 
             // 4. 입력 허용
             _isInputBlocked[playerIdx] = false;
