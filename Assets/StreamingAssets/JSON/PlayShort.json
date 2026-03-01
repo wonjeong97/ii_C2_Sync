@@ -1,4 +1,22 @@
 {
+  "playerAName":  {
+    "name": "Text_PlayerALocation",
+    "position": {"x": -800, "y": 480},
+    "scale": {"x": 1, "y": 1, "z": 1},
+    "text": "{nameA}님의 위치",
+    "fontName": "font4",
+    "fontSize": 30,
+    "fontColor": {"r": 0.2588235, "g": 0.2588235, "b": 0.2588235, "a": 1}
+  },
+  "playerBName":  {
+    "name": "Text_PlayerBLocation",
+    "position": {"x": 160, "y": 480},
+    "scale": {"x": 1, "y": 1, "z": 1},
+    "text": "{nameB}님의 위치",
+    "fontName": "font4",
+    "fontSize": 30,
+    "fontColor": {"r": 0.2588235, "g": 0.2588235, "b": 0.2588235, "a": 1}
+  },
   "startText": {
     "name": "Text_Start",
     "position": { "x": 0, "y": 240 },

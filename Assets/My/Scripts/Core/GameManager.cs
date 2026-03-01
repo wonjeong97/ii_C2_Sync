@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
+using My.Scripts.Core.Data;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Wonjeong.Data;
@@ -25,6 +27,16 @@ namespace My.Scripts.Core
         public TextSetting inactivityWarningText;
         public TextSetting inactivityResetText;
         public TextSetting tagText;
+    }
+
+    public enum UserType
+    {
+        A,  // 커플 표준
+        B,  // 친구
+        C,  // 동료
+        D,  // 부모-성인 자녀
+        E,  // 부모-사춘기 자녀
+        F   // 부부사이
     }
 
     /// <summary> 게임 전반적인 상태, 씬 전환 및 글로벌 방치 타이머를 관리하는 매니저 </summary>
@@ -60,7 +72,19 @@ namespace My.Scripts.Core
         public bool IsAutoProgressing { get => isAutoProgressing; set => isAutoProgressing = value; }
         
         public InactivityTextType CurrentInactivityTextType { get; set; } = InactivityTextType.Warning;
-
+        
+        public UserType currentUserType = UserType.A;
+        public ApiSettings ApiConfig { get; private set; }
+        public int CurrentUserId { get; set; } = 0; 
+        public string PlayerALastName { get; set; } = "NoNameA";
+        public string PlayerBLastName { get; set; } = "NoNameB";
+        public ColorData PlayerAColor { get; set; } = ColorData.NotSet;
+        public ColorData PlayerBColor { get; set; } = ColorData.NotSet;
+        
+        [Header("Player Color Sprites")]
+        [Tooltip("인덱스 순서대로 등록하세요. 0:Cyan, 1:Pink, 2:Orange, 3:Green, 4:Red, 5:Yellow")]
+        public Sprite[] playerColorSprites;
+        
         private void Awake()
         {
             if (!Instance)
@@ -130,6 +154,34 @@ namespace My.Scripts.Core
             if (_isTransitioning) return;
 
             HandleInactivity();
+        }
+        
+        /// <summary> ColorData에 해당하는 스프라이트 반환 </summary>
+        public Sprite GetColorSprite(ColorData color)
+        {
+            int index = (int)color;
+            if (index >= 0 && playerColorSprites != null && index < playerColorSprites.Length)
+            {
+                return playerColorSprites[index];
+            }
+            return null;
+        }
+        
+        /// <summary>
+        /// API의 ColorData Enum을 지정된 실제 RGB(Color32) 데이터로 매핑하여 반환함.
+        /// </summary>
+        public Color GetColorFromData(ColorData colorData)
+        {
+            switch (colorData)
+            {
+                case ColorData.Cyan:   return new Color32(113, 177, 158, 255);
+                case ColorData.Pink:   return new Color32(240, 60, 102, 255);
+                case ColorData.Orange: return new Color32(240, 103, 27, 255);
+                case ColorData.Green:  return new Color32(98, 125, 23, 255);
+                case ColorData.Red:    return new Color32(191, 82, 77, 255);
+                case ColorData.Yellow: return new Color32(243, 203, 38, 255);
+                default:               return Color.white; // 색상이 지정되지 않은 경우의 폴백
+            }
         }
 
         private void HandleInactivity()
@@ -339,5 +391,71 @@ namespace My.Scripts.Core
 
             ChangeScene(GameConstants.Scene.Title);
         }
+        
+         #region API 호출 로직 (시간 및 값 기록)
+
+        /// <summary> 콘텐츠 시작/종료 시간을 서버에 기록합니다. </summary>
+        public void SendTimeUpdateAPI(string option)
+        {
+            if (CurrentUserId == 0)
+            {
+                Debug.LogWarning($"[GameManager] CurrentUserId가 0입니다. {option} API 호출을 건너뜁니다.");
+                return;
+            }
+            StartCoroutine(TimeUpdateRoutine(option));
+        }
+
+        private IEnumerator TimeUpdateRoutine(string option)
+        {
+            if (ApiConfig == null) yield break;
+
+            // ApiConfig.UpdateTimeUrl 사용
+            string urlLeft = $"{ApiConfig.UpdateTimeUrl}?idx_user={CurrentUserId}&option={option}&side=left&code=a1";
+            string urlRight = $"{ApiConfig.UpdateTimeUrl}?idx_user={CurrentUserId}&option={option}&side=right&code=a1";
+
+            // Left 통신
+            using (UnityWebRequest reqLeft = UnityWebRequest.Get(urlLeft))
+            {
+                yield return reqLeft.SendWebRequest();
+                if (reqLeft.result != UnityWebRequest.Result.Success) Debug.LogError($"[Time API Left] 에러: {reqLeft.error}");
+                else Debug.Log($"[Time API Left] {option} 업데이트 성공!");
+            }
+
+            // Right 통신
+            using (UnityWebRequest reqRight = UnityWebRequest.Get(urlRight))
+            {
+                yield return reqRight.SendWebRequest();
+                if (reqRight.result != UnityWebRequest.Result.Success) Debug.LogError($"[Time API Right] 에러: {reqRight.error}");
+                else Debug.Log($"[Time API Right] {option} 업데이트 성공!");
+            }
+        }
+
+        /// <summary> 사용자의 질문 응답 값을 서버에 업데이트합니다. </summary>
+        public void SendValueUpdateAPI(int qNo, string side, int value)
+        {
+            if (CurrentUserId == 0)
+            {
+                Debug.LogWarning("[GameManager] CurrentUserId가 0입니다. Value 업데이트를 건너뜁니다.");
+                return;
+            }
+            StartCoroutine(ValueUpdateRoutine(qNo, side, value));
+        }
+
+        private IEnumerator ValueUpdateRoutine(int qNo, string side, int value)
+        {
+            if (ApiConfig == null) yield break; // 안전장치
+
+            // ApiConfig.UpdateValueUrl 사용
+            string url = $"{ApiConfig.UpdateValueUrl}?idx_user={CurrentUserId}&q_no={qNo}&side={side}&code=a1&value={value}";
+            
+            using (UnityWebRequest req = UnityWebRequest.Get(url))
+            {
+                yield return req.SendWebRequest();
+                if (req.result != UnityWebRequest.Result.Success) Debug.LogError($"[Value API] 통신 에러: {req.error}");
+                else Debug.Log($"[Value API] {side} Q{qNo} 값({value}) 업데이트 성공!");
+            }
+        }
+
+        #endregion
     }
 }

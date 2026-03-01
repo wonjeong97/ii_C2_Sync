@@ -20,28 +20,60 @@ public class PadDotController : MonoBehaviour
     private HashSet<int> _blinkingIndices = new HashSet<int>();
     private Coroutine _blinkCoroutine;
 
-    void Start()
+    private void Start()
     {
         if (padImages != null)
         {
             _defaultSprites = new Sprite[padImages.Length];
             for (int i = 0; i < padImages.Length; i++)
             {
-                if (padImages[i] != null)
+                if (padImages[i])
                     _defaultSprites[i] = padImages[i].sprite;
             }
         }
 
-        if (InputManager.Instance != null)
+        // API 설정 색상 적용
+        ApplyPlayerColors();
+
+        if (InputManager.Instance)
         {
             InputManager.Instance.OnPadDown += OnKeyDown;
             InputManager.Instance.OnPadUp += OnKeyUp;
         }
     }
 
-    void OnDestroy()
+    /// <summary>
+    /// GameManager에서 API 색상 데이터를 가져와 각 플레이어의 패드 이미지에 적용함.
+    /// 배열 인덱스 규칙에 따라 0~5는 Player A, 6~11은 Player B로 계산하여 시각적 일관성을 유지함.
+    /// </summary>
+    private void ApplyPlayerColors()
     {
-        if (InputManager.Instance != null)
+        if (!GameManager.Instance) return;
+
+        Color colorA = GameManager.Instance.GetColorFromData(GameManager.Instance.PlayerAColor);
+        Color colorB = GameManager.Instance.GetColorFromData(GameManager.Instance.PlayerBColor);
+
+        if (padImages != null)
+        {
+            for (int i = 0; i < padImages.Length; i++)
+            {
+                if (padImages[i])
+                {
+                    // i가 0~5이면 playerIdx는 0, 6~11이면 1이 됨
+                    int playerIdx = i / 6;
+                    Color targetColor = (playerIdx == 0) ? colorA : colorB;
+                    
+                    // 기존에 에디터에서 세팅된 알파값(투명도)은 보존하고 RGB 색상만 교체함
+                    float currentAlpha = padImages[i].color.a;
+                    padImages[i].color = new Color(targetColor.r, targetColor.g, targetColor.b, currentAlpha);
+                }
+            }
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (InputManager.Instance)
         {
             InputManager.Instance.OnPadDown -= OnKeyDown;
             InputManager.Instance.OnPadUp -= OnKeyUp;
@@ -58,20 +90,20 @@ public class PadDotController : MonoBehaviour
     {
         int index = (pIdx * 6) + (lIdx * 2) + padIdx;
 
-        // ★ 점멸 중인 발판을 눌렀을 때는 점멸 로직보다 입력 상태를 우선시하기 위해 예외 처리가 필요할 수 있으나,
+        // 점멸 중인 발판을 눌렀을 때는 점멸 로직보다 입력 상태를 우선시하기 위해 예외 처리가 필요할 수 있으나,
         // 현재 로직상 입력 이벤트가 발생하면 즉시 스프라이트를 덮어씌우므로 자연스럽게 동작함.
         if (IsValidIndex(index))
         {
             if (isPressed)
             {
-                if (activeSprite != null) padImages[index].sprite = activeSprite;
+                if (activeSprite) padImages[index].sprite = activeSprite;
             }
             else
             {
                 // 점멸 중이 아닐 때만 기본 이미지로 복구 (점멸 중이면 코루틴이 알아서 제어)
                 if (!_blinkingIndices.Contains(index))
                 {
-                    if (_defaultSprites != null && _defaultSprites[index] != null)
+                    if (_defaultSprites != null && _defaultSprites[index])
                         padImages[index].sprite = _defaultSprites[index];
                 }
             }
@@ -95,10 +127,10 @@ public class PadDotController : MonoBehaviour
         }
     }
 
-    // ★ [추가] 특정 인덱스들의 점멸 시작
+    // 특정 인덱스들의 점멸 시작
     public void StartBlinking(int[] indices)
     {
-        foreach (var idx in indices)
+        foreach (int idx in indices)
         {
             if (IsValidIndex(idx)) _blinkingIndices.Add(idx);
         }
@@ -109,10 +141,10 @@ public class PadDotController : MonoBehaviour
         }
     }
 
-    // ★ [추가] 특정 인덱스들의 점멸 중지
+    // 특정 인덱스들의 점멸 중지
     public void StopBlinking(int[] indices)
     {
-        foreach (var idx in indices)
+        foreach (int idx in indices)
         {
             if (_blinkingIndices.Contains(idx))
             {
@@ -121,7 +153,7 @@ public class PadDotController : MonoBehaviour
                 // 점멸을 멈출 때 기본 이미지로 즉시 복구
                 if (IsValidIndex(idx))
                 {
-                    if (_defaultSprites != null && _defaultSprites[idx] != null)
+                    if (_defaultSprites != null && _defaultSprites[idx])
                         padImages[idx].sprite = _defaultSprites[idx];
                 }
             }
@@ -135,17 +167,17 @@ public class PadDotController : MonoBehaviour
 
         while (_blinkingIndices.Count > 0)
         {
-            foreach (var idx in _blinkingIndices)
+            foreach (int idx in _blinkingIndices)
             {
                 if (!IsValidIndex(idx)) continue;
 
                 if (isActive)
                 {
-                    if (activeSprite != null) padImages[idx].sprite = activeSprite;
+                    if (activeSprite) padImages[idx].sprite = activeSprite;
                 }
                 else
                 {
-                    if (_defaultSprites != null && _defaultSprites[idx] != null)
+                    if (_defaultSprites != null && _defaultSprites[idx])
                         padImages[idx].sprite = _defaultSprites[idx];
                 }
             }
@@ -159,6 +191,6 @@ public class PadDotController : MonoBehaviour
 
     private bool IsValidIndex(int index)
     {
-        return padImages != null && index >= 0 && index < padImages.Length && padImages[index] != null;
+        return padImages != null && index >= 0 && index < padImages.Length && padImages[index];
     }
 }

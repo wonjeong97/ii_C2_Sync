@@ -22,6 +22,9 @@ namespace My.Scripts._02_PlayTutorial.Managers
     [Serializable]
     public class PlayTutorialData
     {
+        public TextSetting playerAName;
+        public TextSetting playerBName;
+        
         public TextSetting[] guideTexts;
         public TextSetting phase1SuccessMessage;
         public TextSetting[] finalTexts;
@@ -79,7 +82,28 @@ namespace My.Scripts._02_PlayTutorial.Managers
                 return;
             }
 
-            if (ui) ui.InitUI(settings.physicsConfig.maxDistance);
+            if (ui) 
+            {
+                ui.InitUI(settings.physicsConfig.maxDistance);
+                
+                // API 연동 데이터(이름, 컬러)와 JSON 스타일 데이터를 UI에 전달함.
+                if (GameManager.Instance)
+                {
+                    string nameA = string.IsNullOrEmpty(GameManager.Instance.PlayerALastName) ? "Player A" : GameManager.Instance.PlayerALastName;
+                    string nameB = string.IsNullOrEmpty(GameManager.Instance.PlayerBLastName) ? "Player B" : GameManager.Instance.PlayerBLastName;
+                    
+                    TextSetting settingA = _data != null ? _data.playerAName : null;
+                    TextSetting settingB = _data != null ? _data.playerBName : null;
+
+                    ui.SetPlayerNames(nameA, nameB, settingA, settingB);
+
+                    // 컬러 데이터를 기반으로 UI 공 이미지의 스프라이트를 변경함.
+                    Sprite spriteA = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerAColor);
+                    Sprite spriteB = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerBColor);
+                    ui.SetPlayerBalls(spriteA, spriteB);
+                }
+            }
+            
             if (env) env.InitEnvironment();
 
             if (players != null)
@@ -93,6 +117,13 @@ namespace My.Scripts._02_PlayTutorial.Managers
 
                         players[i].OnDistanceChanged -= HandlePlayerDistanceChanged;
                         players[i].OnDistanceChanged += HandlePlayerDistanceChanged;
+
+                        if (GameManager.Instance)
+                        {
+                            ColorData colorData = (i == 0) ? GameManager.Instance.PlayerAColor : GameManager.Instance.PlayerBColor;
+                            Color targetColor = GameManager.Instance.GetColorFromData(colorData);
+                            players[i].SetCharacterColor(targetColor);
+                        }
                     }
                 }
             }
@@ -106,7 +137,6 @@ namespace My.Scripts._02_PlayTutorial.Managers
 
             if (InputManager.Instance) InputManager.Instance.OnPadDown += HandlePadDown;
 
-            // 시작 직후에는 텍스트 연출이 나오므로 글로벌 방치 타이머를 일시 정지시킴
             SetAutoProgressing(true);
             StartCoroutine(IntroScenario());
         }
@@ -127,7 +157,6 @@ namespace My.Scripts._02_PlayTutorial.Managers
                 }
             }
 
-            // 씬이 파괴될 때 글로벌 방치 타이머를 기본 상태(동작)로 복구함
             if (GameManager.Instance)
             {
                 GameManager.Instance.IsAutoProgressing = false;
@@ -154,18 +183,12 @@ namespace My.Scripts._02_PlayTutorial.Managers
             if (env) env.ScrollEnvironment(s1, s2);
         }
 
-        /// <summary>
-        /// 게임 매니저의 글로벌 방치 타이머 상태를 제어함.
-        /// 사용자가 움직여야 하는 구간에서는 타이머를 켜고(false), 컷신 중에는 끎(true).
-        /// </summary>
-        /// <param name="isAuto">true: 타이머 멈춤(자동 진행), false: 타이머 켜짐(사용자 대기)</param>
         private void SetAutoProgressing(bool isAuto)
         {
             if (GameManager.Instance)
             {
                 GameManager.Instance.IsAutoProgressing = isAuto;
                 
-                // 사용자가 입력해야 하는 구간이 새롭게 시작될 때, 이전 입력 시간을 초기화하여 온전히 20초를 보장함
                 if (!isAuto)
                 {
                     GameManager.Instance.ResetInactivityTimer();
@@ -234,10 +257,9 @@ namespace My.Scripts._02_PlayTutorial.Managers
                 {
                     _phase1GlobalComplete = true;
                     
-                    // 성공 컷신이 시작되므로 방치 타이머 정지
                     SetAutoProgressing(true);
                     
-                    string msg = _data?.phase1SuccessMessage?.text ?? "잘하셨어요.";
+                    string msg = _data != null && _data.phase1SuccessMessage != null ? _data.phase1SuccessMessage.text : "잘하셨어요.";
                     StartCoroutine(SuccessSequenceRoutine(msg));
                 }
             }
@@ -275,7 +297,6 @@ namespace My.Scripts._02_PlayTutorial.Managers
                 {
                     _routineStarted = true;
                     
-                    // 페이즈 완료 컷신이 시작되므로 방치 타이머 정지
                     SetAutoProgressing(true);
                     StartCoroutine(nextRoutine());
                 }
@@ -302,8 +323,8 @@ namespace My.Scripts._02_PlayTutorial.Managers
 
         private IEnumerator IntroScenario()
         {
-            string t1 = (_data?.guideTexts != null && _data.guideTexts.Length > 0) ? _data.guideTexts[0].text : "Start";
-            string t2 = (_data?.guideTexts != null && _data.guideTexts.Length > 1) ? _data.guideTexts[1].text : "Next";
+            string t1 = (_data != null && _data.guideTexts != null && _data.guideTexts.Length > 0) ? _data.guideTexts[0].text : "Start";
+            string t2 = (_data != null && _data.guideTexts != null && _data.guideTexts.Length > 1) ? _data.guideTexts[1].text : "Next";
 
             if (ui)
             {
@@ -316,7 +337,6 @@ namespace My.Scripts._02_PlayTutorial.Managers
             _gameStarted = true;
             _currentPhase = TutorialPhase.Phase1Center;
             
-            // 첫 달리기 페이즈 진입, 입력 대기 시작이므로 타이머 가동
             SetAutoProgressing(false);
         }
 
@@ -326,7 +346,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
             
             if (ui) yield return StartCoroutine(ui.ShowSuccessText(message, 2.0f));
 
-            if (_data?.guideTexts != null && _data.guideTexts.Length > 3)
+            if (_data != null && _data.guideTexts != null && _data.guideTexts.Length > 3)
             {
                 if (ui)
                 {
@@ -357,7 +377,6 @@ namespace My.Scripts._02_PlayTutorial.Managers
 
                 _currentPhase = TutorialPhase.Phase2Right;
                 
-                // 두 번째 달리기 페이즈 진입, 입력 대기 시작이므로 타이머 가동
                 SetAutoProgressing(false);
             }
         }
@@ -380,7 +399,6 @@ namespace My.Scripts._02_PlayTutorial.Managers
             ResetPhaseState();
             _currentPhase = TutorialPhase.Phase3Left;
             
-            // 세 번째 달리기 페이즈 진입, 입력 대기 시작이므로 타이머 가동
             SetAutoProgressing(false);
         }
 

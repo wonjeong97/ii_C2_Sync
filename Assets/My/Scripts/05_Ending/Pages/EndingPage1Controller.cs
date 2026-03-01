@@ -34,6 +34,15 @@ namespace My.Scripts._05_Ending.Pages
         [SerializeField] private Animator p1Animator;
         [SerializeField] private Animator p2Animator;
 
+        [Header("Character Parts (For Color)")]
+        [SerializeField] private Image p1Body;
+        [SerializeField] private Image p1LeftHand;
+        [SerializeField] private Image p1RightHand;
+        
+        [SerializeField] private Image p2Body;
+        [SerializeField] private Image p2LeftHand;
+        [SerializeField] private Image p2RightHand;
+
         private EndingPage1Data _data;
         private Coroutine _particleRoutine;
 
@@ -54,7 +63,10 @@ namespace My.Scripts._05_Ending.Pages
                 particleCg.gameObject.SetActive(false);
             }
 
-            // 2. 거리 텍스트 데이터 세팅
+            // 2. 캐릭터 색상 동기화
+            ApplyPlayerColors();
+
+            // 3. 거리 텍스트 데이터 세팅
             float dist = GameManager.Instance ? GameManager.Instance.lastPlayDistance : 0f;
             int finalDistance = Mathf.FloorToInt(dist);
 
@@ -66,7 +78,7 @@ namespace My.Scripts._05_Ending.Pages
                 distanceTextUI.text = string.Format(_data.distanceFormatText.text, finalDistance);
             }
 
-            // 3. 데이터 세팅이 완전히 끝난 후, 텍스트 컴포넌트의 Alpha를 0으로 덮어씀
+            // 4. 데이터 세팅이 완전히 끝난 후, 텍스트 컴포넌트의 Alpha를 0으로 덮어씀
             if (distanceTextUI)
             {
                 Color c = distanceTextUI.color;
@@ -74,8 +86,28 @@ namespace My.Scripts._05_Ending.Pages
                 distanceTextUI.color = c;
             }
 
-            // 4. 시퀀스 시작
+            // 5. 시퀀스 시작
             StartCoroutine(EntranceSequence(finalDistance));
+        }
+
+        /// <summary>
+        /// GameManager에 저장된 API 컬러 데이터를 가져와 캐릭터(몸통, 손) 이미지에 적용함.
+        /// 엔딩 연출 시에도 플레이어가 자신의 캐릭터를 명확히 식별할 수 있도록 시각적 일관성을 유지하기 위함.
+        /// </summary>
+        private void ApplyPlayerColors()
+        {
+            if (!GameManager.Instance) return;
+
+            Color colorA = GameManager.Instance.GetColorFromData(GameManager.Instance.PlayerAColor);
+            Color colorB = GameManager.Instance.GetColorFromData(GameManager.Instance.PlayerBColor);
+
+            if (p1Body) p1Body.color = colorA;
+            if (p1LeftHand) p1LeftHand.color = colorA;
+            if (p1RightHand) p1RightHand.color = colorA;
+
+            if (p2Body) p2Body.color = colorB;
+            if (p2LeftHand) p2LeftHand.color = colorB;
+            if (p2RightHand) p2RightHand.color = colorB;
         }
 
         /// <summary>
@@ -83,7 +115,6 @@ namespace My.Scripts._05_Ending.Pages
         /// </summary>
         private IEnumerator EntranceSequence(int finalDistance)
         {   
-            SoundManager.Instance?.PlayBGM("MainBGM");
             // 1. 피켓과 캐릭터 페이드인 (1초)
             if (picketAndCharsCg)
             {

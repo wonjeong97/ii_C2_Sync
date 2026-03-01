@@ -16,6 +16,8 @@ namespace My.Scripts._01_Tutorial.Pages
     [Serializable]
     public class TutorialPage3Data
     {
+        public TextSetting playerAName;
+        public TextSetting playerBName;
         public TextSetting descriptionText;
     }
 
@@ -30,6 +32,10 @@ namespace My.Scripts._01_Tutorial.Pages
         [SerializeField] private Text descriptionText;
         [SerializeField] private Image checkImageA;
         [SerializeField] private Image checkImageB;
+        [SerializeField] private Text playerAText; 
+        [SerializeField] private Text playerBText; 
+        [SerializeField] private Image ballImageA; 
+        [SerializeField] private Image ballImageB; 
 
         [Header("Settings")]
         [SerializeField] private float jumpLandingTolerance = 0.25f; 
@@ -54,9 +60,9 @@ namespace My.Scripts._01_Tutorial.Pages
 
         /// <summary>
         /// 외부 데이터를 UI에 반영함.
-        /// 데이터 기반으로 UI를 갱신하여 유지보수성을 높이기 위함.
+        /// GameManager에서 플레이어 이름을 가져와 JSON의 플레이스홀더({nameA}, {nameB})를 실제 이름으로 치환함.
         /// </summary>
-        /// <param name="data">설명 텍스트 정보가 담긴 데이터 객체</param>
+        /// <param name="data">텍스트 정보가 담긴 데이터 객체</param>
         protected override void SetupData(TutorialPage3Data data)
         {
             if (data == null)
@@ -64,7 +70,34 @@ namespace My.Scripts._01_Tutorial.Pages
                 Debug.LogWarning("[TutorialPage3Controller] 전달된 데이터가 없습니다.");
                 return;
             }
+
+            // GameManager에서 실제 유저 이름을 가져옴. 없을 경우를 대비해 기본값(Player A/B) 설정
+            string nameA = GameManager.Instance ? GameManager.Instance.PlayerALastName : "Player A";
+            string nameB = GameManager.Instance ? GameManager.Instance.PlayerBLastName : "Player B";
             
+            // Player A 텍스트 적용 (스타일 적용 후 텍스트 내용을 덮어씀)
+            if (playerAText && data.playerAName != null)
+            {
+                if (UIManager.Instance) UIManager.Instance.SetText(playerAText.gameObject, data.playerAName);
+                playerAText.text = data.playerAName.text.Replace("{nameA}", nameA);
+            }
+            else
+            {
+                Debug.LogWarning("[TutorialPage3Controller] Player A 이름 텍스트 설정에 필요한 컴포넌트나 데이터가 누락되었습니다.");
+            }
+
+            // Player B 텍스트 적용
+            if (playerBText && data.playerBName != null)
+            {
+                if (UIManager.Instance) UIManager.Instance.SetText(playerBText.gameObject, data.playerBName);
+                playerBText.text = data.playerBName.text.Replace("{nameB}", nameB);
+            }
+            else
+            {
+                Debug.LogWarning("[TutorialPage3Controller] Player B 이름 텍스트 설정에 필요한 컴포넌트나 데이터가 누락되었습니다.");
+            }
+
+            // 하단 설명 텍스트 적용
             if (descriptionText && data.descriptionText != null)
             {
                 descriptionText.supportRichText = true;
@@ -98,6 +131,9 @@ namespace My.Scripts._01_Tutorial.Pages
 
             InitCheckImage(checkImageA);
             InitCheckImage(checkImageB);
+
+            // API에서 받아온 유저별 컬러 데이터를 UI에 동기화함
+            ApplyPlayerColors();
 
             // 사용자가 이미 키를 누르고 있는 상태에서 진입했을 때의 예외 처리를 위해 상태를 동기화함
             SyncInitialInputState();
@@ -146,6 +182,41 @@ namespace My.Scripts._01_Tutorial.Pages
                     Debug.LogWarning("[TutorialPage3Controller] GameManager.Instance를 찾을 수 없어 방치 팝업을 띄울 수 없습니다.");
                 }
                 _lastInputTime = float.MaxValue; 
+            }
+        }
+
+        /// <summary>
+        /// GameManager에 저장된 API 컬러 데이터를 가져와 공 이미지에 적용함.
+        /// 시각적 피드백을 유저가 선택한 색상과 일치시키기 위함.
+        /// </summary>
+        private void ApplyPlayerColors()
+        {
+            if (!GameManager.Instance) return;
+
+            if (ballImageA)
+            {
+                Sprite spriteA = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerAColor);
+                if (spriteA)
+                {
+                    ballImageA.sprite = spriteA;
+                }
+                else
+                {
+                    Debug.LogWarning("[TutorialPage3Controller] Player A 컬러 스프라이트를 찾을 수 없어 기본 이미지를 유지합니다.");
+                }
+            }
+
+            if (ballImageB)
+            {
+                Sprite spriteB = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerBColor);
+                if (spriteB)
+                {
+                    ballImageB.sprite = spriteB;
+                }
+                else
+                {
+                    Debug.LogWarning("[TutorialPage3Controller] Player B 컬러 스프라이트를 찾을 수 없어 기본 이미지를 유지합니다.");
+                }
             }
         }
 

@@ -9,6 +9,14 @@ namespace My.Scripts._03_PlayShort
 {
     public class PlayShortUIManager : MonoBehaviour
     {
+        [Header("Player Name UI")]
+        [SerializeField] private Text p1NameText;
+        [SerializeField] private Text p2NameText;
+
+        [Header("Player Color Balls")]
+        [SerializeField] private Image ballImageA;
+        [SerializeField] private Image ballImageB;
+
         [Header("Question Popup UI - Left (P1)")]
         [SerializeField] private CanvasGroup popupQuestionLeft;
         [SerializeField] private Text textLeftDistance;
@@ -97,6 +105,90 @@ namespace My.Scripts._03_PlayShort
             HidePopupImmediate(popupFinishP1);
             HidePopupImmediate(popupFinishP2);
             HidePopupImmediate(popupCenter);
+        }
+
+        /// <summary>
+        /// API에서 받아온 유저 이름과 JSON 텍스트 세팅을 UI에 적용함.
+        /// 외부 데이터(JSON)로 포맷과 스타일을 관리하여 기획 변경에 유연하게 대응하기 위함.
+        /// </summary>
+        public void SetPlayerNames(string nameA, string nameB, TextSetting settingA, TextSetting settingB)
+        {
+            if (p1NameText)
+            {
+                if (settingA != null)
+                {
+                    if (UIManager.Instance) UIManager.Instance.SetText(p1NameText.gameObject, settingA);
+                    p1NameText.text = settingA.text.Replace("{nameA}", nameA);
+                }
+                else
+                {
+                    // JSON 데이터 누락 시 기본값 폴백
+                    p1NameText.text = $"{nameA}님의 위치";
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[PlayShortUIManager] P1 이름 텍스트 컴포넌트가 할당되지 않았습니다.");
+            }
+
+            if (p2NameText)
+            {
+                if (settingB != null)
+                {
+                    if (UIManager.Instance) UIManager.Instance.SetText(p2NameText.gameObject, settingB);
+                    p2NameText.text = settingB.text.Replace("{nameB}", nameB);
+                }
+                else
+                {
+                    // JSON 데이터 누락 시 기본값 폴백
+                    p2NameText.text = $"{nameB}님의 위치";
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[PlayShortUIManager] P2 이름 텍스트 컴포넌트가 할당되지 않았습니다.");
+            }
+        }
+
+        /// <summary>
+        /// API에서 받아온 컬러 기반의 스프라이트를 플레이어 이름 옆 공 이미지에 적용함.
+        /// 플레이어가 자신의 조작 영역과 색상을 직관적으로 매칭할 수 있게 돕기 위함.
+        /// </summary>
+        /// <param name="spriteA">GameManager에서 추출한 Player A의 스프라이트</param>
+        /// <param name="spriteB">GameManager에서 추출한 Player B의 스프라이트</param>
+        public void SetPlayerBalls(Sprite spriteA, Sprite spriteB)
+        {
+            if (ballImageA)
+            {
+                if (spriteA)
+                {
+                    ballImageA.sprite = spriteA;
+                }
+                else
+                {
+                    Debug.LogWarning("[PlayShortUIManager] Player A 컬러 스프라이트가 누락되어 기본 이미지를 유지합니다.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[PlayShortUIManager] ballImageA 컴포넌트가 연결되지 않았습니다.");
+            }
+
+            if (ballImageB)
+            {
+                if (spriteB)
+                {
+                    ballImageB.sprite = spriteB;
+                }
+                else
+                {
+                    Debug.LogWarning("[PlayShortUIManager] Player B 컬러 스프라이트가 누락되어 기본 이미지를 유지합니다.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[PlayShortUIManager] ballImageB 컴포넌트가 연결되지 않았습니다.");
+            }
         }
         
         public void HideWaitingPopups()
@@ -208,7 +300,6 @@ namespace My.Scripts._03_PlayShort
             CanvasGroup targetYesNo = (playerIdx == 0) ? cgLeftYesNo : cgRightYesNo;
             Text targetInfo = (playerIdx == 0) ? textLeftInfo : textRightInfo; 
 
-            // 기존에 돌고 있던 텍스트 제어 코루틴 중지
             if (_infoFadeRoutines[playerIdx] != null)
             {
                 StopCoroutine(_infoFadeRoutines[playerIdx]);
@@ -217,12 +308,10 @@ namespace My.Scripts._03_PlayShort
 
             if (distance > 10)
             {
-                // 20M 이상: 게이지를 다 채우지 않은 상태에서 3초간 반응이 없을 때만 등장시키는 코루틴 실행
                 _infoFadeRoutines[playerIdx] = StartCoroutine(InactivityInfoFadeRoutine(playerIdx, targetInfo, 3.0f, 0.5f));
             }
             else
             {
-                // 10M (처음): 페이지 전환 시 바로 보이도록 Alpha 1을 고정
                 if (targetInfo)
                 {
                     Color c = targetInfo.color;
@@ -231,27 +320,25 @@ namespace My.Scripts._03_PlayShort
                 }
             }
 
-            // 1. YesNo 그룹 페이드 인
             if (targetYesNo)
             {
                 targetYesNo.gameObject.SetActive(true);
                 StartCoroutine(FadeCanvasGroup(targetYesNo, 0f, 1f, duration));
             }
 
-            // 2. Page 1 -> Page 2 전환 (순차 페이드)
             SwitchPageState(playerIdx, true); 
 
             yield return CoroutineData.GetWaitForSeconds(duration);
         }
         
         /// <summary>
-        /// 3초 동안 입력이 없으면 텍스트를 표시하고, 입력이 들어오면 텍스트를 즉시 숨깁니다.
+        /// 3초 동안 입력이 없으면 텍스트를 표시하고, 이후 입력이 들어와도 텍스트를 유지함.
+        /// 이유: 한 번 힌트를 본 사용자가 조작을 재개하더라도 내용을 계속 참고할 수 있게 하기 위함.
         /// </summary>
         private IEnumerator InactivityInfoFadeRoutine(int playerIdx, Text infoText, float waitTime, float fadeDuration)
         {
             if (!infoText) yield break;
 
-            // 초기에는 안 보이는 상태로 설정
             Color c = infoText.color;
             c.a = 0f;
             infoText.color = c;
@@ -262,7 +349,6 @@ namespace My.Scripts._03_PlayShort
             {
                 float idleTime = Time.time - _lastInputTime[playerIdx];
 
-                // 3초간 방치되었다면 페이드 인 시키고 감시 루프를 완전히 종료함
                 if (idleTime >= waitTime)
                 {
                     yield return StartCoroutine(FadeTextAlpha(infoText, infoText.color.a, 1f, fadeDuration));
@@ -332,14 +418,12 @@ namespace My.Scripts._03_PlayShort
         /// </summary>
         public void HideQuestionPopup(int playerIdx, float duration)
         {
-            // 팝업을 닫을 때 진행 중이던 방치 텍스트 코루틴이 있다면 정리함
             if (_infoFadeRoutines[playerIdx] != null)
             {
                 StopCoroutine(_infoFadeRoutines[playerIdx]);
                 _infoFadeRoutines[playerIdx] = null;
             }
 
-            // 다음 팝업 호출 시 이전 텍스트가 남아 보이지 않도록 즉시 투명화 처리함
             Text targetInfo = (playerIdx == 0) ? textLeftInfo : textRightInfo;
             if (targetInfo)
             {
@@ -411,10 +495,6 @@ namespace My.Scripts._03_PlayShort
             centerText.gameObject.SetActive(false);
         }
         
-        /// <summary>
-        /// 외부(Manager)에서 사용자 입력이 발생했음을 알림.
-        /// 방치 타이머를 현재 시간으로 갱신함.
-        /// </summary>
         public void NotifyInput(int playerIdx)
         {
             if (playerIdx >= 0 && playerIdx < 2)
@@ -425,13 +505,11 @@ namespace My.Scripts._03_PlayShort
         
         private IEnumerator SequentialPageTransition(CanvasGroup fromGroup, CanvasGroup toGroup, float fadeOutTime, float fadeInTime)
         {
-            // 1. 현재 페이지 Fade Out
             if (fromGroup.gameObject.activeSelf)
             {
                 yield return StartCoroutine(FadeCanvasGroup(fromGroup, fromGroup.alpha, 0f, fadeOutTime));
             }
             
-            // 2. 다음 페이지 Fade In
             toGroup.gameObject.SetActive(true);
             toGroup.alpha = 0f;
             yield return StartCoroutine(FadeCanvasGroup(toGroup, 0f, 1f, fadeInTime));

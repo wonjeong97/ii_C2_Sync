@@ -24,6 +24,7 @@ namespace My.Scripts.Core
             public const string PlayShort = "JSON/PlayShort";
             public const string PlayLong = "JSON/PlayLong";
             public const string Ending = "JSON/Ending";
+            public const string ApiSetting = "JSON/API";
         }
     }
 }

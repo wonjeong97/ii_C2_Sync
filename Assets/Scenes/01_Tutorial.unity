@@ -345,6 +345,10 @@ MonoBehaviour:
   descriptionText: {fileID: 1338546923}
   checkImageA: {fileID: 1498821696}
   checkImageB: {fileID: 1288603767}
+  playerAText: {fileID: 1523175555}
+  playerBText: {fileID: 2108719853}
+  ballImageA: {fileID: 1532956925}
+  ballImageB: {fileID: 1089252629}
   jumpLandingTolerance: 0.25
 --- !u!1 &258749459
 GameObject:
@@ -548,7 +552,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &272525086
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1211,7 +1215,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1085564346
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1295,7 +1299,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 460, y: 190}
-  m_SizeDelta: {x: 190, y: 190}
+  m_SizeDelta: {x: 280, y: 280}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1089252629
 MonoBehaviour:
@@ -1317,7 +1321,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: b8da85a7e020968469c585822b1ad004, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 7e017a83c63170f41ae7b579a833f5e5, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2010,7 +2014,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: "\uC544\uC601\uB2D8 \uC790\uB9AC"
+  m_Text: "{nameA}\uB2D8 \uC790\uB9AC"
 --- !u!222 &1523175556
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2055,7 +2059,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -460, y: 190}
-  m_SizeDelta: {x: 380, y: 380}
+  m_SizeDelta: {x: 280, y: 280}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1532956925
 MonoBehaviour:
@@ -2077,7 +2081,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: d2cbbcf0ed5826248ab1a30852980d97, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 7e017a83c63170f41ae7b579a833f5e5, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2236,7 +2240,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1747783570
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2353,7 +2357,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: "\uAE38\uB3D9\uB2D8 \uC790\uB9AC"
+  m_Text: "{nameB}\uB2D8 \uC790\uB9AC"
 --- !u!222 &2108719854
 CanvasRenderer:
   m_ObjectHideFlags: 0

@@ -1,4 +1,22 @@
 {
+  "playerAName":  {
+    "name": "Text_PlayerA",
+    "position": {"x": -930, "y": 350},
+    "scale": {"x": 1, "y": 1, "z": 1},
+    "text": "{nameA}님",
+    "fontName": "font4",
+    "fontSize": 30,
+    "fontColor": {"r": 0.2588235, "g": 0.2588235, "b": 0.2588235, "a": 1}
+  },
+  "playerBName":  {
+    "name": "Text_PlayerB",
+    "position": {"x": 930, "y": 350},
+    "scale": {"x": 1, "y": 1, "z": 1},
+    "text": "{nameB}님",
+    "fontName": "font4",
+    "fontSize": 30,
+    "fontColor": {"r": 0.2588235, "g": 0.2588235, "b": 0.2588235, "a": 1}
+  },
   "introPage": {
     "introText1": {
       "name": "Text_Text1",
@@ -51,7 +69,7 @@
       "name": "PopupText_2",
       "position": {"x": 0, "y": 0},
       "scale": {"x": 1, "y": 1, "z": 1},
-      "text": "아영님 왼쪽 발판으로\n이동해서 달려주세요.",
+      "text": "{nameA}님 왼쪽 발판으로\n이동해서 달려주세요.",
       "fontName": "font7",
       "fontSize": 55,
       "fontColor": {"r": 1, "g": 1, "b": 1, "a": 1}

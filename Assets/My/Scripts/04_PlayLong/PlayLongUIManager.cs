@@ -1,7 +1,6 @@
 using System.Collections;
 using My.Scripts.UI;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 using Wonjeong.Data;
 using Wonjeong.UI;
@@ -11,6 +10,14 @@ namespace My.Scripts._04_PlayLong
 {
     public class PlayLongUIManager : MonoBehaviour
     {
+        [Header("Player Name UI")]
+        [SerializeField] private Text p1NameText;
+        [SerializeField] private Text p2NameText;
+
+        [Header("Player Color Balls")]
+        [SerializeField] private Image ballImageA;
+        [SerializeField] private Image ballImageB;
+
         [Header("Formatting Settings")]
         [SerializeField] private string[] formattedTextNames = new string[] { "PopupText_4" };
 
@@ -40,8 +47,8 @@ namespace My.Scripts._04_PlayLong
         [SerializeField] private Sprite[] originalMarkerSprites;
         [SerializeField] private Sprite heartFragmentSprite;
 
-        private readonly static Vector2 OriginalMarkerSize = new Vector2(85f, 35f);
-        private readonly static Vector2 HeartFragmentSize = new Vector2(144f, 138f);
+        private static readonly Vector2 OriginalMarkerSize = new Vector2(85f, 35f);
+        private static readonly Vector2 HeartFragmentSize = new Vector2(144f, 138f);
 
         private string _originalFullText;
         private Coroutine _textBlinkCoroutine;
@@ -74,6 +81,48 @@ namespace My.Scripts._04_PlayLong
 
             _lastActiveMarkerCount = 0;
             ResetDistMarkers();
+        }
+
+        /// <summary>
+        /// API에서 받아온 유저 이름과 JSON 텍스트 세팅을 UI에 적용함.
+        /// 외부 데이터(JSON)로 포맷과 스타일을 관리하여 기획 변경에 유연하게 대응하기 위함.
+        /// </summary>
+        public void SetPlayerNames(string nameA, string nameB, TextSetting settingA, TextSetting settingB)
+        {
+            if (p1NameText)
+            {
+                if (settingA != null)
+                {
+                    if (UIManager.Instance) UIManager.Instance.SetText(p1NameText.gameObject, settingA);
+                    p1NameText.text = settingA.text.Replace("{nameA}", nameA);
+                }
+                else
+                {
+                    p1NameText.text = $"{nameA}님의 위치";
+                }
+            }
+
+            if (p2NameText)
+            {
+                if (settingB != null)
+                {
+                    if (UIManager.Instance) UIManager.Instance.SetText(p2NameText.gameObject, settingB);
+                    p2NameText.text = settingB.text.Replace("{nameB}", nameB);
+                }
+                else
+                {
+                    p2NameText.text = $"{nameB}님의 위치";
+                }
+            }
+        }
+
+        /// <summary>
+        /// API에서 받아온 컬러 기반의 스프라이트를 플레이어 이름 옆 공 이미지에 적용함.
+        /// </summary>
+        public void SetPlayerBalls(Sprite spriteA, Sprite spriteB)
+        {
+            if (ballImageA && spriteA) ballImageA.sprite = spriteA;
+            if (ballImageB && spriteB) ballImageB.sprite = spriteB;
         }
 
         private void ResetDistMarkers()
@@ -203,7 +252,6 @@ namespace My.Scripts._04_PlayLong
                     else popupText.text = textData.text;
                 }
 
-                // 텍스트 페이드 인
                 yield return StartCoroutine(FadeTextAlpha(popupText, 0f, 1f, 0.5f));
                 yield return CoroutineData.GetWaitForSeconds(durationPerText);
 

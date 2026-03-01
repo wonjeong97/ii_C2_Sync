@@ -514,6 +514,14 @@ MonoBehaviour:
     type: 3}
   lastPlayDistance: 100
   firstTaggedPlayer: 0
+  currentUserType: 0
+  playerColorSprites:
+  - {fileID: 21300000, guid: 0679e0eab26f5ea448444c6c7c4493c4, type: 3}
+  - {fileID: 21300000, guid: 8adb48798e6b7f1459b6294349c4661e, type: 3}
+  - {fileID: 21300000, guid: 3666250fa23dbc04ca788f1be328de0d, type: 3}
+  - {fileID: 21300000, guid: 5baccf8d595d9b6459d5ddeb7b5a8492, type: 3}
+  - {fileID: 21300000, guid: d2493e4ff753cd34f83aba791e4f5ac4, type: 3}
+  - {fileID: 21300000, guid: 024e7c4669835a24d980646495b96a73, type: 3}
 --- !u!4 &973756557
 Transform:
   m_ObjectHideFlags: 0

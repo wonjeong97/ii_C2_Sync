@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI; // Image 컴포넌트 사용을 위해 추가
 using Wonjeong.UI;
 using Wonjeong.Utils;
 
@@ -31,6 +32,14 @@ namespace My.Scripts.Core
         [SerializeField] private RectTransform characterUI;
         [SerializeField] private CanvasGroup characterCanvasGroup;
         [SerializeField] private Animator characterAnimator;
+
+        [Header("Character Parts (For Color)")]
+        [Tooltip("API 컬러 데이터에 맞춰 색상이 변경될 몸통 이미지")]
+        [SerializeField] private Image bodyImage;
+        [Tooltip("API 컬러 데이터에 맞춰 색상이 변경될 왼손 이미지")]
+        [SerializeField] private Image leftHandImage;
+        [Tooltip("API 컬러 데이터에 맞춰 색상이 변경될 오른손 이미지")]
+        [SerializeField] private Image rightHandImage;
 
         [Header("Hand Anchors (Animation)")]
         [Tooltip("애니메이션에 맞춰 실이 따라갈 손 Bone (Transform)")]
@@ -104,6 +113,18 @@ namespace My.Scripts.Core
             }
             
             NotifyDistanceChanged();
+        }
+
+        /// <summary>
+        /// 캐릭터의 신체 부위(몸통, 양손) 색상을 변경함.
+        /// API에서 받아온 유저별 퍼스널 컬러를 캐릭터에 시각적으로 반영하기 위함.
+        /// </summary>
+        /// <param name="color">적용할 RGB 색상값</param>
+        public void SetCharacterColor(Color color)
+        {
+            if (bodyImage) bodyImage.color = color;
+            if (leftHandImage) leftHandImage.color = color;
+            if (rightHandImage) rightHandImage.color = color;
         }
 
         /// <summary>
