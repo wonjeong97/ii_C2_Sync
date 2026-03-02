@@ -1,7 +1,6 @@
 using System.Collections;
 using My.Scripts.UI;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 using Wonjeong.Data;
 using Wonjeong.UI;
@@ -11,6 +10,14 @@ namespace My.Scripts._04_PlayLong
 {
     public class PlayLongUIManager : MonoBehaviour
     {
+        [Header("Player Name UI")]
+        [SerializeField] private Text p1NameText;
+        [SerializeField] private Text p2NameText;
+
+        [Header("Player Color Balls")]
+        [SerializeField] private Image ballImageA;
+        [SerializeField] private Image ballImageB;
+
         [Header("Formatting Settings")]
         [SerializeField] private string[] formattedTextNames = new string[] { "PopupText_4" };
 
@@ -40,8 +47,8 @@ namespace My.Scripts._04_PlayLong
         [SerializeField] private Sprite[] originalMarkerSprites;
         [SerializeField] private Sprite heartFragmentSprite;
 
-        private readonly static Vector2 OriginalMarkerSize = new Vector2(85f, 35f);
-        private readonly static Vector2 HeartFragmentSize = new Vector2(144f, 138f);
+        private static readonly Vector2 OriginalMarkerSize = new Vector2(85f, 35f);
+        private static readonly Vector2 HeartFragmentSize = new Vector2(144f, 138f);
 
         private string _originalFullText;
         private Coroutine _textBlinkCoroutine;
@@ -74,6 +81,28 @@ namespace My.Scripts._04_PlayLong
 
             _lastActiveMarkerCount = 0;
             ResetDistMarkers();
+        }
+
+        public void SetPlayerNames(string nameA, string nameB, TextSetting settingA, TextSetting settingB)
+        {
+            UIUtils.ApplyPlayerNames(p1NameText, p2NameText, nameA, nameB, settingA, settingB);
+        }
+
+        public void SetPlayerBalls(Sprite spriteA, Sprite spriteB)
+        {
+            if (ballImageA)
+            {
+                if (spriteA) ballImageA.sprite = spriteA;
+                else Debug.LogWarning("[PlayLongUIManager] Player A 컬러 스프라이트(spriteA)가 누락되어 기본 이미지를 유지합니다.");
+            }
+            else Debug.LogWarning("[PlayLongUIManager] ballImageA 컴포넌트가 연결되지 않았습니다.");
+
+            if (ballImageB)
+            {
+                if (spriteB) ballImageB.sprite = spriteB;
+                else Debug.LogWarning("[PlayLongUIManager] Player B 컬러 스프라이트(spriteB)가 누락되어 기본 이미지를 유지합니다.");
+            }
+            else Debug.LogWarning("[PlayLongUIManager] ballImageB 컴포넌트가 연결되지 않았습니다.");
         }
 
         private void ResetDistMarkers()
@@ -203,7 +232,6 @@ namespace My.Scripts._04_PlayLong
                     else popupText.text = textData.text;
                 }
 
-                // 텍스트 페이드 인
                 yield return StartCoroutine(FadeTextAlpha(popupText, 0f, 1f, 0.5f));
                 yield return CoroutineData.GetWaitForSeconds(durationPerText);
 

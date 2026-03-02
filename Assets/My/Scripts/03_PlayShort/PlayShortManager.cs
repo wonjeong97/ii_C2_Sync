@@ -15,6 +15,9 @@ namespace My.Scripts._03_PlayShort
     [Serializable]
     public class PlayShortData
     {
+        public TextSetting playerAName; 
+        public TextSetting playerBName; 
+
         public TextSetting startText;
         public TextSetting popupInfoText;
         public TextSetting waitingText;
@@ -28,8 +31,8 @@ namespace My.Scripts._03_PlayShort
     /// </summary>
     public class PlayShortManager : MonoBehaviour
     {
-        private readonly static int Idle = Animator.StringToHash("Idle");
-        private readonly static int FinishJump = Animator.StringToHash("FinishJump");
+        private static readonly int Idle = Animator.StringToHash("Idle");
+        private static readonly int FinishJump = Animator.StringToHash("FinishJump");
         public static PlayShortManager Instance { get; private set; }
 
         [Header("Settings")]
@@ -71,7 +74,7 @@ namespace My.Scripts._03_PlayShort
             else if (Instance != this) Destroy(gameObject);
         }
 
-        private void Start()
+      private void Start()
         {
             _data = JsonLoader.Load<PlayShortData>(GameConstants.Path.PlayShort);
             
@@ -80,7 +83,28 @@ namespace My.Scripts._03_PlayShort
 
             InitializeQuestionQueues();
             
-            if (ui) ui.InitUI(targetDistance);
+            if (ui) 
+            {
+                ui.InitUI(targetDistance);
+                
+                // API 연동 데이터(이름)와 JSON 스타일 데이터를 함께 UI에 전달하여 동적 텍스트를 구성함.
+                if (GameManager.Instance)
+                {
+                    string nameA = string.IsNullOrEmpty(GameManager.Instance.PlayerALastName) ? "Player A" : GameManager.Instance.PlayerALastName;
+                    string nameB = string.IsNullOrEmpty(GameManager.Instance.PlayerBLastName) ? "Player B" : GameManager.Instance.PlayerBLastName;
+                    
+                    TextSetting settingA = _data != null ? _data.playerAName : null;
+                    TextSetting settingB = _data != null ? _data.playerBName : null;
+
+                    ui.SetPlayerNames(nameA, nameB, settingA, settingB);
+
+                    // 컬러 데이터를 기반으로 UI 공 이미지의 스프라이트를 변경함.
+                    Sprite spriteA = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerAColor);
+                    Sprite spriteB = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerBColor);
+                    ui.SetPlayerBalls(spriteA, spriteB);
+                }
+            }
+
             if (env) env.InitEnvironment();
 
             if (padDotController)
@@ -113,6 +137,14 @@ namespace My.Scripts._03_PlayShort
                     players[i].Setup(i, lanes, physicsConfig);
                     players[i].OnDistanceChanged -= HandlePlayerDistanceChanged;
                     players[i].OnDistanceChanged += HandlePlayerDistanceChanged;
+
+                    // API로 받아온 컬러값을 기반으로 플레이어 캐릭터의 색상을 동기화함
+                    if (GameManager.Instance)
+                    {
+                        ColorData colorData = (i == 0) ? GameManager.Instance.PlayerAColor : GameManager.Instance.PlayerBColor;
+                        Color targetColor = GameManager.Instance.GetColorFromData(colorData);
+                        players[i].SetCharacterColor(targetColor);
+                    }
                 }
             }
 
@@ -431,6 +463,7 @@ namespace My.Scripts._03_PlayShort
                 {
                     if (UIManager.Instance)
                     {   
+                        yield return CoroutineData.GetWaitForSeconds(0.3f);
                         if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_14");
                         UIManager.Instance.SetText(countdownText.gameObject, _data.startText);
                     }

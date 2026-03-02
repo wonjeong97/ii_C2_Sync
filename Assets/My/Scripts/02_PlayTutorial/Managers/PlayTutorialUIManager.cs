@@ -4,11 +4,20 @@ using UnityEngine.UI;
 using Wonjeong.Data;
 using Wonjeong.UI;
 using Wonjeong.Utils;
+using My.Scripts.UI; 
 
 namespace My.Scripts._02_PlayTutorial.Managers
 {
     public class PlayTutorialUIManager : MonoBehaviour
     {
+        [Header("Player Name UI")]
+        [SerializeField] private Text p1NameText;
+        [SerializeField] private Text p2NameText;
+
+        [Header("Player Color Balls")]
+        [SerializeField] private Image ballImageA;
+        [SerializeField] private Image ballImageB;
+
         [Header("Popup UI")]
         [SerializeField] private CanvasGroup popup;
         [SerializeField] private Text popupText;
@@ -45,6 +54,29 @@ namespace My.Scripts._02_PlayTutorial.Managers
                 finalPageCanvasGroup.gameObject.SetActive(false);
                 finalPageCanvasGroup.blocksRaycasts = false;
             }
+        }
+
+        public void SetPlayerNames(string nameA, string nameB, TextSetting settingA, TextSetting settingB)
+        {
+            // 중복 로직 제거 및 재사용
+            UIUtils.ApplyPlayerNames(p1NameText, p2NameText, nameA, nameB, settingA, settingB);
+        }
+
+        public void SetPlayerBalls(Sprite spriteA, Sprite spriteB)
+        {
+            if (ballImageA)
+            {
+                if (spriteA) ballImageA.sprite = spriteA;
+                else Debug.LogWarning("[PlayTutorialUIManager] Player A 컬러 스프라이트가 누락되어 기본 이미지를 유지합니다.");
+            }
+            else Debug.LogWarning("[PlayTutorialUIManager] ballImageA 컴포넌트가 연결되지 않았습니다.");
+
+            if (ballImageB)
+            {
+                if (spriteB) ballImageB.sprite = spriteB;
+                else Debug.LogWarning("[PlayTutorialUIManager] Player B 컬러 스프라이트가 누락되어 기본 이미지를 유지합니다.");
+            }
+            else Debug.LogWarning("[PlayTutorialUIManager] ballImageB 컴포넌트가 연결되지 않았습니다.");
         }
 
         public void UpdateGauge(int playerIdx, float current, float max)
@@ -123,6 +155,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
             StartCoroutine(FadeCanvasGroup(popup, popup.alpha, 0f, duration));
             popup.blocksRaycasts = false;
         }
+        
         public IEnumerator FadeOutPopupTextAndChange(string newText, float fadeOutTime, float fadeInTime)
         {
             yield return StartCoroutine(FadeTextAlpha(popupText, 1f, 0f, fadeOutTime));
@@ -147,11 +180,9 @@ namespace My.Scripts._02_PlayTutorial.Managers
 
         public IEnumerator RunFinalPageSequence(TextSetting[] texts)
         {
-            // 예외 처리
             if (!finalPageCanvasGroup || !finalPageText) yield break;
             if (texts == null || texts.Length == 0) yield break;
 
-            // 1. 패널 활성화 (아직 투명한 상태)
             finalPageCanvasGroup.gameObject.SetActive(true);
             finalPageCanvasGroup.alpha = 0f;
             
@@ -161,19 +192,15 @@ namespace My.Scripts._02_PlayTutorial.Managers
                 else finalPageText.text = texts[0].text;
             }
 
-            // 텍스트를 투명하게 초기화 (페이드 인 효과를 위해)
             Color c = finalPageText.color;
             finalPageText.color = new Color(c.r, c.g, c.b, 0f);
 
-            // 2. 페이지 페이드 인
             yield return StartCoroutine(FadeCanvasGroup(finalPageCanvasGroup, 0f, 1f, 1f));
 
-            // 3. 텍스트 순차 재생
             foreach (TextSetting setting in texts)
             {
                 if (setting == null) continue;
 
-                // 텍스트 교체
                 if (UIManager.Instance)
                 {
                     UIManager.Instance.SetText(finalPageText.gameObject, setting);
@@ -187,18 +214,12 @@ namespace My.Scripts._02_PlayTutorial.Managers
                 {
                     SoundManager.Instance?.PlaySFX("공통_13");
                 }
-                // 텍스트 페이드 인 (0 -> 1)
+                
                 yield return StartCoroutine(FadeTextAlpha(finalPageText, 0f, 1f, 1f));
-        
-                // 3초 대기
                 yield return CoroutineData.GetWaitForSeconds(3.0f);
-
-                // 텍스트 페이드 아웃 (1 -> 0)
                 yield return StartCoroutine(FadeTextAlpha(finalPageText, 1f, 0f, 1f));
             }
         }
-
-        // --- Utility Coroutines ---
 
         private IEnumerator FadeCanvasGroup(CanvasGroup cg, float start, float end, float duration)
         {

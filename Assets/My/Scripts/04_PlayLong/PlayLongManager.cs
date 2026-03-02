@@ -15,6 +15,9 @@ namespace My.Scripts._04_PlayLong
         [Serializable]
         public class Play500MSetting
         {
+            public TextSetting playerAName;
+            public TextSetting playerBName;
+            
             public IntroPageData introPage;
             public TextSetting[] popupTexts;
             public TextSetting startText;
@@ -77,11 +80,48 @@ namespace My.Scripts._04_PlayLong
         private void Start()
         {
             LoadSettings();
-            if (ui) ui.InitUI(targetDistance);
+            
+            if (ui) 
+            {
+                ui.InitUI(targetDistance);
+
+                // API 연동 데이터(이름, 컬러)와 JSON 스타일 데이터를 UI에 전달함.
+                if (GameManager.Instance)
+                {
+                    string nameA = string.IsNullOrEmpty(GameManager.Instance.PlayerALastName) ? "Player A" : GameManager.Instance.PlayerALastName;
+                    string nameB = string.IsNullOrEmpty(GameManager.Instance.PlayerBLastName) ? "Player B" : GameManager.Instance.PlayerBLastName;
+                    
+                    TextSetting settingA = _setting != null ? _setting.playerAName : null;
+                    TextSetting settingB = _setting != null ? _setting.playerBName : null;
+
+                    ui.SetPlayerNames(nameA, nameB, settingA, settingB);
+
+                    // --- [추가] 팝업 텍스트 데이터의 이름 플레이스홀더 치환 ---
+                    // 이유: 특정 인덱스에 구애받지 않고, 기획자가 JSON 내 어떤 팝업 문구에든 {nameA}, {nameB}를 자유롭게 활용할 수 있도록 일괄 적용함.
+                    if (_setting != null && _setting.popupTexts != null)
+                    {
+                        foreach (TextSetting popupText in _setting.popupTexts)
+                        {
+                            if (popupText != null && !string.IsNullOrEmpty(popupText.text))
+                            {
+                                popupText.text = popupText.text.Replace("{nameA}", nameA).Replace("{nameB}", nameB);
+                            }
+                        }
+                    }
+                    // -------------------------------------------------------------
+
+                    // 컬러 데이터를 기반으로 UI 공 이미지의 스프라이트를 변경함.
+                    Sprite spriteA = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerAColor);
+                    Sprite spriteB = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerBColor);
+                    ui.SetPlayerBalls(spriteA, spriteB);
+                }
+            }
+            
             InitializePlayers();
+            
             if (InputManager.Instance) InputManager.Instance.OnPadDown += HandlePadDown;
 
-            // 게임 시작 시 인트로 컷신이 나오므로 글로벌 방치 타이머를 일시 정지함
+            // 게임 시작 시 인트로 페이지가 나오므로 글로벌 방치 타이머를 일시 정지함
             SetAutoProgressing(true);
             StartCoroutine(InitialFlowRoutine());
         }
@@ -102,14 +142,12 @@ namespace My.Scripts._04_PlayLong
         /// 게임 매니저의 글로벌 방치 타이머 상태를 제어함.
         /// 연출 구간에서는 타이머를 끄고(true), 실제 플레이 구간에서는 켬(false).
         /// </summary>
-        /// <param name="isAuto">true: 타이머 멈춤(자동 연출 중), false: 타이머 가동(사용자 입력 대기)</param>
         private void SetAutoProgressing(bool isAuto)
         {
             if (GameManager.Instance)
             {
                 GameManager.Instance.IsAutoProgressing = isAuto;
                 
-                // 사용자가 직접 움직여야 하는 구간이 새롭게 시작될 때, 온전한 20초를 보장하기 위해 리셋함
                 if (!isAuto)
                 {
                     GameManager.Instance.ResetInactivityTimer();
@@ -121,9 +159,6 @@ namespace My.Scripts._04_PlayLong
             }
         }
 
-        /// <summary>
-        /// 게임 시작 시 인트로 페이지 연출을 대기한 후 미션 시작.
-        /// </summary>
         private IEnumerator InitialFlowRoutine()
         {
             if (introPage)
@@ -174,8 +209,6 @@ namespace My.Scripts._04_PlayLong
             }
 
             _isInputBlocked = true;
-            
-            // 레드라인 컷신 시작, 타이머 정지
             SetAutoProgressing(true);
             
             foreach (PlayerController p in players)
@@ -195,14 +228,11 @@ namespace My.Scripts._04_PlayLong
             _isRightMissionActive = true;
             _currentCoopDistance = 0f;
 
-            // 우측 이동 미션 대기, 타이머 가동
             SetAutoProgressing(false);
 
             while (_currentCoopDistance < RequiredRightDistance) yield return null;
 
             _isRightMissionActive = false;
-            
-            // 미션 완료 후 다음 텍스트 연출 대기, 타이머 정지
             SetAutoProgressing(true);
             
             foreach (PlayerController p in players)
@@ -221,7 +251,6 @@ namespace My.Scripts._04_PlayLong
             _p1StepCount = _p2StepCount = _syncedStepCount = 0;
             _currentCoopDistance = 0f;
 
-            // 좌측 이동 미션 대기, 타이머 가동
             SetAutoProgressing(false);
 
             while (_currentCoopDistance < RequiredLeftDistance) yield return null;
@@ -229,7 +258,6 @@ namespace My.Scripts._04_PlayLong
             _isLeftMissionActive = false;
             _isInputBlocked = true;
             
-            // 좌측 미션 완료 및 자동 회피 컷신 진입, 타이머 정지
             SetAutoProgressing(true);
             
             foreach (PlayerController p in players)
@@ -288,7 +316,6 @@ namespace My.Scripts._04_PlayLong
             bool p2Ready = false;
             float readyStartTime = Time.time;
 
-            // 두 플레이어가 중앙 발판을 밟아 준비 완료할 때까지 대기, 방치 타이머 가동
             SetAutoProgressing(false);
 
             Action<int, int, int> onReadyPadDown = (pIdx, lIdx, padIdx) =>
@@ -318,7 +345,6 @@ namespace My.Scripts._04_PlayLong
 
             if (InputManager.Instance) InputManager.Instance.OnPadDown -= onReadyPadDown;
 
-            // 준비 완료 후 카운트다운 연출 시작, 타이머 정지
             SetAutoProgressing(true);
 
             if (ui)
@@ -348,10 +374,6 @@ namespace My.Scripts._04_PlayLong
             {
                 if (ui) ui.SetCenterText(_setting.startText);
             }
-            else
-            {
-                Debug.LogWarning("[PlayLongManager] StartCountdownSequence: _setting or startText is null");
-            }
 
             yield return CoroutineData.GetWaitForSeconds(1.0f);
 
@@ -370,7 +392,6 @@ namespace My.Scripts._04_PlayLong
             _currentCoopDistance = 0f;
             _p1LastStepTime = _p2LastStepTime = Time.time;
             
-            // 첫 미션 입력 대기, 방치 타이머 가동
             SetAutoProgressing(false);
         }
 
@@ -521,7 +542,6 @@ namespace My.Scripts._04_PlayLong
             _p1LastStepTime = _p2LastStepTime = Time.time;
             if (obstacleManager) obstacleManager.GenerateProgressiveObstacles();
             
-            // 본 게임 달리기 시작, 타이머 가동
             SetAutoProgressing(false);
         }
 
@@ -535,7 +555,6 @@ namespace My.Scripts._04_PlayLong
 
         private IEnumerator FinishGameSequence()
         {
-            // 종료 연출 진행 중이므로 타이머 정지
             SetAutoProgressing(true);
 
             foreach (PlayerController p in players)
@@ -555,7 +574,6 @@ namespace My.Scripts._04_PlayLong
                     }
                     else
                     {
-                        Debug.LogWarning("[PlayLongManager] FinishGameSequence _setting or _setting.endText is null.");
                         ui.ShowCenterResultPopup("SUCCESS");
                     }
                 }
@@ -589,12 +607,30 @@ namespace My.Scripts._04_PlayLong
 
         private void InitializePlayers()
         {
-            if (baseSettings == null) return;
+            if (!baseSettings) return;
 
             PlayerPhysicsConfig config = baseSettings.physicsConfig;
             config.maxDistance = targetDistance;
-            if (players != null && players.Length > 0 && players[0]) players[0].Setup(0, p1LongLanePositions, config);
-            if (players != null && players.Length > 1 && players[1]) players[1].Setup(1, p2LongLanePositions, config);
+            
+            if (players != null)
+            {
+                for (int i = 0; i < players.Length; i++)
+                {
+                    if (players[i])
+                    {
+                        Vector2[] lanes = (i == 0) ? p1LongLanePositions : p2LongLanePositions;
+                        players[i].Setup(i, lanes, config);
+
+                        // 플레이어 캐릭터의 색상을 API 컬러로 동기화함
+                        if (GameManager.Instance)
+                        {
+                            ColorData colorData = (i == 0) ? GameManager.Instance.PlayerAColor : GameManager.Instance.PlayerBColor;
+                            Color targetColor = GameManager.Instance.GetColorFromData(colorData);
+                            players[i].SetCharacterColor(targetColor);
+                        }
+                    }
+                }
+            }
         }
     }
 }
