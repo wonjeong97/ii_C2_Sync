@@ -16,9 +16,10 @@ public class PadDotController : MonoBehaviour
 
     private Sprite[] _defaultSprites;
 
-    // 점멸 중인 인덱스를 관리하기 위한 HashSet
     private HashSet<int> _blinkingIndices = new HashSet<int>();
     private Coroutine _blinkCoroutine;
+
+    private const int DOTS_PER_PLAYER = 6;
 
     private void Start()
     {
@@ -32,7 +33,6 @@ public class PadDotController : MonoBehaviour
             }
         }
 
-        // API 설정 색상 적용
         ApplyPlayerColors();
 
         if (InputManager.Instance)
@@ -42,10 +42,6 @@ public class PadDotController : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// GameManager에서 API 색상 데이터를 가져와 각 플레이어의 패드 이미지에 적용함.
-    /// 배열 인덱스 규칙에 따라 0~5는 Player A, 6~11은 Player B로 계산하여 시각적 일관성을 유지함.
-    /// </summary>
     private void ApplyPlayerColors()
     {
         if (!GameManager.Instance) return;
@@ -59,11 +55,9 @@ public class PadDotController : MonoBehaviour
             {
                 if (padImages[i])
                 {
-                    // i가 0~5이면 playerIdx는 0, 6~11이면 1이 됨
-                    int playerIdx = i / 6;
+                    int playerIdx = Mathf.Clamp(i / DOTS_PER_PLAYER, 0, 1);
                     Color targetColor = (playerIdx == 0) ? colorA : colorB;
                     
-                    // 기존에 에디터에서 세팅된 알파값(투명도)은 보존하고 RGB 색상만 교체함
                     float currentAlpha = padImages[i].color.a;
                     padImages[i].color = new Color(targetColor.r, targetColor.g, targetColor.b, currentAlpha);
                 }
@@ -90,8 +84,6 @@ public class PadDotController : MonoBehaviour
     {
         int index = (pIdx * 6) + (lIdx * 2) + padIdx;
 
-        // 점멸 중인 발판을 눌렀을 때는 점멸 로직보다 입력 상태를 우선시하기 위해 예외 처리가 필요할 수 있으나,
-        // 현재 로직상 입력 이벤트가 발생하면 즉시 스프라이트를 덮어씌우므로 자연스럽게 동작함.
         if (IsValidIndex(index))
         {
             if (isPressed)
@@ -100,7 +92,6 @@ public class PadDotController : MonoBehaviour
             }
             else
             {
-                // 점멸 중이 아닐 때만 기본 이미지로 복구 (점멸 중이면 코루틴이 알아서 제어)
                 if (!_blinkingIndices.Contains(index))
                 {
                     if (_defaultSprites != null && _defaultSprites[index])
@@ -127,9 +118,10 @@ public class PadDotController : MonoBehaviour
         }
     }
 
-    // 특정 인덱스들의 점멸 시작
     public void StartBlinking(int[] indices)
     {
+        if (indices == null || indices.Length == 0) return;
+
         foreach (int idx in indices)
         {
             if (IsValidIndex(idx)) _blinkingIndices.Add(idx);
@@ -141,16 +133,16 @@ public class PadDotController : MonoBehaviour
         }
     }
 
-    // 특정 인덱스들의 점멸 중지
     public void StopBlinking(int[] indices)
     {
+        if (indices == null || indices.Length == 0) return;
+
         foreach (int idx in indices)
         {
             if (_blinkingIndices.Contains(idx))
             {
                 _blinkingIndices.Remove(idx);
                 
-                // 점멸을 멈출 때 기본 이미지로 즉시 복구
                 if (IsValidIndex(idx))
                 {
                     if (_defaultSprites != null && _defaultSprites[idx])
@@ -163,7 +155,7 @@ public class PadDotController : MonoBehaviour
     private IEnumerator BlinkRoutine()
     {
         bool isActive = true;
-        WaitForSeconds wait = CoroutineData.GetWaitForSeconds(0.5f); // 0.5초 간격 점멸
+        WaitForSeconds wait = CoroutineData.GetWaitForSeconds(0.5f); 
 
         while (_blinkingIndices.Count > 0)
         {

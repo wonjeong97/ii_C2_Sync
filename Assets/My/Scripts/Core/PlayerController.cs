@@ -1,15 +1,12 @@
 using System;
 using System.Collections;
 using UnityEngine;
-using UnityEngine.UI; // Image 컴포넌트 사용을 위해 추가
+using UnityEngine.UI;
 using Wonjeong.UI;
 using Wonjeong.Utils;
 
 namespace My.Scripts.Core
 {
-    /// <summary>
-    /// 플레이어 이동 연산에 필요한 상수들을 정의하는 물리 설정 구조체.
-    /// </summary>
     [Serializable]
     public struct PlayerPhysicsConfig
     {
@@ -23,9 +20,6 @@ namespace My.Scripts.Core
         public float metricMultiplier; 
     }
 
-    /// <summary>
-    /// 플레이어 캐릭터의 이동, 애니메이션, 피격 상태 및 손 위치 정보를 관리하는 컨트롤러.
-    /// </summary>
     public class PlayerController : MonoBehaviour
     {
         [Header("Components")]
@@ -34,33 +28,23 @@ namespace My.Scripts.Core
         [SerializeField] private Animator characterAnimator;
 
         [Header("Character Parts (For Color)")]
-        [Tooltip("API 컬러 데이터에 맞춰 색상이 변경될 몸통 이미지")]
         [SerializeField] private Image bodyImage;
-        [Tooltip("API 컬러 데이터에 맞춰 색상이 변경될 왼손 이미지")]
         [SerializeField] private Image leftHandImage;
-        [Tooltip("API 컬러 데이터에 맞춰 색상이 변경될 오른손 이미지")]
         [SerializeField] private Image rightHandImage;
 
         [Header("Hand Anchors (Animation)")]
-        [Tooltip("애니메이션에 맞춰 실이 따라갈 손 Bone (Transform)")]
         [SerializeField] private Transform leftHandTransform;
-        [Tooltip("애니메이션에 맞춰 실이 따라갈 손 Bone (Transform)")]
         [SerializeField] private Transform rightHandTransform;
 
         [Header("Default Hand Offsets (UI Pixels)")]
-        [Tooltip("Bone이 없을 때 사용할 왼쪽 손 기본 좌표 (-86, -33)")]
         [SerializeField] private Vector2 leftHandDefaultOffset = new Vector2(-86f, -33f);
-        [Tooltip("Bone이 없을 때 사용할 오른쪽 손 기본 좌표 (86, -33)")]
         [SerializeField] private Vector2 rightHandDefaultOffset = new Vector2(86f, -33f);
 
         [Header("Animation Settings")]
-        [Tooltip("이동 속도 대비 애니메이션 재생 속도 비율")]
         [SerializeField] private float runSpeedMultiplier = 1.0f;
 
         [Header("Movement Settings")]
-        [Tooltip("라인 이동 시 점프 높이 (UI 좌표 기준)")]
         [SerializeField] private float jumpArcHeight = 50f; 
-        [Tooltip("라인 이동에 걸리는 시간 (초)")]
         [SerializeField] private float jumpDuration = 0.25f;
 
         [Header("State (Read Only)")]
@@ -87,9 +71,6 @@ namespace My.Scripts.Core
         
         public Animator CharacterAnimator => characterAnimator;
 
-        /// <summary>
-        /// 초기 데이터 및 좌표 설정을 수행합니다.
-        /// </summary>
         public void Setup(int index, Vector2[] lanePositions, PlayerPhysicsConfig config)
         {
             playerIndex = index;
@@ -105,7 +86,6 @@ namespace My.Scripts.Core
             if (_moveCoroutine != null) StopCoroutine(_moveCoroutine);
             _moveCoroutine = null;
 
-            // 초기화 시 중앙(1번) 라인에 즉시 배치
             if (_lanePositions != null && _lanePositions.Length > 1)
             {
                 currentLane = 1;
@@ -115,40 +95,24 @@ namespace My.Scripts.Core
             NotifyDistanceChanged();
         }
 
-        /// <summary>
-        /// 캐릭터의 신체 부위(몸통, 양손) 색상을 변경함.
-        /// API에서 받아온 유저별 퍼스널 컬러를 캐릭터에 시각적으로 반영하기 위함.
-        /// </summary>
-        /// <param name="color">적용할 RGB 색상값</param>
         public void SetCharacterColor(Color color)
         {
-            if (bodyImage) bodyImage.color = color;
-            if (leftHandImage) leftHandImage.color = color;
-            if (rightHandImage) rightHandImage.color = color;
+            if (bodyImage) bodyImage.color = new Color(color.r, color.g, color.b, bodyImage.color.a);
+            if (leftHandImage) leftHandImage.color = new Color(color.r, color.g, color.b, leftHandImage.color.a);
+            if (rightHandImage) rightHandImage.color = new Color(color.r, color.g, color.b, rightHandImage.color.a);
         }
 
-        /// <summary>
-        /// 요청된 방향에 따른 손의 UI 글로벌 좌표를 반환합니다.
-        /// Bone이 할당되지 않은 경우 지정된 UI 오프셋을 캐릭터 좌표에 더해 계산합니다.
-        /// </summary>
-        /// <param name="isRightHand">true면 오른손, false면 왼손</param>
         public Vector3 GetHandUIPosition(bool isRightHand)
         {
             Transform target = isRightHand ? rightHandTransform : leftHandTransform;
-    
-            // 1. 애니메이션 Bone이 할당되어 있다면 해당 UI 글로벌 좌표 반환
             if (target) return target.position;
 
-            // 2. Bone이 없다면 캐릭터 UI 위치 기준 상대 좌표를 UI 글로벌 좌표로 변환하여 반환
             Vector2 offset = isRightHand ? rightHandDefaultOffset : leftHandDefaultOffset;
             if (!characterUI) return transform.position;
 
             return characterUI.TransformPoint(offset);
         }
 
-        /// <summary>
-        /// 매 프레임 속도 감쇠 및 물리 상태를 업데이트합니다.
-        /// </summary>
         public void OnUpdate(bool isAutoRun, float autoRunTargetSpeed, float autoRunSmoothTime)
         {
             if (IsStunned)
@@ -222,9 +186,6 @@ namespace My.Scripts.Core
             _stunCoroutine = null;
         }
 
-        /// <summary>
-        /// 발판 입력 이벤트를 처리하여 한 라인의 두 발판이 모두 눌렸는지 판단합니다.
-        /// </summary>
         public bool HandleInput(int laneIdx, int padIdx)
         {
             if (IsStunned) return false; 
@@ -243,9 +204,6 @@ namespace My.Scripts.Core
             return false;
         }
 
-        /// <summary>
-        /// 캐릭터를 해당 라인으로 이동시키고 속도를 증가시킵니다.
-        /// </summary>
         public void MoveAndAccelerate(int laneIdx)
         {
             MoveToLane(laneIdx);
@@ -271,15 +229,10 @@ namespace My.Scripts.Core
             OnDistanceChanged?.Invoke(playerIndex, currentDistance, _config.maxDistance);
         }
 
-        /// <summary>
-        /// 지정된 인덱스의 라인으로 캐릭터를 이동(점프)시킵니다.
-        /// 외부 매니저에서 접근 가능하도록 public으로 선언되어 있습니다.
-        /// </summary>
         public void MoveToLane(int laneIdx)
         {
             if (laneIdx < 0 || laneIdx >= _lanePositions.Length) return;
             
-            // 이동(점프) 중이거나 현재 위치와 같은 라인이면 무시
             if (_moveCoroutine != null || currentLane == laneIdx) return;
         
             int laneDiff = Mathf.Max(1, Mathf.Abs(laneIdx - currentLane));
@@ -291,7 +244,7 @@ namespace My.Scripts.Core
                 Vector2 targetPos = _lanePositions[laneIdx];
                 
                 float actualArcHeight = jumpArcHeight * laneDiff; 
-                float actualDuration = jumpDuration * (1f + 0.3f * (laneDiff - 1)); // 2칸 이동 시 시간 1.3배
+                float actualDuration = jumpDuration * (1f + 0.3f * (laneDiff - 1));
                 
                 SoundManager.Instance?.PlaySFX("달리기_1");
                 _moveCoroutine = StartCoroutine(MoveLaneRoutine(startPos, targetPos, actualDuration, actualArcHeight));
@@ -306,10 +259,8 @@ namespace My.Scripts.Core
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / duration);
 
-                // 직선 이동 보간
                 Vector2 currentPos = Vector2.Lerp(startPos, targetPos, t);
 
-                // 포물선 효과 적용
                 float heightOffset = Mathf.Sin(t * Mathf.PI) * arcHeight;
                 currentPos.y += heightOffset;
                 characterUI.anchoredPosition = currentPos;

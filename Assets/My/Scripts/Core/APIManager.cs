@@ -9,17 +9,6 @@ using Wonjeong.Utils;
 
 namespace My.Scripts.Core
 {
-    public enum ColorData
-    {   
-        NotSet = -1,
-        Cyan = 0,
-        Pink = 1,
-        Orange = 2,
-        Green = 3,
-        Red = 4,
-        Yellow = 5
-    }
-    
     public struct UserData
     {
         public int IDX_USER; 
@@ -61,7 +50,11 @@ namespace My.Scripts.Core
     {
         [Header("API Settings")]
         [Tooltip("조회할 유저의 UID를 입력하세요.")]
+#if UNITY_EDITOR
         [SerializeField] private string userUid = "2270AE4A-ABFC-E349-1A0A5A69999CC1A8";
+#else
+        [SerializeField] private string userUid = "";
+#endif
 
         void Start()
         {
@@ -74,7 +67,6 @@ namespace My.Scripts.Core
         [ContextMenu("Fetch API Data")]
         public void FetchData()
         {
-            // 1. API 설정 파일 가져오기 (GameManager가 없으면 직접 로드)
             ApiSettings config = null;
             if (GameManager.Instance != null) config = GameManager.Instance.ApiConfig;
             if (config == null) config = JsonLoader.Load<ApiSettings>(GameConstants.Path.ApiSetting);
@@ -85,22 +77,22 @@ namespace My.Scripts.Core
                 return;
             }
 
-            // 2. 설정된 베이스 URL + GetUser URL + 입력된 uid 조합
             string requestUrl = $"{config.GetUserUrl}?uid={userUid}";
             StartCoroutine(GetApiDataRoutine(requestUrl));
         }
 
-        /// <summary> API 서버에 GET 요청을 보내고 JSON을 받아오는 코루틴 </summary>
         private IEnumerator GetApiDataRoutine(string url)
         {
-            Debug.Log($"[APIManager] API 요청 시작: {url}");
+            // URL에 포함된 UID를 마스킹하여 로그에 노출되지 않도록 보호
+            string maskedUrl = string.IsNullOrEmpty(userUid) ? url : url.Replace(userUid, "<masked_uid>");
+            Debug.Log($"[APIManager] API 요청 시작: {maskedUrl}");
 
             using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
-            {
-                // 통신 대기
+            { 
+                webRequest.timeout = 10; 
+                
                 yield return webRequest.SendWebRequest();
 
-                // 네트워크 에러 또는 HTTP 에러(404, 500 등) 체크
                 if (webRequest.result == UnityWebRequest.Result.ConnectionError || 
                     webRequest.result == UnityWebRequest.Result.ProtocolError)
                 {
@@ -108,11 +100,8 @@ namespace My.Scripts.Core
                 }
                 else
                 {
-                    // 성공적으로 JSON 텍스트를 받아옴
                     string jsonResult = webRequest.downloadHandler.text;
                     Debug.Log("[APIManager] 데이터 수신 성공! 파싱을 시작합니다.");
-                    
-                    // 수신받은 JSON 텍스트를 파싱 함수로 전달
                     ParseAndProcessData(jsonResult);
                 }
             }

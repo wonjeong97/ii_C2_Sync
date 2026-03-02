@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using Wonjeong.Data; 
 using Wonjeong.UI;
 using Wonjeong.Utils;
+using My.Scripts.UI; 
 
 namespace My.Scripts._03_PlayShort
 {
@@ -107,88 +108,26 @@ namespace My.Scripts._03_PlayShort
             HidePopupImmediate(popupCenter);
         }
 
-        /// <summary>
-        /// API에서 받아온 유저 이름과 JSON 텍스트 세팅을 UI에 적용함.
-        /// 외부 데이터(JSON)로 포맷과 스타일을 관리하여 기획 변경에 유연하게 대응하기 위함.
-        /// </summary>
         public void SetPlayerNames(string nameA, string nameB, TextSetting settingA, TextSetting settingB)
         {
-            if (p1NameText)
-            {
-                if (settingA != null)
-                {
-                    if (UIManager.Instance) UIManager.Instance.SetText(p1NameText.gameObject, settingA);
-                    p1NameText.text = settingA.text.Replace("{nameA}", nameA);
-                }
-                else
-                {
-                    // JSON 데이터 누락 시 기본값 폴백
-                    p1NameText.text = $"{nameA}님의 위치";
-                }
-            }
-            else
-            {
-                Debug.LogWarning("[PlayShortUIManager] P1 이름 텍스트 컴포넌트가 할당되지 않았습니다.");
-            }
-
-            if (p2NameText)
-            {
-                if (settingB != null)
-                {
-                    if (UIManager.Instance) UIManager.Instance.SetText(p2NameText.gameObject, settingB);
-                    p2NameText.text = settingB.text.Replace("{nameB}", nameB);
-                }
-                else
-                {
-                    // JSON 데이터 누락 시 기본값 폴백
-                    p2NameText.text = $"{nameB}님의 위치";
-                }
-            }
-            else
-            {
-                Debug.LogWarning("[PlayShortUIManager] P2 이름 텍스트 컴포넌트가 할당되지 않았습니다.");
-            }
+            UIUtils.ApplyPlayerNames(p1NameText, p2NameText, nameA, nameB, settingA, settingB);
         }
 
-        /// <summary>
-        /// API에서 받아온 컬러 기반의 스프라이트를 플레이어 이름 옆 공 이미지에 적용함.
-        /// 플레이어가 자신의 조작 영역과 색상을 직관적으로 매칭할 수 있게 돕기 위함.
-        /// </summary>
-        /// <param name="spriteA">GameManager에서 추출한 Player A의 스프라이트</param>
-        /// <param name="spriteB">GameManager에서 추출한 Player B의 스프라이트</param>
         public void SetPlayerBalls(Sprite spriteA, Sprite spriteB)
         {
             if (ballImageA)
             {
-                if (spriteA)
-                {
-                    ballImageA.sprite = spriteA;
-                }
-                else
-                {
-                    Debug.LogWarning("[PlayShortUIManager] Player A 컬러 스프라이트가 누락되어 기본 이미지를 유지합니다.");
-                }
+                if (spriteA) ballImageA.sprite = spriteA;
+                else Debug.LogWarning("[PlayShortUIManager] Player A 컬러 스프라이트가 누락되어 기본 이미지를 유지합니다.");
             }
-            else
-            {
-                Debug.LogWarning("[PlayShortUIManager] ballImageA 컴포넌트가 연결되지 않았습니다.");
-            }
+            else Debug.LogWarning("[PlayShortUIManager] ballImageA 컴포넌트가 연결되지 않았습니다.");
 
             if (ballImageB)
             {
-                if (spriteB)
-                {
-                    ballImageB.sprite = spriteB;
-                }
-                else
-                {
-                    Debug.LogWarning("[PlayShortUIManager] Player B 컬러 스프라이트가 누락되어 기본 이미지를 유지합니다.");
-                }
+                if (spriteB) ballImageB.sprite = spriteB;
+                else Debug.LogWarning("[PlayShortUIManager] Player B 컬러 스프라이트가 누락되어 기본 이미지를 유지합니다.");
             }
-            else
-            {
-                Debug.LogWarning("[PlayShortUIManager] ballImageB 컴포넌트가 연결되지 않았습니다.");
-            }
+            else Debug.LogWarning("[PlayShortUIManager] ballImageB 컴포넌트가 연결되지 않았습니다.");
         }
         
         public void HideWaitingPopups()
@@ -331,10 +270,6 @@ namespace My.Scripts._03_PlayShort
             yield return CoroutineData.GetWaitForSeconds(duration);
         }
         
-        /// <summary>
-        /// 3초 동안 입력이 없으면 텍스트를 표시하고, 이후 입력이 들어와도 텍스트를 유지함.
-        /// 이유: 한 번 힌트를 본 사용자가 조작을 재개하더라도 내용을 계속 참고할 수 있게 하기 위함.
-        /// </summary>
         private IEnumerator InactivityInfoFadeRoutine(int playerIdx, Text infoText, float waitTime, float fadeDuration)
         {
             if (!infoText) yield break;
@@ -413,9 +348,6 @@ namespace My.Scripts._03_PlayShort
             return false; 
         }
 
-        /// <summary>
-        /// 질문 팝업을 숨기고 관련된 진행 중인 상태들을 초기화함.
-        /// </summary>
         public void HideQuestionPopup(int playerIdx, float duration)
         {
             if (_infoFadeRoutines[playerIdx] != null)
