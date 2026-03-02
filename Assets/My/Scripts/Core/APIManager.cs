@@ -83,7 +83,6 @@ namespace My.Scripts.Core
 
         private IEnumerator GetApiDataRoutine(string url)
         {
-            // URL에 포함된 UID를 마스킹하여 로그에 노출되지 않도록 보호
             string maskedUrl = string.IsNullOrEmpty(userUid) ? url : url.Replace(userUid, "<masked_uid>");
             Debug.Log($"[APIManager] API 요청 시작: {maskedUrl}");
 
@@ -93,8 +92,7 @@ namespace My.Scripts.Core
                 
                 yield return webRequest.SendWebRequest();
 
-                if (webRequest.result == UnityWebRequest.Result.ConnectionError || 
-                    webRequest.result == UnityWebRequest.Result.ProtocolError)
+                if (webRequest.result != UnityWebRequest.Result.Success)
                 {
                     Debug.LogError($"[APIManager] 통신 실패: {webRequest.error}");
                 }
@@ -164,6 +162,7 @@ namespace My.Scripts.Core
                         
                         GameManager.Instance.PlayerAColor = userData.COLOR_LEFT;
                         GameManager.Instance.PlayerBColor = userData.COLOR_RIGHT;
+                        GameManager.Instance.NotifyUserDataUpdated();
                     }
                 }
                 else
@@ -181,6 +180,7 @@ namespace My.Scripts.Core
 
         private int ParseIntSafe(ApiTableResponse response, List<object> row, string colName)
         {
+            if (response?.COLUMNS == null || row == null) return 0;
             int index = response.COLUMNS.IndexOf(colName);
             if (index != -1 && row.Count > index && row[index] != null)
             {
@@ -188,9 +188,9 @@ namespace My.Scripts.Core
             }
             return 0; 
         }
-
         private string ParseStringSafe(ApiTableResponse response, List<object> row, string colName)
         {
+            if (response?.COLUMNS == null || row == null) return string.Empty;
             int index = response.COLUMNS.IndexOf(colName);
             if (index != -1 && row.Count > index && row[index] != null)
             {
@@ -201,6 +201,7 @@ namespace My.Scripts.Core
 
         private ColorData ParseColorSafe(ApiTableResponse response, List<object> row, string colName)
         {
+            if (response?.COLUMNS == null || row == null) return ColorData.NotSet;
             int index = response.COLUMNS.IndexOf(colName);
             if (index != -1 && row.Count > index && row[index] != null)
             {

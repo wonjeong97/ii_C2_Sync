@@ -80,6 +80,8 @@ namespace My.Scripts.Core
         public ColorData PlayerAColor { get; set; } = ColorData.NotSet;
         public ColorData PlayerBColor { get; set; } = ColorData.NotSet;
         
+        public event Action OnUserDataUpdated;
+        
         [Header("Player Color Sprites")]
         public Sprite[] playerColorSprites;
         
@@ -133,8 +135,6 @@ namespace My.Scripts.Core
             else _fadeTime = 1.0f;
 
             _systemData = JsonLoader.Load<SystemData>(GameConstants.Path.System);
-            
-            // 초기화 시점에 ApiConfig를 로드하여 null 참조 방지
             ApiConfig = JsonLoader.Load<ApiSettings>(GameConstants.Path.ApiSetting);
         }
 
@@ -152,6 +152,11 @@ namespace My.Scripts.Core
             HandleInactivity();
         }
         
+        public void NotifyUserDataUpdated()
+        {
+            OnUserDataUpdated?.Invoke();
+        }
+
         public Sprite GetColorSprite(ColorData color)
         {
             int index = -1;
@@ -363,7 +368,7 @@ namespace My.Scripts.Core
         {
             if (ApiConfig == null) yield break;
 
-            string safeOption = Uri.EscapeDataString(option);
+            string safeOption = Uri.EscapeDataString(option ?? string.Empty);
 
             string urlLeft = $"{ApiConfig.UpdateTimeUrl}?idx_user={CurrentUserId}&option={safeOption}&side=left&code=a1";
             string urlRight = $"{ApiConfig.UpdateTimeUrl}?idx_user={CurrentUserId}&option={safeOption}&side=right&code=a1";
@@ -393,7 +398,7 @@ namespace My.Scripts.Core
         {
             if (ApiConfig == null) yield break; 
 
-            string safeSide = Uri.EscapeDataString(side);
+            string safeSide = Uri.EscapeDataString(side ?? string.Empty);
             string url = $"{ApiConfig.UpdateValueUrl}?idx_user={CurrentUserId}&q_no={qNo}&side={safeSide}&code=a1&value={value}";
             
             using (UnityWebRequest req = UnityWebRequest.Get(url))

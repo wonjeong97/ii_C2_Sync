@@ -34,6 +34,11 @@ public class PadDotController : MonoBehaviour
         }
 
         ApplyPlayerColors();
+        
+        if (GameManager.Instance)
+        {
+            GameManager.Instance.OnUserDataUpdated += ApplyPlayerColors;
+        }
 
         if (InputManager.Instance)
         {
@@ -71,6 +76,11 @@ public class PadDotController : MonoBehaviour
         {
             InputManager.Instance.OnPadDown -= OnKeyDown;
             InputManager.Instance.OnPadUp -= OnKeyUp;
+        }
+        
+        if (GameManager.Instance)
+        {
+            GameManager.Instance.OnUserDataUpdated -= ApplyPlayerColors;
         }
     }
 
