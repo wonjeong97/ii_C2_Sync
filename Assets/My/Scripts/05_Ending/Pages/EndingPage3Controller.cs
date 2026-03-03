@@ -27,6 +27,7 @@ namespace My.Scripts._05_Ending.Pages
         [SerializeField] private Image redLineImage;
 
         private bool _isAllFinished; // 특별 엔딩(붉은 실) 활성화 여부
+        private bool _hasSentEndTime;
 
         protected override void SetupData(EndingPage3Data data)
         {
@@ -64,6 +65,12 @@ namespace My.Scripts._05_Ending.Pages
                 redLineImage.fillAmount = 0f;
                 // 특별 엔딩이 아닐 경우 이미지 오브젝트 자체를 비활성화
                 redLineImage.gameObject.SetActive(_isAllFinished); 
+            }
+            
+            if (!_hasSentEndTime && GameManager.Instance)
+            {
+                _hasSentEndTime = true;
+                GameManager.Instance.SendTimeUpdateAPI();
             }
 
             StartCoroutine(SequenceRoutine());

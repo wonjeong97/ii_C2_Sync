@@ -36,6 +36,7 @@ namespace My.Scripts._05_Ending.Pages
         [SerializeField] private Sprite heartDontGetSprite;
 
         private EndingPage2Data _data;
+        private bool _hasSentPieceUpdate;
 
         protected override void SetupData(EndingPage2Data data)
         {
@@ -55,25 +56,42 @@ namespace My.Scripts._05_Ending.Pages
             float dist = GameManager.Instance ? GameManager.Instance.lastPlayDistance : 0f;
             int fragments = Mathf.Clamp(Mathf.FloorToInt(dist / 100f), 0, 5);
 
-            // 3. 텍스트 설정
+            // 3. API 업데이트 및 총 획득량 계산
+            int totalPieces = fragments;
+            if (GameManager.Instance)
+            {
+                // PlayLong(현재 콘텐츠)에서 얻은 마음 조각을 로컬 변수에 캐싱함.
+                // 하단 텍스트의 TotalPieces 연산에 즉시 반영하기 위함임.
+                GameManager.Instance.PieceC2 = fragments;
+                totalPieces = GameManager.Instance.TotalPieces;
+
+                // 서버에 획득한 마음 조각 데이터를 실시간으로 동기화함.
+                if (GameManager.Instance && !_hasSentPieceUpdate)
+                {
+                    GameManager.Instance.SendPieceUpdateAPI(fragments);
+                    _hasSentPieceUpdate = true;
+                }
+            }
+
+            // 4. 텍스트 설정
             if (_data != null)
             {
                 if (topText && _data.topTextFormat != null)
                 {
                     if (UIManager.Instance) UIManager.Instance.SetText(topText.gameObject, _data.topTextFormat);
-                    // JSON의 {0} 자리에 획득한 조각 개수를 넣음
+                    // 이번 체험에서 얻은 조각 개수 표기
                     topText.text = string.Format(_data.topTextFormat.text, fragments);
                 }
 
                 if (bottomText && _data.bottomTextFormat != null)
                 {
                     if (UIManager.Instance) UIManager.Instance.SetText(bottomText.gameObject, _data.bottomTextFormat);
-                    // API 연동 전 임시로 현재 획득한 개수를 {0} 자리에 넣음
-                    bottomText.text = string.Format(_data.bottomTextFormat.text, fragments);
+                    // 전체 콘텐츠를 거치며 누적된 마음 조각의 총합 표기
+                    bottomText.text = string.Format(_data.bottomTextFormat.text, totalPieces);
                 }
             }
 
-            // 4. 조각 이미지 스프라이트 및 투명도(Alpha) 갱신
+            // 5. 조각 이미지 스프라이트 및 투명도(Alpha) 갱신
             if (heartImages != null)
             {
                 for (int i = 0; i < heartImages.Length; i++)
@@ -93,7 +111,7 @@ namespace My.Scripts._05_Ending.Pages
                 }
             }
 
-            // 5. 시퀀스 시작
+            // 6. 시퀀스 시작
             StartCoroutine(EntranceSequence());
         }
 

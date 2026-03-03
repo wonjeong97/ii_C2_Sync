@@ -6,7 +6,8 @@
     "text": "{nameA}님",
     "fontName": "font4",
     "fontSize": 30,
-    "fontColor": {"r": 0.2588235, "g": 0.2588235, "b": 0.2588235, "a": 1}
+    "fontColor": {"r": 0.2588235, "g": 0.2588235, "b": 0.2588235, "a": 1},
+    "alignment": 3
   },
   "playerBName":  {
     "name": "Text_PlayerB",
@@ -15,7 +16,8 @@
     "text": "{nameB}님",
     "fontName": "font4",
     "fontSize": 30,
-    "fontColor": {"r": 0.2588235, "g": 0.2588235, "b": 0.2588235, "a": 1}
+    "fontColor": {"r": 0.2588235, "g": 0.2588235, "b": 0.2588235, "a": 1},
+    "alignment": 5
   },
   "introPage": {
     "introText1": {

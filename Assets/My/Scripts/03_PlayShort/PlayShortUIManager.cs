@@ -224,8 +224,32 @@ namespace My.Scripts._03_PlayShort
             }
 
             if (targetDistText) targetDistText.text = $"{distance}M";
+            
+            // 공통 스타일(폰트, 색상, 정렬 등)을 먼저 적용함
             ApplyTextSetting(targetQueP1, questionData);
-            if (targetQueP2) targetQueP2.text = (questionData != null) ? questionData.text : "";
+            
+            // JSON에 '||' 구분자로 분리해둔 텍스트를 나누어 해당 컴포넌트에 각각 주입함.
+            if (questionData != null && !string.IsNullOrEmpty(questionData.text))
+            {
+                string[] texts = questionData.text.Split(new string[] { "||" }, System.StringSplitOptions.None);
+                
+                if (targetQueP1) 
+                {
+                    targetQueP1.text = texts[0];
+                }
+                
+                if (targetQueP2) 
+                {
+                    // 구분자가 누락되었을 경우를 대비하여 Fallback 처리 (\n을 띄어쓰기로 대체)
+                    targetQueP2.text = texts.Length > 1 ? texts[1] : texts[0].Replace("\n", " ");
+                }
+            }
+            else
+            {
+                if (targetQueP1) targetQueP1.text = "";
+                if (targetQueP2) targetQueP2.text = "";
+            }
+
             ApplyTextSetting(targetInfo, infoData);
 
             targetPopup.gameObject.SetActive(true);

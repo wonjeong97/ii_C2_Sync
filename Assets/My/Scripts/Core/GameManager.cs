@@ -74,12 +74,37 @@ namespace My.Scripts.Core
         public InactivityTextType CurrentInactivityTextType { get; set; } = InactivityTextType.Warning;
         public UserType currentUserType = UserType.A;
         public ApiSettings ApiConfig { get; private set; }
+        
+        // --- API 연동 데이터 캐싱 ---
         public int CurrentUserId { get; set; } = 0; 
+        public string CurrentLanguage { get; set; } = "KR"; // 기본 언어
+        
         public string PlayerALastName { get; set; } = "NoNameA";
         public string PlayerBLastName { get; set; } = "NoNameB";
+        
         public ColorData PlayerAColor { get; set; } = ColorData.NotSet;
         public ColorData PlayerBColor { get; set; } = ColorData.NotSet;
+
+        public int PieceA1 { get; set; }
+        public int PieceA2 { get; set; }
+        public int PieceA3 { get; set; }
+        public int PieceB1 { get; set; }
+        public int PieceB2 { get; set; }
+        public int PieceB3 { get; set; }
+        public int PieceC1 { get; set; }
+        public int PieceC2 { get; set; }
+        public int PieceC3 { get; set; }
+        public int PieceD1 { get; set; }
+        public int PieceD2 { get; set; }
+        public int PieceD3 { get; set; }
         
+        public int TotalPieces => PieceA1 + PieceA2 + PieceA3 + 
+                                  PieceB1 + PieceB2 + PieceB3 + 
+                                  PieceC1 + PieceC2 + PieceC3 + 
+                                  PieceD1 + PieceD2 + PieceD3;  // A1은 해당 컨텐츠이므로 계산에서 제외함.
+        // -----------------------------
+
+        // 유저 데이터 갱신 알림 이벤트
         public event Action OnUserDataUpdated;
         
         [Header("Player Color Sprites")]
@@ -152,6 +177,7 @@ namespace My.Scripts.Core
             HandleInactivity();
         }
         
+        // 유저 데이터 갱신 시 호출
         public void NotifyUserDataUpdated()
         {
             OnUserDataUpdated?.Invoke();
@@ -356,56 +382,85 @@ namespace My.Scripts.Core
             ChangeScene(GameConstants.Scene.Title);
         }
         
-         #region API 호출 로직 (시간 및 값 기록)
+ #region API 호출 로직 (시간 및 값 기록)
 
-        public void SendTimeUpdateAPI(string option)
+        /// <summary> 콘텐츠 종료(end) 시간을 서버에 기록합니다. </summary>
+        public void SendTimeUpdateAPI()
         {
-            if (CurrentUserId == 0) return;
-            StartCoroutine(TimeUpdateRoutine(option));
+            if (CurrentUserId == 0)
+            {
+                Debug.LogWarning($"[GameManager] CurrentUserId가 0입니다. end API 호출을 건너뜁니다.");
+                return;
+            }
+            StartCoroutine(TimeUpdateRoutine());
         }
 
-        private IEnumerator TimeUpdateRoutine(string option)
+        private IEnumerator TimeUpdateRoutine()
         {
             if (ApiConfig == null) yield break;
 
-            string safeOption = Uri.EscapeDataString(option ?? string.Empty);
+            // option=end 로 완전히 고정합니다.
+            string url = $"{ApiConfig.UpdateTimeUrl}?idx_user={CurrentUserId}&option=end&code=c2";
 
-            string urlLeft = $"{ApiConfig.UpdateTimeUrl}?idx_user={CurrentUserId}&option={safeOption}&side=left&code=a1";
-            string urlRight = $"{ApiConfig.UpdateTimeUrl}?idx_user={CurrentUserId}&option={safeOption}&side=right&code=a1";
-
-            using (UnityWebRequest reqLeft = UnityWebRequest.Get(urlLeft))
+            using (UnityWebRequest req = UnityWebRequest.Get(url))
             {
-                reqLeft.timeout = 10;
-                yield return reqLeft.SendWebRequest();
-                if (reqLeft.result != UnityWebRequest.Result.Success) Debug.LogError($"[Time API Left] 에러: {reqLeft.error}");
-            }
-
-            using (UnityWebRequest reqRight = UnityWebRequest.Get(urlRight))
-            {
-                reqRight.timeout = 10;
-                yield return reqRight.SendWebRequest();
-                if (reqRight.result != UnityWebRequest.Result.Success) Debug.LogError($"[Time API Right] 에러: {reqRight.error}");
+                yield return req.SendWebRequest();
+                if (req.result != UnityWebRequest.Result.Success) 
+                    Debug.LogError($"[Time API] 에러: {req.error}");
+                else 
+                    Debug.Log($"[Time API] end 업데이트 성공! (URL: {url})");
             }
         }
 
+        /// <summary> 사용자의 질문 응답 값을 서버에 업데이트합니다. </summary>
         public void SendValueUpdateAPI(int qNo, string side, int value)
         {
-            if (CurrentUserId == 0) return;
+            if (CurrentUserId == 0)
+            {
+                Debug.LogWarning("[GameManager] CurrentUserId가 0입니다. Value 업데이트를 건너뜁니다.");
+                return;
+            }
             StartCoroutine(ValueUpdateRoutine(qNo, side, value));
         }
 
         private IEnumerator ValueUpdateRoutine(int qNo, string side, int value)
         {
-            if (ApiConfig == null) yield break; 
+            if (ApiConfig == null) yield break; // 안전장치
 
-            string safeSide = Uri.EscapeDataString(side ?? string.Empty);
-            string url = $"{ApiConfig.UpdateValueUrl}?idx_user={CurrentUserId}&q_no={qNo}&side={safeSide}&code=a1&value={value}";
+            string url = $"{ApiConfig.UpdateValueUrl}?idx_user={CurrentUserId}&q_no={qNo}&side={side}&code=c2&value={value}";
             
             using (UnityWebRequest req = UnityWebRequest.Get(url))
             {
-                req.timeout = 10;
                 yield return req.SendWebRequest();
                 if (req.result != UnityWebRequest.Result.Success) Debug.LogError($"[Value API] 통신 에러: {req.error}");
+                else Debug.Log($"[Value API] {side} Q{qNo} 값({value}) 업데이트 성공!");
+            }
+        }
+
+        /// <summary> 획득한 마음 조각 개수를 서버에 업데이트합니다. </summary>
+        public void SendPieceUpdateAPI(int value)
+        {
+            if (CurrentUserId == 0)
+            {
+                Debug.LogWarning("[GameManager] CurrentUserId가 0입니다. Piece 업데이트를 건너뜁니다.");
+                return;
+            }
+            StartCoroutine(PieceUpdateRoutine(value));
+        }
+
+        private IEnumerator PieceUpdateRoutine(int value)
+        {
+            if (ApiConfig == null) yield break;
+
+            string url = $"{ApiConfig.UpdatePieceUrl}?idx_user={CurrentUserId}&code=c2&value={value}";
+            
+            using (UnityWebRequest req = UnityWebRequest.Get(url))
+            {
+                yield return req.SendWebRequest();
+                if (req.result != UnityWebRequest.Result.Success) 
+                    Debug.LogError($"[Piece API] 에러: {req.error}");
+                else 
+                    Debug.Log($"[Piece API] 마음 조각({value}개) 업데이트 성공! (URL: {url})");
             }
         }
 

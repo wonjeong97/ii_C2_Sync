@@ -14,6 +14,8 @@ namespace My.Scripts.Core
         public int IDX_USER; 
         public string UID_LEFT;
         public string UID_RIGHT;
+        public string LANG;
+        public int RELATION;
         
         public ColorData COLOR_LEFT; 
         public ColorData COLOR_RIGHT;
@@ -35,9 +37,6 @@ namespace My.Scripts.Core
         public int PIECE_D1;
         public int PIECE_D2;
         public int PIECE_D3;
-
-        public int[] VALUE_LEFT_A1;
-        public int[] VALUE_RIGHT_A1;
     }
 
     public class ApiTableResponse
@@ -56,7 +55,7 @@ namespace My.Scripts.Core
         [SerializeField] private string userUid = "";
 #endif
 
-        void Start()
+        private void Start()
         {
             if (!string.IsNullOrEmpty(userUid))
             {
@@ -68,7 +67,7 @@ namespace My.Scripts.Core
         public void FetchData()
         {
             ApiSettings config = null;
-            if (GameManager.Instance != null) config = GameManager.Instance.ApiConfig;
+            if (GameManager.Instance) config = GameManager.Instance.ApiConfig;
             if (config == null) config = JsonLoader.Load<ApiSettings>(GameConstants.Path.ApiSetting);
 
             if (config == null)
@@ -120,6 +119,9 @@ namespace My.Scripts.Core
                     userData.UID_LEFT = ParseStringSafe(response, firstRow, "UID_LEFT");
                     userData.UID_RIGHT = ParseStringSafe(response, firstRow, "UID_RIGHT");
                     
+                    userData.LANG = ParseStringSafe(response, firstRow, "LANG");
+                    userData.RELATION = ParseIntSafe(response, firstRow, "RELATION");
+
                     userData.RESERVATION_FIRST_NAME_LEFT = ParseStringSafe(response, firstRow, "RESERVATION_FIRST_NAME_LEFT");
                     userData.RESERVATION_LAST_NAME_LEFT = ParseStringSafe(response, firstRow, "RESERVATION_LAST_NAME_LEFT");
                     userData.RESERVATION_FIRST_NAME_RIGHT = ParseStringSafe(response, firstRow, "RESERVATION_FIRST_NAME_RIGHT");
@@ -141,19 +143,27 @@ namespace My.Scripts.Core
                     userData.PIECE_D2 = ParseIntSafe(response, firstRow, "PIECE_D2");
                     userData.PIECE_D3 = ParseIntSafe(response, firstRow, "PIECE_D3");
 
-                    userData.VALUE_LEFT_A1 = new int[10];
-                    userData.VALUE_RIGHT_A1 = new int[10];
-
-                    for (int i = 1; i <= 10; i++)
-                    {
-                        userData.VALUE_LEFT_A1[i - 1] = ParseIntSafe(response, firstRow, $"VALUE_{i}_LEFT_A1");
-                        userData.VALUE_RIGHT_A1[i - 1] = ParseIntSafe(response, firstRow, $"VALUE_{i}_RIGHT_A1");
-                    }
-
                     if (GameManager.Instance)
                     {   
                         GameManager.Instance.CurrentUserId = userData.IDX_USER;
-                        
+                        GameManager.Instance.CurrentLanguage = userData.LANG;
+
+                        switch (userData.RELATION)
+                        {
+                            case 1: GameManager.Instance.currentUserType = UserType.A; break;
+                            case 2: GameManager.Instance.currentUserType = UserType.B; break;
+                            case 3: GameManager.Instance.currentUserType = UserType.C; break;
+                            case 4: GameManager.Instance.currentUserType = UserType.D; break;
+                            case 5: GameManager.Instance.currentUserType = UserType.E; break;
+                            case 6: GameManager.Instance.currentUserType = UserType.F; break;
+                            default: 
+                                GameManager.Instance.currentUserType = UserType.A; 
+                                Debug.LogWarning($"[APIManager] 알 수 없는 RELATION 값({userData.RELATION})입니다. UserType.A로 기본 설정됩니다.");
+                                break;
+                        }
+
+                        Debug.Log($"[APIManager] 언어: {userData.LANG}, 관계: {userData.RELATION} -> 설정된 UserType: {GameManager.Instance.currentUserType}");
+
                         if (!string.IsNullOrEmpty(userData.RESERVATION_LAST_NAME_LEFT))
                             GameManager.Instance.PlayerALastName = userData.RESERVATION_LAST_NAME_LEFT;
                             
@@ -162,6 +172,21 @@ namespace My.Scripts.Core
                         
                         GameManager.Instance.PlayerAColor = userData.COLOR_LEFT;
                         GameManager.Instance.PlayerBColor = userData.COLOR_RIGHT;
+
+                        GameManager.Instance.PieceA1 = userData.PIECE_A1;
+                        GameManager.Instance.PieceA2 = userData.PIECE_A2;
+                        GameManager.Instance.PieceA3 = userData.PIECE_A3;
+                        GameManager.Instance.PieceB1 = userData.PIECE_B1;
+                        GameManager.Instance.PieceB2 = userData.PIECE_B2;
+                        GameManager.Instance.PieceB3 = userData.PIECE_B3;
+                        GameManager.Instance.PieceC1 = userData.PIECE_C1;
+                        GameManager.Instance.PieceC2 = userData.PIECE_C2;
+                        GameManager.Instance.PieceC3 = userData.PIECE_C3;
+                        GameManager.Instance.PieceD1 = userData.PIECE_D1;
+                        GameManager.Instance.PieceD2 = userData.PIECE_D2;
+                        GameManager.Instance.PieceD3 = userData.PIECE_D3;
+
+                        // 이벤트 호출을 통해 색상 등이 필요한 모든 컨트롤러가 실시간으로 데이터를 반영하도록 알림
                         GameManager.Instance.NotifyUserDataUpdated();
                     }
                 }
@@ -184,10 +209,17 @@ namespace My.Scripts.Core
             int index = response.COLUMNS.IndexOf(colName);
             if (index != -1 && row.Count > index && row[index] != null)
             {
-                if (int.TryParse(row[index].ToString(), out int val)) return val;
+                string valStr = row[index].ToString().Trim();
+                if (string.IsNullOrEmpty(valStr)) return 0;
+                
+                if (int.TryParse(valStr, out int val)) return val;
+                
+                if (float.TryParse(valStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out float fVal)) 
+                    return (int)fVal;
             }
             return 0; 
         }
+
         private string ParseStringSafe(ApiTableResponse response, List<object> row, string colName)
         {
             if (response?.COLUMNS == null || row == null) return string.Empty;
