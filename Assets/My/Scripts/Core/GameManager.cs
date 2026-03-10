@@ -73,14 +73,20 @@ namespace My.Scripts.Core
         public bool IsAutoProgressing { get => isAutoProgressing; set => isAutoProgressing = value; }
         public InactivityTextType CurrentInactivityTextType { get; set; } = InactivityTextType.Warning;
         public UserType currentUserType = UserType.A;
-        public ApiSettings ApiConfig { get; private set; }
+        
+        // [수정됨] APIManager에서 최신 설정을 주입할 수 있도록 private set 제한을 해제함
+        public ApiSettings ApiConfig { get; set; } 
         
         // --- API 연동 데이터 캐싱 ---
-        public int CurrentUserId { get; set; } = 0; 
-        public string CurrentLanguage { get; set; } = "KR"; // 기본 언어
+        public int CurrentUserIdx { get; set; } = 0; 
+        public string CurrentLanguage { get; set; } = "ko"; 
         
-        public string PlayerALastName { get; set; } = "NoNameA";
-        public string PlayerBLastName { get; set; } = "NoNameB";
+        // [추가됨] 타 카트리지 클리어 상태 확인용 변수
+        public string Cartridge { get; set; } = "";
+        public bool IsOtherCartridgeContentsCleared { get; set; } = false;
+        
+        public string PlayerAName { get; set; } = "NoNameA";
+        public string PlayerBName { get; set; } = "NoNameB";
         
         public ColorData PlayerAColor { get; set; } = ColorData.NotSet;
         public ColorData PlayerBColor { get; set; } = ColorData.NotSet;
@@ -101,10 +107,9 @@ namespace My.Scripts.Core
         public int TotalPieces => PieceA1 + PieceA2 + PieceA3 + 
                                   PieceB1 + PieceB2 + PieceB3 + 
                                   PieceC1 + PieceC2 + PieceC3 + 
-                                  PieceD1 + PieceD2 + PieceD3;  // A1은 해당 컨텐츠이므로 계산에서 제외함.
+                                  PieceD1 + PieceD2 + PieceD3; 
         // -----------------------------
 
-        // 유저 데이터 갱신 알림 이벤트
         public event Action OnUserDataUpdated;
         
         [Header("Player Color Sprites")]
@@ -177,7 +182,6 @@ namespace My.Scripts.Core
             HandleInactivity();
         }
         
-        // 유저 데이터 갱신 시 호출
         public void NotifyUserDataUpdated()
         {
             OnUserDataUpdated?.Invoke();
@@ -316,6 +320,9 @@ namespace My.Scripts.Core
             _popupFadeCoroutine = StartCoroutine(FadeSystemPopup(0f, 1f, 0.5f));
             yield return _popupFadeCoroutine;
 
+            SendResetStartAPI();
+            SendExitRoomAPI();
+
             yield return new WaitForSeconds(3.0f);
 
             _isInactivitySequenceRunning = false;
@@ -378,18 +385,109 @@ namespace My.Scripts.Core
             isAutoProgressing = false;
             CurrentInactivityTextType = InactivityTextType.Warning; 
             ResetInactivityTimer();
+            
+            CurrentUserIdx = 0;
+            Cartridge = "";
+            IsOtherCartridgeContentsCleared = false;
 
             ChangeScene(GameConstants.Scene.Title);
         }
         
- #region API 호출 로직 (시간 및 값 기록)
+        #region API 호출 로직 (시간 및 값 기록)
 
-        /// <summary> 콘텐츠 종료(end) 시간을 서버에 기록합니다. </summary>
+        public IEnumerator CheckRoomStateRoutine(Action<string> callback)
+        {
+            if (ApiConfig == null)
+            {
+                if (callback != null) callback("EMPTY");
+                yield break;
+            }
+
+            string url = $"{ApiConfig.CheckRoomStateUrl}?code=c2";
+            using (UnityWebRequest req = UnityWebRequest.Get(url))
+            {
+                req.timeout = 5;
+                yield return req.SendWebRequest();
+
+                if (req.result == UnityWebRequest.Result.Success)
+                {
+                    if (callback != null) callback(req.downloadHandler.text.Trim());
+                }
+                else
+                {
+                    Debug.LogWarning($"[API] CheckRoomState 통신 에러: {req.error}");
+                    if (callback != null) callback("EMPTY");
+                }
+            }
+        }
+
+        public IEnumerator GetCurrentRoomUserRoutine(Action<string> callback)
+        {
+            if (ApiConfig == null)
+            {
+                if (callback != null) callback("EMPTY");
+                yield break;
+            }
+
+            string url = $"{ApiConfig.GetCurrentRoomUserUrl}?code=c2";
+            using (UnityWebRequest req = UnityWebRequest.Get(url))
+            {
+                req.timeout = 5;
+                yield return req.SendWebRequest();
+
+                if (req.result == UnityWebRequest.Result.Success)
+                {
+                    if (callback != null) callback(req.downloadHandler.text.Trim());
+                }
+                else
+                {
+                    Debug.LogWarning($"[API] GetCurrentRoomUser 통신 에러: {req.error}");
+                    if (callback != null) callback("EMPTY");
+                }
+            }
+        }
+
+        public void SendResetStartAPI()
+        {
+            if (CurrentUserIdx == 0 || ApiConfig == null) return;
+            StartCoroutine(ResetStartRoutine());
+        }
+
+        private IEnumerator ResetStartRoutine()
+        {
+            string url = $"{ApiConfig.ResetStartUrl}?idx_user={CurrentUserIdx}&code=c2";
+            using (UnityWebRequest req = UnityWebRequest.Get(url))
+            {
+                req.timeout = 5;
+                yield return req.SendWebRequest();
+                if (req.result != UnityWebRequest.Result.Success)
+                    Debug.LogWarning($"[API] ResetStart 실패: {req.error}");
+            }
+        }
+
+        public void SendExitRoomAPI()
+        {
+            if (CurrentUserIdx == 0 || ApiConfig == null) return;
+            StartCoroutine(ExitRoomRoutine());
+        }
+
+        private IEnumerator ExitRoomRoutine()
+        {
+            string url = $"{ApiConfig.ExitRoomUrl}?code=c2&idx_user={CurrentUserIdx}";
+            using (UnityWebRequest req = UnityWebRequest.Get(url))
+            {
+                req.timeout = 5;
+                yield return req.SendWebRequest();
+                if (req.result != UnityWebRequest.Result.Success)
+                    Debug.LogWarning($"[API] ExitRoom 실패: {req.error}");
+            }
+        }
+
         public void SendTimeUpdateAPI()
         {
-            if (CurrentUserId == 0)
+            if (CurrentUserIdx == 0 || ApiConfig == null)
             {
-                Debug.LogWarning($"[GameManager] CurrentUserId가 0입니다. end API 호출을 건너뜁니다.");
+                Debug.LogWarning($"[GameManager] CurrentUserId가 0이거나 ApiConfig가 없습니다. end API 호출을 건너뜁니다.");
                 return;
             }
             StartCoroutine(TimeUpdateRoutine());
@@ -397,14 +495,13 @@ namespace My.Scripts.Core
 
         private IEnumerator TimeUpdateRoutine()
         {
-            if (ApiConfig == null) yield break;
-
-            // option=end 로 완전히 고정합니다.
-            string url = $"{ApiConfig.UpdateTimeUrl}?idx_user={CurrentUserId}&option=end&code=c2";
+            string url = $"{ApiConfig.UpdateTimeUrl}?idx_user={CurrentUserIdx}&option=end&code=c2";
 
             using (UnityWebRequest req = UnityWebRequest.Get(url))
             {
+                req.timeout = 10;
                 yield return req.SendWebRequest();
+                
                 if (req.result != UnityWebRequest.Result.Success) 
                     Debug.LogError($"[Time API] 에러: {req.error}");
                 else 
@@ -412,12 +509,11 @@ namespace My.Scripts.Core
             }
         }
 
-        /// <summary> 사용자의 질문 응답 값을 서버에 업데이트합니다. </summary>
         public void SendValueUpdateAPI(int qNo, string side, int value)
         {
-            if (CurrentUserId == 0)
+            if (CurrentUserIdx == 0 || ApiConfig == null)
             {
-                Debug.LogWarning("[GameManager] CurrentUserId가 0입니다. Value 업데이트를 건너뜁니다.");
+                Debug.LogWarning("[GameManager] CurrentUserId가 0이거나 ApiConfig가 없습니다. Value 업데이트를 건너뜁니다.");
                 return;
             }
             StartCoroutine(ValueUpdateRoutine(qNo, side, value));
@@ -425,24 +521,23 @@ namespace My.Scripts.Core
 
         private IEnumerator ValueUpdateRoutine(int qNo, string side, int value)
         {
-            if (ApiConfig == null) yield break; // 안전장치
-
-            string url = $"{ApiConfig.UpdateValueUrl}?idx_user={CurrentUserId}&q_no={qNo}&side={side}&code=c2&value={value}";
+            string safeSide = Uri.EscapeDataString(side ?? string.Empty);
+            string url = $"{ApiConfig.UpdateValueUrl}?idx_user={CurrentUserIdx}&q_no={qNo}&side={safeSide}&code=c2&value={value}";
             
             using (UnityWebRequest req = UnityWebRequest.Get(url))
             {
+                req.timeout = 10;
                 yield return req.SendWebRequest();
                 if (req.result != UnityWebRequest.Result.Success) Debug.LogError($"[Value API] 통신 에러: {req.error}");
                 else Debug.Log($"[Value API] {side} Q{qNo} 값({value}) 업데이트 성공!");
             }
         }
 
-        /// <summary> 획득한 마음 조각 개수를 서버에 업데이트합니다. </summary>
         public void SendPieceUpdateAPI(int value)
         {
-            if (CurrentUserId == 0)
+            if (CurrentUserIdx == 0 || ApiConfig == null)
             {
-                Debug.LogWarning("[GameManager] CurrentUserId가 0입니다. Piece 업데이트를 건너뜁니다.");
+                Debug.LogWarning("[GameManager] CurrentUserId가 0이거나 ApiConfig가 없습니다. Piece 업데이트를 건너뜁니다.");
                 return;
             }
             StartCoroutine(PieceUpdateRoutine(value));
@@ -450,12 +545,11 @@ namespace My.Scripts.Core
 
         private IEnumerator PieceUpdateRoutine(int value)
         {
-            if (ApiConfig == null) yield break;
-
-            string url = $"{ApiConfig.UpdatePieceUrl}?idx_user={CurrentUserId}&code=c2&value={value}";
+            string url = $"{ApiConfig.UpdatePieceUrl}?idx_user={CurrentUserIdx}&code=c2&value={value}";
             
             using (UnityWebRequest req = UnityWebRequest.Get(url))
             {
+                req.timeout = 10;
                 yield return req.SendWebRequest();
                 if (req.result != UnityWebRequest.Result.Success) 
                     Debug.LogError($"[Piece API] 에러: {req.error}");

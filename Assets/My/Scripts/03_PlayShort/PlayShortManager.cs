@@ -118,8 +118,8 @@ namespace My.Scripts._03_PlayShort
                 
                 if (GameManager.Instance)
                 {
-                    string nameA = string.IsNullOrEmpty(GameManager.Instance.PlayerALastName) ? "Player A" : GameManager.Instance.PlayerALastName;
-                    string nameB = string.IsNullOrEmpty(GameManager.Instance.PlayerBLastName) ? "Player B" : GameManager.Instance.PlayerBLastName;
+                    string nameA = string.IsNullOrEmpty(GameManager.Instance.PlayerAName) ? "Player A" : GameManager.Instance.PlayerAName;
+                    string nameB = string.IsNullOrEmpty(GameManager.Instance.PlayerBName) ? "Player B" : GameManager.Instance.PlayerBName;
                     
                     TextSetting settingA = _data != null ? _data.playerAName : null;
                     TextSetting settingB = _data != null ? _data.playerBName : null;

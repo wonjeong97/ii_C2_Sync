@@ -55,8 +55,8 @@ namespace My.Scripts._01_Tutorial.Pages
                 return;
             }
 
-            string nameA = GameManager.Instance ? GameManager.Instance.PlayerALastName : "Player A";
-            string nameB = GameManager.Instance ? GameManager.Instance.PlayerBLastName : "Player B";
+            string nameA = GameManager.Instance ? GameManager.Instance.PlayerAName : "Player A";
+            string nameB = GameManager.Instance ? GameManager.Instance.PlayerBName : "Player B";
             
             if (playerAText && data.playerAName != null)
             {

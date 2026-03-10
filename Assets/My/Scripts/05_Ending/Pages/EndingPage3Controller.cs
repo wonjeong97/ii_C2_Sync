@@ -26,15 +26,13 @@ namespace My.Scripts._05_Ending.Pages
         [SerializeField] private Text result;
         [SerializeField] private Image redLineImage;
 
-        private bool _isAllFinished; // 특별 엔딩(붉은 실) 활성화 여부
+        private bool _isAllFinished; 
         private bool _hasSentEndTime;
 
         protected override void SetupData(EndingPage3Data data)
         {
             if (data == null) return;
 
-            // 엔딩의 다양성을 위해 50% 확률로 일반 엔딩과 특별 엔딩(Red Line)을 분기합니다.
-            // # TODO: 현재는 랜덤이지만, 추후 API에 따라 변경 필요
             int randomValue = UnityEngine.Random.Range(0, 2);
             TextSetting textToUse;
 
@@ -57,47 +55,40 @@ namespace My.Scripts._05_Ending.Pages
 
         public override void OnEnter()
         {
-            base.OnEnter(); // BaseFlowManager에서 자동으로 알파값을 0 -> 1로 페이드인 시켜줍니다.
+            base.OnEnter(); 
 
             if (redLineImage)
             {
                 redLineImage.type = Image.Type.Filled;
                 redLineImage.fillAmount = 0f;
-                // 특별 엔딩이 아닐 경우 이미지 오브젝트 자체를 비활성화
                 redLineImage.gameObject.SetActive(_isAllFinished); 
             }
             
+            // --- [수정] 정상 종료 시 End 시간 기록 및 방 점유 초기화(exitRoom) 동시 진행 ---
             if (!_hasSentEndTime && GameManager.Instance)
             {
                 _hasSentEndTime = true;
-                GameManager.Instance.SendTimeUpdateAPI();
+                GameManager.Instance.SendTimeUpdateAPI(); // 4번: 유저의 End값을 할당
+                GameManager.Instance.SendExitRoomAPI();   // 4번: 방 점유 초기화 추가
             }
+            // -----------------------------------------------------------------------
 
             StartCoroutine(SequenceRoutine());
         }
 
-        /// <summary>
-        /// 엔딩 시퀀스 루틴입니다. 분기된 엔딩 타입에 따라 다른 연출과 대기 시간을 가집니다.
-        /// </summary>
         private IEnumerator SequenceRoutine()
         {   
-            // 1. BaseFlowManager가 페이지를 페이드인 하는 시간(0.5초) 동안 대기
             yield return CoroutineData.GetWaitForSeconds(0.5f);
-            
-            // 2. 글자가 다 나타난 후 약간의 딜레이(1초)를 주어 자연스러운 템포 형성
             yield return CoroutineData.GetWaitForSeconds(1.0f);
             
-            // 3. 분기별 연출
             if (_isAllFinished && redLineImage)
             {
-                // 특별 엔딩: 붉은 실이 차오르는 연출
                 yield return StartCoroutine(FillImageRoutine(redLineImage, 0f, 1f, 2.0f));
                 SoundManager.Instance?.FadeOutBGM(5.0f);
                 yield return CoroutineData.GetWaitForSeconds(5.0f);
             }
             else
             {   
-                // 일반 엔딩: 텍스트만 보여준 채 대기
                 yield return CoroutineData.GetWaitForSeconds(2.0f);
                 SoundManager.Instance?.FadeOutBGM(5.0f);
                 yield return CoroutineData.GetWaitForSeconds(5.0f);
@@ -106,11 +97,6 @@ namespace My.Scripts._05_Ending.Pages
             CompleteStep();
         }
 
-        // --- Utility Coroutines ---
-
-        /// <summary>
-        /// 이미지의 FillAmount를 조절하여 게이지가 차오르는 듯한 연출을 수행합니다. (붉은 실 연출용)
-        /// </summary>
         private IEnumerator FillImageRoutine(Image image, float start, float end, float duration)
         {
             if (!image) yield break;
