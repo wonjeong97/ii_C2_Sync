@@ -31,6 +31,8 @@ namespace My.Scripts._01_Tutorial.Pages
         [Header("Settings")]
         [SerializeField] private float jumpLandingTolerance = 0.25f; 
 
+        private TutorialPage3Data _data; // [추가] 런타임 이름 치환을 위해 원본 데이터 캐싱
+
         private bool _isAFinished;
         private bool _isBFinished;
         private bool _isStepCompleted; 
@@ -55,42 +57,23 @@ namespace My.Scripts._01_Tutorial.Pages
                 return;
             }
 
-            string nameA = GameManager.Instance ? GameManager.Instance.PlayerAName : "Player A";
-            string nameB = GameManager.Instance ? GameManager.Instance.PlayerBName : "Player B";
-            
+            _data = data; // 원본 데이터를 기억해둡니다.
+
+            // SetupData는 씬 시작 시(API 통신 전) 호출되므로, 여기서는 폰트/색상 등 UI 스타일만 덮어씌웁니다.
             if (playerAText && data.playerAName != null)
             {
-                string replacedTextA = data.playerAName.text.Replace("{nameA}", nameA);
                 if (UIManager.Instance) UIManager.Instance.SetText(playerAText.gameObject, data.playerAName);
-                playerAText.text = replacedTextA;
-            }
-            else
-            {
-                Debug.LogWarning("[TutorialPage3Controller] Player A 이름 텍스트 설정에 필요한 컴포넌트나 데이터가 누락되었습니다.");
             }
 
             if (playerBText && data.playerBName != null)
             {
-                string replacedTextB = data.playerBName.text.Replace("{nameB}", nameB);
                 if (UIManager.Instance) UIManager.Instance.SetText(playerBText.gameObject, data.playerBName);
-                playerBText.text = replacedTextB;
-            }
-            else
-            {
-                Debug.LogWarning("[TutorialPage3Controller] Player B 이름 텍스트 설정에 필요한 컴포넌트나 데이터가 누락되었습니다.");
             }
 
             if (descriptionText && data.descriptionText != null)
             {
                 descriptionText.supportRichText = true;
-                if (UIManager.Instance)
-                {
-                    UIManager.Instance.SetText(descriptionText.gameObject, data.descriptionText);
-                }
-                else
-                {
-                    Debug.LogWarning("[TutorialPage3Controller] UIManager.Instance를 찾을 수 없습니다.");
-                }
+                if (UIManager.Instance) UIManager.Instance.SetText(descriptionText.gameObject, data.descriptionText);
             }
         }
 
@@ -110,6 +93,10 @@ namespace My.Scripts._01_Tutorial.Pages
             InitCheckImage(checkImageA);
             InitCheckImage(checkImageB);
 
+            // --- [수정] OnEnter 시점(API 통신 완료 후)에 동적 이름 치환 수행 ---
+            ApplyDynamicNames();
+            // ------------------------------------------------------------------
+
             ApplyPlayerColors();
             SyncInitialInputState();
 
@@ -118,9 +105,37 @@ namespace My.Scripts._01_Tutorial.Pages
                 InputManager.Instance.OnPadDown += HandlePadDown;
                 InputManager.Instance.OnPadUp += HandlePadUp;
             }
-            else
+        }
+
+        /// <summary>
+        /// API 연동이 완료된 최신 이름을 가져와 텍스트에 적용합니다.
+        /// 이유: SetupData는 통신 전에 실행되므로 "NoName"이 들어가는 문제를 해결하기 위함.
+        /// </summary>
+        private void ApplyDynamicNames()
+        {
+            if (_data == null) return;
+
+            string nameA = "Player A";
+            string nameB = "Player B";
+
+            if (GameManager.Instance)
             {
-                Debug.LogWarning("[TutorialPage3Controller] InputManager.Instance를 찾을 수 없습니다.");
+                nameA = GameManager.Instance.PlayerAName;
+                nameB = GameManager.Instance.PlayerBName;
+
+                // 통신 실패나 빈 값에 대한 방어 로직
+                if (string.IsNullOrEmpty(nameA) || nameA == "NoNameA") nameA = "Player A";
+                if (string.IsNullOrEmpty(nameB) || nameB == "NoNameB") nameB = "Player B";
+            }
+
+            if (playerAText && _data.playerAName != null)
+            {
+                playerAText.text = _data.playerAName.text.Replace("{nameA}", nameA);
+            }
+
+            if (playerBText && _data.playerBName != null)
+            {
+                playerBText.text = _data.playerBName.text.Replace("{nameB}", nameB);
             }
         }
 
@@ -144,10 +159,6 @@ namespace My.Scripts._01_Tutorial.Pages
                 if (GameManager.Instance)
                 {
                     GameManager.Instance.ForceInactivitySequence();
-                }
-                else
-                {
-                    Debug.LogWarning("[TutorialPage3Controller] GameManager.Instance를 찾을 수 없어 방치 팝업을 띄울 수 없습니다.");
                 }
                 _lastInputTime = float.MaxValue; 
             }

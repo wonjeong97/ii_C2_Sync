@@ -31,6 +31,6 @@ MonoBehaviour:
   targetDistancePhase1: 10
   targetDistancePhase2: 6
   targetDistancePhase3: 5
-  autoRunSpeedRatio: 0.05
-  autoRunSmoothTime: 2
+  autoRunSpeedRatio: 0.08
+  autoRunSmoothTime: 1.5
   autoRunDuration: 1.5

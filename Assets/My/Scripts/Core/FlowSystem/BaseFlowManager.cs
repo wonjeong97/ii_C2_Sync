@@ -146,7 +146,7 @@ namespace My.Scripts.Core.FlowSystem
                 // 2. 다음 페이지로 인덱스를 갱신하고 진입 준비(초기화)
                 currentPageIndex = targetIndex;
                 var next = pages[targetIndex];
-                if (next != null)
+                if (next)
                 {
                     next.OnEnter(); 
                     

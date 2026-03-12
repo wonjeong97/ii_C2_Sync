@@ -38,8 +38,8 @@ namespace My.Scripts._03_PlayShort
     /// </summary>
     public class PlayShortManager : MonoBehaviour
     {
-        private static readonly int Idle = Animator.StringToHash("Idle");
-        private static readonly int FinishJump = Animator.StringToHash("FinishJump");
+        private readonly static int Idle = Animator.StringToHash("Idle");
+        private readonly static int FinishJump = Animator.StringToHash("FinishJump");
         public static PlayShortManager Instance { get; private set; }
 
         [Header("Settings")]
@@ -74,7 +74,6 @@ namespace My.Scripts._03_PlayShort
         private readonly int[] _playerStepCounts = new int[2]; 
         private readonly int[] _lastActiveLane = new int[2] { -1, -1 }; 
         
-        // [추가] 각 플레이어의 현재 진행 중인 질문 번호(1~20)를 저장하는 배열
         private readonly int[] _currentQuestionNumbers = new int[2]; 
 
         private float _lastHitSoundTime = -1f;
@@ -168,8 +167,18 @@ namespace My.Scripts._03_PlayShort
                     if (GameManager.Instance)
                     {
                         ColorData colorData = (i == 0) ? GameManager.Instance.PlayerAColor : GameManager.Instance.PlayerBColor;
-                        Color targetColor = GameManager.Instance.GetColorFromData(colorData);
-                        players[i].SetCharacterColor(targetColor);
+                        Sprite targetSprite = GameManager.Instance.GetColorSprite(colorData);
+
+                        // 이유: API에 등록된 스프라이트가 존재하면 해당 이미지를 씌우고, 없다면 기존 틴트(Color) 방식을 예비책(Fallback)으로 적용하기 위함
+                        if (targetSprite)
+                        {
+                            players[i].SetCharacterSprite(targetSprite);
+                        }
+                        else
+                        {
+                            Color targetColor = GameManager.Instance.GetColorFromData(colorData);
+                            players[i].SetCharacterColor(targetColor);
+                        }
                     }
                 }
             }
@@ -286,7 +295,6 @@ namespace My.Scripts._03_PlayShort
                         
                         if (ui && ui.UpdateStepGauge(playerIdx, true, _playerStepCounts[playerIdx]))
                         {
-                            // [추가] 게이지가 다 차서 답변이 확정되었을 때 API 전송 (YES는 1로 전송)
                             if (GameManager.Instance)
                             {
                                 string side = (playerIdx == 0) ? "left" : "right";
@@ -309,7 +317,6 @@ namespace My.Scripts._03_PlayShort
                         
                         if (ui && ui.UpdateStepGauge(playerIdx, false, _playerStepCounts[playerIdx]))
                         {
-                            // 게이지가 다 차서 답변이 확정되었을 때 API 전송
                             if (GameManager.Instance)
                             {
                                 string side = (playerIdx == 0) ? "left" : "right";
@@ -403,8 +410,6 @@ namespace My.Scripts._03_PlayShort
                 {
                     int qIdx = _questionQueues[playerIdx].Dequeue();
                     
-                    // [추가] 큐에서 뽑은 인덱스(0~19)에 1을 더해 실제 질문 번호(1~20)로 기억함
-                    // 이유: 나중에 답변을 확정했을 때 API로 어느 질문에 대답했는지 식별하여 전송하기 위함.
                     _currentQuestionNumbers[playerIdx] = qIdx + 1;
 
                     if (_data?.questions != null && qIdx < _data.questions.Length)

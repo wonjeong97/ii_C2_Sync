@@ -1,6 +1,9 @@
 using System;
 using System.Collections;
+using System.IO;
+using Cysharp.Threading.Tasks;
 using My.Scripts.Core.Data;
+using My.Scripts.Global;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
@@ -12,22 +15,7 @@ using Wonjeong.Utils;
 
 namespace My.Scripts.Core
 {
-    public enum ColorData
-    {   
-        NotSet = -1,
-        Cyan = 0,
-        Pink = 1,
-        Orange = 2,
-        Green = 3,
-        Red = 4,
-        Yellow = 5
-    }
-
-    public enum InactivityTextType
-    {
-        Warning,
-        Tag
-    }
+    public enum InactivityTextType { Warning, Tag }
 
     [Serializable]
     public class SystemData
@@ -35,11 +23,6 @@ namespace My.Scripts.Core
         public TextSetting inactivityWarningText;
         public TextSetting inactivityResetText;
         public TextSetting tagText;
-    }
-
-    public enum UserType
-    {
-        A, B, C, D, E, F
     }
 
     public class GameManager : MonoBehaviour
@@ -59,9 +42,7 @@ namespace My.Scripts.Core
         private SystemData _systemData; 
         private float _currentInactivityTimer; 
         private bool _isTransitioning; 
-        private float _fadeTime = 1.0f; 
-
-        public int firstTaggedPlayer = 0;
+        private float _fadeTime = 0.5f; 
         
         private bool _isInactivitySequenceRunning;
         private Coroutine _inactivityCoroutine;
@@ -70,44 +51,40 @@ namespace My.Scripts.Core
         private CanvasGroup _systemPopupCg;
         private Text _systemPopupText;
         
+        private bool _isQuitting;
+        private bool _isQuitSafe;
+
         public bool IsAutoProgressing { get => isAutoProgressing; set => isAutoProgressing = value; }
         public InactivityTextType CurrentInactivityTextType { get; set; } = InactivityTextType.Warning;
-        public UserType currentUserType = UserType.A;
         
-        // [수정됨] APIManager에서 최신 설정을 주입할 수 있도록 private set 제한을 해제함
         public ApiSettings ApiConfig { get; set; } 
         
-        // --- API 연동 데이터 캐싱 ---
-        public int CurrentUserIdx { get; set; } = 0; 
-        public string CurrentLanguage { get; set; } = "ko"; 
-        
-        // [추가됨] 타 카트리지 클리어 상태 확인용 변수
-        public string Cartridge { get; set; } = "";
-        public bool IsOtherCartridgeContentsCleared { get; set; } = false;
-        
-        public string PlayerAName { get; set; } = "NoNameA";
-        public string PlayerBName { get; set; } = "NoNameB";
-        
-        public ColorData PlayerAColor { get; set; } = ColorData.NotSet;
-        public ColorData PlayerBColor { get; set; } = ColorData.NotSet;
+        // --- Session Data Proxy ---
+        // 하위 호환성을 유지하기 위해 데이터는 SessionManager에서 꺼내오도록 중계(Proxy)합니다.
+        public int CurrentUserId => SessionManager.Instance ? SessionManager.Instance.CurrentUserId : 0;
+        public string CurrentLanguage => SessionManager.Instance ? SessionManager.Instance.CurrentLanguage : "ko";
+        public string Cartridge => SessionManager.Instance ? SessionManager.Instance.Cartridge : "";
+        public bool IsOtherCartridgeContentsCleared => SessionManager.Instance && SessionManager.Instance.IsOtherCartridgeContentsCleared;
 
-        public int PieceA1 { get; set; }
-        public int PieceA2 { get; set; }
-        public int PieceA3 { get; set; }
-        public int PieceB1 { get; set; }
-        public int PieceB2 { get; set; }
-        public int PieceB3 { get; set; }
-        public int PieceC1 { get; set; }
-        public int PieceC2 { get; set; }
-        public int PieceC3 { get; set; }
-        public int PieceD1 { get; set; }
-        public int PieceD2 { get; set; }
-        public int PieceD3 { get; set; }
+        public string PlayerAName => SessionManager.Instance ? SessionManager.Instance.PlayerAFirstName : "Player A";
+        public string PlayerBName => SessionManager.Instance ? SessionManager.Instance.PlayerBFirstName : "Player B";
         
-        public int TotalPieces => PieceA1 + PieceA2 + PieceA3 + 
-                                  PieceB1 + PieceB2 + PieceB3 + 
-                                  PieceC1 + PieceC2 + PieceC3 + 
-                                  PieceD1 + PieceD2 + PieceD3; 
+        public ColorData PlayerAColor => SessionManager.Instance ? SessionManager.Instance.PlayerAColor : ColorData.NotSet;
+        public ColorData PlayerBColor => SessionManager.Instance ? SessionManager.Instance.PlayerBColor : ColorData.NotSet;
+
+        public UserType currentUserType 
+        {
+            get => SessionManager.Instance ? SessionManager.Instance.CurrentUserType : UserType.A;
+            set { if (SessionManager.Instance) SessionManager.Instance.CurrentUserType = value; }
+        }
+
+        public int PieceC2 
+        {
+            get => SessionManager.Instance ? SessionManager.Instance.PieceC2 : 0;
+            set { if (SessionManager.Instance) SessionManager.Instance.PieceC2 = value; }
+        }
+        
+        public int TotalPieces => SessionManager.Instance ? SessionManager.Instance.TotalPieces : 0;
         // -----------------------------
 
         public event Action OnUserDataUpdated;
@@ -121,6 +98,15 @@ namespace My.Scripts.Core
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
+                
+                // SessionManager 자동 생성 보장
+                if (!SessionManager.Instance)
+                {
+                    GameObject sessionObj = new GameObject("SessionManager");
+                    sessionObj.AddComponent<SessionManager>();
+                }
+                
+                Application.wantsToQuit += WantsToQuit; 
             }
             else
             {
@@ -141,13 +127,8 @@ namespace My.Scripts.Core
             if (systemPopupPrefab)
             {
                 GameObject popupInstance = Instantiate(systemPopupPrefab, transform);
-                
                 _systemPopupCg = popupInstance.GetComponent<CanvasGroup>();
-                if (!_systemPopupCg)
-                {
-                    _systemPopupCg = popupInstance.AddComponent<CanvasGroup>();
-                }
-                
+                if (!_systemPopupCg) _systemPopupCg = popupInstance.AddComponent<CanvasGroup>();
                 _systemPopupText = popupInstance.GetComponentInChildren<Text>();
 
                 if (_systemPopupCg)
@@ -156,6 +137,11 @@ namespace My.Scripts.Core
                     _systemPopupCg.gameObject.SetActive(false);
                 }
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this) Application.wantsToQuit -= WantsToQuit;
         }
 
         private void LoadSettings()
@@ -178,32 +164,16 @@ namespace My.Scripts.Core
             else if (Input.GetKeyDown(KeyCode.M)) Cursor.visible = !Cursor.visible;
 
             if (_isTransitioning) return;
-
             HandleInactivity();
         }
         
-        public void NotifyUserDataUpdated()
-        {
-            OnUserDataUpdated?.Invoke();
-        }
+        public void NotifyUserDataUpdated() => OnUserDataUpdated?.Invoke();
 
         public Sprite GetColorSprite(ColorData color)
         {
-            int index = -1;
-            switch (color)
-            {
-                case ColorData.Cyan:   index = 0; break;
-                case ColorData.Pink:   index = 1; break;
-                case ColorData.Orange: index = 2; break;
-                case ColorData.Green:  index = 3; break;
-                case ColorData.Red:    index = 4; break;
-                case ColorData.Yellow: index = 5; break;
-            }
-
+            int index = (int)color;
             if (index >= 0 && playerColorSprites != null && index < playerColorSprites.Length)
-            {
                 return playerColorSprites[index];
-            }
             return null;
         }
         
@@ -221,9 +191,29 @@ namespace My.Scripts.Core
             }
         }
 
+        public string GetLevelSuffix(int questionNumber)
+        {
+            if (questionNumber <= 0) return ""; 
+
+            switch (currentUserType)
+            {
+                case UserType.A: return "_A"; 
+                case UserType.B: return (questionNumber == 4) ? "_B" : "_A";
+                case UserType.C:
+                    if (questionNumber == 4 || questionNumber == 10 || questionNumber == 11 || 
+                        questionNumber == 13 || questionNumber == 14 || questionNumber == 15) return "_C";
+                    return "_A";
+                case UserType.D: return "_D"; 
+                case UserType.E: return "_E"; 
+                case UserType.F: return "_F";
+                default: return "_A";
+            }
+        }
+
         private void HandleInactivity()
         {
-            if (SceneManager.GetActiveScene().name == GameConstants.Scene.Title || isAutoProgressing)
+            if (SceneManager.GetActiveScene().name == GameConstants.Scene.Title || isAutoProgressing
+                || SceneManager.GetActiveScene().name == GameConstants.Scene.Ending)
             {
                 ResetInactivityTimer();
                 return;
@@ -249,11 +239,9 @@ namespace My.Scripts.Core
         public void ResetInactivityTimer()
         {
             _currentInactivityTimer = 0f;
-            
             if (_isInactivitySequenceRunning)
             {
                 _isInactivitySequenceRunning = false;
-                
                 if (_inactivityCoroutine != null) StopCoroutine(_inactivityCoroutine);
                 
                 if (_systemPopupCg)
@@ -262,7 +250,6 @@ namespace My.Scripts.Core
                     _systemPopupCg.alpha = 0f;
                     _systemPopupCg.gameObject.SetActive(false);
                 }
-
                 if (SoundManager.Instance) SoundManager.Instance.StopSFX();
             }
         }
@@ -281,20 +268,14 @@ namespace My.Scripts.Core
             _isInactivitySequenceRunning = true;
 
             TextSetting targetText = null;
-            if (_systemData != null)
-            {
-                targetText = CurrentInactivityTextType == InactivityTextType.Tag ? _systemData.tagText : _systemData.inactivityWarningText;
-            }
+            if (_systemData != null) targetText = CurrentInactivityTextType == InactivityTextType.Tag ? _systemData.tagText : _systemData.inactivityWarningText;
 
             if (targetText != null && _systemPopupText)
             {
                 if (UIManager.Instance) UIManager.Instance.SetText(_systemPopupText.gameObject, targetText);
                 else _systemPopupText.text = targetText.text;
             }
-            else if (_systemPopupText) 
-            {
-                _systemPopupText.text = "움직여주세요"; 
-            }
+            else if (_systemPopupText) _systemPopupText.text = "움직여주세요"; 
 
             _popupFadeCoroutine = StartCoroutine(FadeSystemPopup(0f, 1f, 0.5f));
             yield return _popupFadeCoroutine;
@@ -304,7 +285,6 @@ namespace My.Scripts.Core
             yield return _popupFadeCoroutine;
 
             if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_15_10초");
-
             yield return new WaitForSeconds(10.0f);
 
             if (_systemData != null && _systemData.inactivityResetText != null && _systemPopupText)
@@ -312,10 +292,7 @@ namespace My.Scripts.Core
                 if (UIManager.Instance) UIManager.Instance.SetText(_systemPopupText.gameObject, _systemData.inactivityResetText);
                 else _systemPopupText.text = _systemData.inactivityResetText.text;
             }
-            else if (_systemPopupText) 
-            {
-                _systemPopupText.text = "동작이 인식 되지 않아 초기화 됩니다"; 
-            }
+            else if (_systemPopupText) _systemPopupText.text = "동작이 인식 되지 않아 초기화 됩니다"; 
 
             _popupFadeCoroutine = StartCoroutine(FadeSystemPopup(0f, 1f, 0.5f));
             yield return _popupFadeCoroutine;
@@ -332,7 +309,6 @@ namespace My.Scripts.Core
         private IEnumerator FadeSystemPopup(float start, float end, float duration)
         {
             if (!_systemPopupCg) yield break;
-
             _systemPopupCg.gameObject.SetActive(true);
             _systemPopupCg.alpha = start;
             
@@ -343,7 +319,6 @@ namespace My.Scripts.Core
                 _systemPopupCg.alpha = Mathf.Lerp(start, end, elapsed / duration);
                 yield return null;
             }
-
             _systemPopupCg.alpha = end;
             if (end <= 0f) _systemPopupCg.gameObject.SetActive(false);
         }
@@ -351,7 +326,6 @@ namespace My.Scripts.Core
         public void ChangeScene(string sceneName)
         {
             if (_isTransitioning) return;
-            
             _isTransitioning = true;
             ResetInactivityTimer();
             StartCoroutine(ChangeSceneRoutine(sceneName));
@@ -380,20 +354,17 @@ namespace My.Scripts.Core
         public void ReturnToTitle()
         {
             if (_isTransitioning) return;
-
-            firstTaggedPlayer = 0; 
+            
             isAutoProgressing = false;
             CurrentInactivityTextType = InactivityTextType.Warning; 
             ResetInactivityTimer();
             
-            CurrentUserIdx = 0;
-            Cartridge = "";
-            IsOtherCartridgeContentsCleared = false;
+            if (SessionManager.Instance) SessionManager.Instance.ClearSession();
 
             ChangeScene(GameConstants.Scene.Title);
         }
         
-        #region API 호출 로직 (시간 및 값 기록)
+        #region API 호출 로직
 
         public IEnumerator CheckRoomStateRoutine(Action<string> callback)
         {
@@ -449,115 +420,201 @@ namespace My.Scripts.Core
 
         public void SendResetStartAPI()
         {
-            if (CurrentUserIdx == 0 || ApiConfig == null) return;
+            if (CurrentUserId == 0 || ApiConfig == null) return;
             StartCoroutine(ResetStartRoutine());
         }
 
         private IEnumerator ResetStartRoutine()
         {
-            string url = $"{ApiConfig.ResetStartUrl}?idx_user={CurrentUserIdx}&code=c2";
+            string url = $"{ApiConfig.ResetStartUrl}?idx_user={CurrentUserId}&code=c2";
             using (UnityWebRequest req = UnityWebRequest.Get(url))
             {
                 req.timeout = 5;
                 yield return req.SendWebRequest();
-                if (req.result != UnityWebRequest.Result.Success)
-                    Debug.LogWarning($"[API] ResetStart 실패: {req.error}");
             }
         }
 
         public void SendExitRoomAPI()
         {
-            if (CurrentUserIdx == 0 || ApiConfig == null) return;
+            if (CurrentUserId == 0 || ApiConfig == null) return;
             StartCoroutine(ExitRoomRoutine());
         }
 
         private IEnumerator ExitRoomRoutine()
         {
-            string url = $"{ApiConfig.ExitRoomUrl}?code=c2&idx_user={CurrentUserIdx}";
+            string url = $"{ApiConfig.ExitRoomUrl}?code=c2&idx_user={CurrentUserId}";
             using (UnityWebRequest req = UnityWebRequest.Get(url))
             {
                 req.timeout = 5;
                 yield return req.SendWebRequest();
-                if (req.result != UnityWebRequest.Result.Success)
-                    Debug.LogWarning($"[API] ExitRoom 실패: {req.error}");
             }
         }
 
         public void SendTimeUpdateAPI()
         {
-            if (CurrentUserIdx == 0 || ApiConfig == null)
-            {
-                Debug.LogWarning($"[GameManager] CurrentUserId가 0이거나 ApiConfig가 없습니다. end API 호출을 건너뜁니다.");
-                return;
-            }
+            if (CurrentUserId == 0 || ApiConfig == null) return;
             StartCoroutine(TimeUpdateRoutine());
         }
 
         private IEnumerator TimeUpdateRoutine()
         {
-            string url = $"{ApiConfig.UpdateTimeUrl}?idx_user={CurrentUserIdx}&option=end&code=c2";
-
+            string url = $"{ApiConfig.UpdateTimeUrl}?idx_user={CurrentUserId}&option=end&code=c2";
             using (UnityWebRequest req = UnityWebRequest.Get(url))
             {
                 req.timeout = 10;
                 yield return req.SendWebRequest();
-                
-                if (req.result != UnityWebRequest.Result.Success) 
-                    Debug.LogError($"[Time API] 에러: {req.error}");
-                else 
-                    Debug.Log($"[Time API] end 업데이트 성공! (URL: {url})");
             }
         }
 
         public void SendValueUpdateAPI(int qNo, string side, int value)
         {
-            if (CurrentUserIdx == 0 || ApiConfig == null)
-            {
-                Debug.LogWarning("[GameManager] CurrentUserId가 0이거나 ApiConfig가 없습니다. Value 업데이트를 건너뜁니다.");
-                return;
-            }
+            if (CurrentUserId == 0 || ApiConfig == null) return;
             StartCoroutine(ValueUpdateRoutine(qNo, side, value));
         }
 
         private IEnumerator ValueUpdateRoutine(int qNo, string side, int value)
         {
             string safeSide = Uri.EscapeDataString(side ?? string.Empty);
-            string url = $"{ApiConfig.UpdateValueUrl}?idx_user={CurrentUserIdx}&q_no={qNo}&side={safeSide}&code=c2&value={value}";
-            
+            string url = $"{ApiConfig.UpdateValueUrl}?idx_user={CurrentUserId}&q_no={qNo}&side={safeSide}&code=c2&value={value}";
             using (UnityWebRequest req = UnityWebRequest.Get(url))
             {
                 req.timeout = 10;
                 yield return req.SendWebRequest();
-                if (req.result != UnityWebRequest.Result.Success) Debug.LogError($"[Value API] 통신 에러: {req.error}");
-                else Debug.Log($"[Value API] {side} Q{qNo} 값({value}) 업데이트 성공!");
             }
         }
 
         public void SendPieceUpdateAPI(int value)
         {
-            if (CurrentUserIdx == 0 || ApiConfig == null)
-            {
-                Debug.LogWarning("[GameManager] CurrentUserId가 0이거나 ApiConfig가 없습니다. Piece 업데이트를 건너뜁니다.");
-                return;
-            }
+            if (CurrentUserId == 0 || ApiConfig == null) return;
             StartCoroutine(PieceUpdateRoutine(value));
         }
 
         private IEnumerator PieceUpdateRoutine(int value)
         {
-            string url = $"{ApiConfig.UpdatePieceUrl}?idx_user={CurrentUserIdx}&code=c2&value={value}";
-            
+            string url = $"{ApiConfig.UpdatePieceUrl}?idx_user={CurrentUserId}&code=c2&value={value}";
             using (UnityWebRequest req = UnityWebRequest.Get(url))
             {
                 req.timeout = 10;
                 yield return req.SendWebRequest();
-                if (req.result != UnityWebRequest.Result.Success) 
-                    Debug.LogError($"[Piece API] 에러: {req.error}");
-                else 
-                    Debug.Log($"[Piece API] 마음 조각({value}개) 업데이트 성공! (URL: {url})");
             }
         }
 
+        #endregion
+        
+        #region 프로그램 강제 종료 시 예외 처리
+
+        private bool WantsToQuit()
+        {
+            if (_isQuitSafe) return true;
+
+            if (!_isQuitting)
+            {
+                _isQuitting = true;
+                StartCoroutine(QuitRoutine());
+            }
+            return false; 
+        }
+
+        private IEnumerator QuitRoutine()
+        {
+            if (CurrentUserId != 0 && ApiConfig != null)
+            {   
+                string resetUrl = $"{ApiConfig.ResetStartUrl}?idx_user={CurrentUserId}&code=c2";
+                using (UnityWebRequest req = UnityWebRequest.Get(resetUrl))
+                {   
+                    req.timeout = 2; 
+                    yield return req.SendWebRequest();
+                }
+
+                string exitUrl = $"{ApiConfig.ExitRoomUrl}?code=c2&idx_user={CurrentUserId}";
+                using (UnityWebRequest req = UnityWebRequest.Get(exitUrl))
+                {   
+                    req.timeout = 2;
+                    yield return req.SendWebRequest();
+                }
+            }
+
+            yield return ClearSourceFoldersAsync().ToCoroutine();
+            
+            _isQuitSafe = true; 
+            
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit(); 
+#endif
+        }
+
+#if UNITY_EDITOR
+        private void OnApplicationQuit()
+        {
+            if (_isQuitSafe) return; 
+
+            if (CurrentUserId != 0 && ApiConfig != null)
+            {   
+                string resetUrl = $"{ApiConfig.ResetStartUrl}?idx_user={CurrentUserId}&code=c2";
+                using (UnityWebRequest req = UnityWebRequest.Get(resetUrl))
+                {   
+                    req.timeout = 2;
+                    UnityWebRequestAsyncOperation op = req.SendWebRequest();
+                    float deadline = Time.realtimeSinceStartup + 2.0f;
+                    while (!op.isDone && Time.realtimeSinceStartup < deadline)
+                    {
+                        System.Threading.Thread.Sleep(10);
+                    }
+                }
+
+                string exitUrl = $"{ApiConfig.ExitRoomUrl}?code=c2&idx_user={CurrentUserId}";
+                using (UnityWebRequest req = UnityWebRequest.Get(exitUrl))
+                {   
+                    req.timeout = 2;
+                    UnityWebRequestAsyncOperation op = req.SendWebRequest();
+                    float deadline = Time.realtimeSinceStartup + 2.0f;
+                    while (!op.isDone && Time.realtimeSinceStartup < deadline)
+                    {
+                        System.Threading.Thread.Sleep(10);
+                    }
+                }
+            }
+
+            ClearSourceFoldersAsync().Forget();
+        }
+#endif
+
+        private async UniTask ClearSourceFoldersAsync()
+        {
+            string dataPath = Application.dataPath;
+            string dateFolder = DateTime.Now.ToString("yyyy-MM-dd");
+
+            try
+            {
+                await UniTask.RunOnThreadPool(() =>
+                {
+                    DirectoryInfo parentDir = Directory.GetParent(dataPath);
+                    string rootPath = parentDir != null ? parentDir.FullName : dataPath;
+
+                    string timelapseSource = Path.Combine(rootPath, "Timelapse", "Timelapse_Source", dateFolder);
+                    string realtimeSource = Path.Combine(rootPath, "Timelapse", "Realtime_Source", dateFolder);
+
+                    if (Directory.Exists(timelapseSource))
+                    {
+                        foreach (string file in Directory.GetFiles(timelapseSource))
+                        {
+                            try { File.Delete(file); } catch { }
+                        }
+                    }
+
+                    if (Directory.Exists(realtimeSource))
+                    {
+                        foreach (string file in Directory.GetFiles(realtimeSource))
+                        {
+                            try { File.Delete(file); } catch { }
+                        }
+                    }
+                });
+            }
+            catch { }
+        }
         #endregion
     }
 }

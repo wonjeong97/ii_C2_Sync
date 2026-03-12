@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Wonjeong.Data;
 using Wonjeong.UI;
-using Wonjeong.Utils; // CoroutineData 사용
+using Wonjeong.Utils; 
 
 namespace My.Scripts._05_Ending.Pages
 {
@@ -60,12 +60,12 @@ namespace My.Scripts._05_Ending.Pages
             int totalPieces = fragments;
             if (GameManager.Instance)
             {
-                // PlayLong(현재 콘텐츠)에서 얻은 마음 조각을 로컬 변수에 캐싱함.
-                // 하단 텍스트의 TotalPieces 연산에 즉시 반영하기 위함임.
+                // PlayLong(현재 콘텐츠)에서 얻은 마음 조각을 로컬 변수에 캐싱함
+                // 하단 텍스트의 TotalPieces 연산에 즉시 반영하기 위함임
                 GameManager.Instance.PieceC2 = fragments;
                 totalPieces = GameManager.Instance.TotalPieces;
 
-                // 서버에 획득한 마음 조각 데이터를 실시간으로 동기화함.
+                // 서버에 획득한 마음 조각 데이터를 실시간으로 동기화함
                 if (GameManager.Instance && !_hasSentPieceUpdate)
                 {
                     GameManager.Instance.SendPieceUpdateAPI(fragments);
@@ -73,25 +73,23 @@ namespace My.Scripts._05_Ending.Pages
                 }
             }
 
-            // 4. 텍스트 설정
+            // 4. 텍스트 데이터 세팅
             if (_data != null)
             {
                 if (topText && _data.topTextFormat != null)
                 {
                     if (UIManager.Instance) UIManager.Instance.SetText(topText.gameObject, _data.topTextFormat);
-                    // 이번 체험에서 얻은 조각 개수 표기
                     topText.text = string.Format(_data.topTextFormat.text, fragments);
                 }
 
                 if (bottomText && _data.bottomTextFormat != null)
                 {
                     if (UIManager.Instance) UIManager.Instance.SetText(bottomText.gameObject, _data.bottomTextFormat);
-                    // 전체 콘텐츠를 거치며 누적된 마음 조각의 총합 표기
                     bottomText.text = string.Format(_data.bottomTextFormat.text, totalPieces);
                 }
             }
 
-            // 5. 조각 이미지 스프라이트 및 투명도(Alpha) 갱신
+            // 5. 조각 이미지 스프라이트 및 초기 투명도 설정
             if (heartImages != null)
             {
                 for (int i = 0; i < heartImages.Length; i++)
@@ -99,47 +97,84 @@ namespace My.Scripts._05_Ending.Pages
                     if (heartImages[i])
                     {
                         bool isGot = i < fragments;
-                        
-                        // 스프라이트 교체
                         heartImages[i].sprite = isGot ? heartGetSprite : heartDontGetSprite;
                         
-                        // 획득 시 알파 1.0(100%), 미획득 시 알파 0.6(60%)
+                        // 획득한 조각은 순차적 연출을 위해 투명(0)으로 초기화하고, 
+                        // 미획득 조각은 배경 그룹(heartsCg) 페이드인 시 함께 나타나도록 반투명(0.6)으로 설정함
                         Color c = heartImages[i].color;
-                        c.a = isGot ? 1.0f : 0.6f;
+                        c.a = isGot ? 0.0f : 0.6f;
                         heartImages[i].color = c;
                     }
                 }
             }
 
             // 6. 시퀀스 시작
-            StartCoroutine(EntranceSequence());
+            StartCoroutine(EntranceSequence(fragments));
         }
 
         /// <summary>
-        /// 중간 이미지 페이드인 -> 대기 -> 텍스트 페이드인 -> 대기 순서로 연출을 진행함.
+        /// 요청된 기획에 맞춰 대기 -> 컨테이너 페이드인 -> 개별 조각 순차 페이드인 -> 텍스트 표시 순서로 진행함.
         /// </summary>
-        private IEnumerator EntranceSequence()
+        private IEnumerator EntranceSequence(int fragments)
         {
-            // 1. 중간 마음조각 이미지들 페이드인 (1초)
+            // 1. 페이지 입장 후 시각적 안정을 위한 0.5초 대기
+            yield return CoroutineData.GetWaitForSeconds(0.5f);
+
+            // 2. 전체 마음 조각 배경/틀 그룹을 0.5초 동안 페이드인
             if (heartsCg)
             {
-                SoundManager.Instance?.PlaySFX("공통_6");
-                yield return StartCoroutine(UIUtils.FadeCanvasGroup(heartsCg, 0f, 1f, 1.0f));
+                yield return StartCoroutine(UIUtils.FadeCanvasGroup(heartsCg, 0f, 1f, 0.5f));
             }
 
-            // 2. 1초 대기
-            yield return CoroutineData.GetWaitForSeconds(1.0f);
+            // 3. 획득한 조각 개수만큼 1번부터 순차적으로 알파값 0 -> 1 연출 (각 0.5초)
+            if (heartImages != null)
+            {
+                for (int i = 0; i < fragments; i++)
+                {
+                    if (i < heartImages.Length && heartImages[i])
+                    {
+                        if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_6");
+                        yield return StartCoroutine(FadeImageAlpha(heartImages[i], 0f, 1f, 0.5f));
+                    }
+                }
+            }
 
-            // 3. 상단, 하단 텍스트 페이드인 (1초)
+            // (선택) 텍스트 등장 전 약간의 자연스러운 대기 시간
+            yield return CoroutineData.GetWaitForSeconds(0.5f);
+
+            // 4. 텍스트 캔버스 그룹 페이드인
             if (textsCg)
             {
                 yield return StartCoroutine(UIUtils.FadeCanvasGroup(textsCg, 0f, 1f, 1.0f));
             }
 
-            // 4. 2초 대기 후 완료
+            // 5. 유저가 결과를 인지할 수 있도록 대기 후 다음 페이지로 전환
             yield return CoroutineData.GetWaitForSeconds(2.0f);
             
             CompleteStep();
+        }
+
+        /// <summary> 개별 이미지의 알파값을 부드럽게 조절하기 위한 전용 코루틴 </summary>
+        private IEnumerator FadeImageAlpha(Image img, float start, float end, float duration)
+        {
+            if (!img) yield break;
+            
+            float time = 0f;
+            Color c = img.color;
+            c.a = start;
+            img.color = c;
+
+            while (time < duration)
+            {
+                time += Time.deltaTime;
+                c.a = Mathf.Lerp(start, end, time / duration);
+                img.color = c;
+                yield return null;
+            }
+            
+            // 오차 보정
+            c.a = end;
+            img.color = c;
         }
 
         public override void OnExit()

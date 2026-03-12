@@ -255,7 +255,7 @@ namespace My.Scripts._03_PlayShort
             targetPopup.gameObject.SetActive(true);
             targetPopup.alpha = 0f; 
             targetPopup.blocksRaycasts = true; 
-            StartCoroutine(FadeCanvasGroup(targetPopup, 0f, 1f, 1.0f)); 
+            StartCoroutine(FadeCanvasGroup(targetPopup, 0f, 1f, 0.5f)); 
         }
 
         public IEnumerator ShowQuestionPhase2Routine(int playerIdx, float duration, int distance)
@@ -445,9 +445,9 @@ namespace My.Scripts._03_PlayShort
             if (!centerText) yield break;
             centerText.text = message;
             centerText.gameObject.SetActive(true);
-            yield return StartCoroutine(FadeTextAlpha(centerText, 0f, 1f, 1.0f));
+            yield return StartCoroutine(FadeTextAlpha(centerText, 0f, 1f, 0.5f));
             yield return CoroutineData.GetWaitForSeconds(duration);
-            yield return StartCoroutine(FadeTextAlpha(centerText, 1f, 0f, 1.0f));
+            yield return StartCoroutine(FadeTextAlpha(centerText, 1f, 0f, 0.5f));
             centerText.gameObject.SetActive(false);
         }
         

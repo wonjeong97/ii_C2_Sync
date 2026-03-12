@@ -95,6 +95,19 @@ namespace My.Scripts.Core
             NotifyDistanceChanged();
         }
 
+        /// <summary> 캐릭터의 파츠(몸, 손)에 스프라이트 이미지를 직접 씌웁니다. </summary>
+        public void SetCharacterSprite(Sprite sprite)
+        {
+            if (!sprite) return;
+
+            if (bodyImage) bodyImage.sprite = sprite;
+            if (leftHandImage) leftHandImage.sprite = sprite;
+            if (rightHandImage) rightHandImage.sprite = sprite;
+        }
+
+        /// <summary>
+        /// 스프라이트가 없을 경우를 대비한 틴트 색상 덮어쓰기 로직입니다.
+        /// </summary>
         public void SetCharacterColor(Color color)
         {
             if (bodyImage) bodyImage.color = new Color(color.r, color.g, color.b, bodyImage.color.a);
@@ -147,7 +160,7 @@ namespace My.Scripts.Core
 
         private void UpdateAnimationSpeed()
         {
-            if (characterAnimator == null) return;
+            if (!characterAnimator) return;
             float normalizedSpeed = (_config.maxScrollSpeed > 0) ? (currentSpeed / _config.maxScrollSpeed) : 0f;
             if (normalizedSpeed < 0.1f) normalizedSpeed = 0f;
             characterAnimator.SetFloat(RunSpeedParam, normalizedSpeed * runSpeedMultiplier);
