@@ -61,12 +61,14 @@ namespace My.Scripts._05_Ending.Pages
             if (GameManager.Instance)
             {
                 // PlayLong(현재 콘텐츠)에서 얻은 마음 조각을 로컬 변수에 캐싱함
-                // 하단 텍스트의 TotalPieces 연산에 즉시 반영하기 위함임
                 GameManager.Instance.PieceC2 = fragments;
-                totalPieces = GameManager.Instance.TotalPieces;
+                
+                // GameManager.TotalPieces는 C2를 제외한 값이므로,
+                // 방금 게임에서 획득한 조각(fragments)을 더함
+                totalPieces = GameManager.Instance.TotalPieces + fragments;
 
                 // 서버에 획득한 마음 조각 데이터를 실시간으로 동기화함
-                if (GameManager.Instance && !_hasSentPieceUpdate)
+                if (!_hasSentPieceUpdate)
                 {
                     GameManager.Instance.SendPieceUpdateAPI(fragments);
                     _hasSentPieceUpdate = true;
@@ -99,10 +101,9 @@ namespace My.Scripts._05_Ending.Pages
                         bool isGot = i < fragments;
                         heartImages[i].sprite = isGot ? heartGetSprite : heartDontGetSprite;
                         
-                        // 획득한 조각은 순차적 연출을 위해 투명(0)으로 초기화하고, 
-                        // 미획득 조각은 배경 그룹(heartsCg) 페이드인 시 함께 나타나도록 반투명(0.6)으로 설정함
+                        // 순차적 연출을 위해 투명(0)으로 초기화 
                         Color c = heartImages[i].color;
-                        c.a = isGot ? 0.0f : 0.6f;
+                        c.a = 0.0f;
                         heartImages[i].color = c;
                     }
                 }
