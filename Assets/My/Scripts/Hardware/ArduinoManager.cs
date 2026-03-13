@@ -4,6 +4,9 @@ using System.IO.Ports;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using My.Scripts.Core; 
+using My.Scripts.Global;
+using Wonjeong.Utils;
 
 namespace My.Scripts.Hardware
 {
@@ -29,6 +32,9 @@ namespace My.Scripts.Hardware
 
         private Thread _readThread;
         private bool _isRunning = false;
+        
+        // 비동기 작업 안전 종료를 위한 취소 토큰 소스
+        private CancellationTokenSource _cts;
 
         // 예외 로그 스로틀링용 변수
         private DateTime _lastWarnTime = DateTime.MinValue;
@@ -53,7 +59,10 @@ namespace My.Scripts.Hardware
         private void Start()
         {
             _isRunning = true;
-            AutoConnectAsync().Forget();
+            _cts = new CancellationTokenSource();
+            
+            // 토큰을 전달하여 씬 전환 및 객체 파괴 시 비동기 스캔 작업이 즉시 중단되도록 함
+            AutoConnectAsync(_cts.Token).Forget();
         }
 
         private void Update()
@@ -67,27 +76,28 @@ namespace My.Scripts.Hardware
 
         private void ProcessHardwareInput(int padNumber, bool isDown)
         {
-            // 디버그 확인용 (너무 로그가 많으면 주석 처리 요망)
-            // string stateStr = isDown ? "On" : "Off";
-            // Debug.Log($"[아두이노 발판]>> Pad: {padNumber}, State: {stateStr}");
-
             if (OnHardwareInput != null)
             {
                 OnHardwareInput.Invoke(padNumber, isDown);
             }
         }
 
-        private async UniTaskVoid AutoConnectAsync()
+        private async UniTaskVoid AutoConnectAsync(CancellationToken token)
         {
             string[] portNames = SerialPort.GetPortNames();
             Debug.Log($"[ArduinoManager] 발견된 전체 COM 포트 수: {portNames.Length}");
 
             foreach (string portName in portNames)
             {
+                // 이유: 작업 중 취소 요청이 들어오면 불필요한 포트 스캔을 즉시 중단하기 위함
+                if (token.IsCancellationRequested) return;
+                
                 if (IsConnected) break;
 
-                await TryConnectPortAsync(portName);
+                await TryConnectPortAsync(portName, token);
             }
+
+            if (token.IsCancellationRequested) return;
 
             if (!IsConnected) 
             {
@@ -99,13 +109,21 @@ namespace My.Scripts.Hardware
             }
         }
 
-        private async UniTask TryConnectPortAsync(string portName)
+        private async UniTask TryConnectPortAsync(string portName, CancellationToken token)
         {
             await UniTask.RunOnThreadPool(async () =>
             {
+                if (token.IsCancellationRequested) return;
+
                 SerialPort tempPort = new SerialPort(portName, 9600);
                 tempPort.ReadTimeout = 2000;
                 tempPort.DtrEnable = true;
+
+                if (token.IsCancellationRequested)
+                {
+                    tempPort.Dispose();
+                    return;
+                }
 
                 try
                 {
@@ -118,8 +136,23 @@ namespace My.Scripts.Hardware
                     return;
                 }
 
+                if (token.IsCancellationRequested)
+                {
+                    tempPort.Close();
+                    tempPort.Dispose();
+                    return;
+                }
+
                 // 아두이노 재부팅 및 초기화 대기 시간
-                await UniTask.Delay(TimeSpan.FromSeconds(2.5f));
+                // 이유: 연결 직후 아두이노 보드가 재부팅되므로 시리얼 통신 안정화를 위해 잠시 대기함
+                bool isCanceled = await UniTask.Delay(TimeSpan.FromSeconds(2.5f), cancellationToken: token).SuppressCancellationThrow();
+                
+                if (isCanceled || token.IsCancellationRequested)
+                {
+                    tempPort.Close();
+                    tempPort.Dispose();
+                    return;
+                }
 
                 string response = string.Empty;
                 try
@@ -140,9 +173,15 @@ namespace My.Scripts.Hardware
 
                 await UniTask.SwitchToMainThread();
 
+                if (token.IsCancellationRequested)
+                {
+                    tempPort.Close();
+                    tempPort.Dispose();
+                    return;
+                }
+
                 // 이유: GameConstants.Hardware 하위에 C2용 아두이노 식별 문자열이 있다고 가정하고 매칭 검사
-                // (만약 별도 식별 과정이 없다면 무조건 연결하도록 로직을 수정해야 함)
-                if (response.Contains("Arduino_C2") || response.Contains("Pad_Controller")) // 필요시 문자열 변경
+                if (response.Contains("Arduino_C2") || response.Contains("Pad_Controller")) 
                 {
                     tempPort.ReadTimeout = 10;
                     _arduinoPort = tempPort;
@@ -179,7 +218,6 @@ namespace My.Scripts.Hardware
                         {
                             string inputLine = _arduinoPort.ReadLine().Trim();
                             
-                            // 수신된 문자열 파싱 (예: "1 On", "12 Off")
                             if (!string.IsNullOrEmpty(inputLine))
                             {
                                 ParseAndEnqueueInput(inputLine);
@@ -210,15 +248,12 @@ namespace My.Scripts.Hardware
         /// </summary>
         private void ParseAndEnqueueInput(string rawInput)
         {
-            // 1. 공백을 기준으로 분리 (예: ["1", "On"])
             string[] parts = rawInput.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             
             if (parts.Length == 2)
             {
-                // 2. 첫 번째 부분을 숫자로 변환 (Pad Number 1~12)
                 if (int.TryParse(parts[0], out int padNumber))
                 {
-                    // 3. 두 번째 부분으로 상태 판별
                     string stateStr = parts[1].Trim().ToLower();
                     if (stateStr == "on")
                     {
@@ -233,11 +268,6 @@ namespace My.Scripts.Hardware
                         Debug.LogWarning($"[ArduinoManager] 알 수 없는 상태 값 수신: {rawInput}");
                     }
                 }
-            }
-            else
-            {
-                // 디버그/연결 식별용 등 규격 외 메시지는 그냥 무시하거나 로깅
-                // Debug.Log($"[ArduinoManager] 비규격 메시지 수신: {rawInput}");
             }
         }
 
@@ -260,6 +290,14 @@ namespace My.Scripts.Hardware
         private void OnDestroy()
         {
             _isRunning = false;
+
+            // 이유: 오브젝트가 파괴될 때 실행 중이던 비동기 스캔 작업을 즉각적으로 중단시켜 메모리 누수를 막기 위함
+            if (_cts != null)
+            {
+                _cts.Cancel();
+                _cts.Dispose();
+                _cts = null;
+            }
 
             if (_readThread != null && _readThread.IsAlive)
             {
