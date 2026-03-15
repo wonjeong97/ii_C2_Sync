@@ -9,20 +9,12 @@ using Wonjeong.Utils;
 
 namespace My.Scripts._01_Tutorial.Pages
 {
-    /// <summary>
-    /// 튜토리얼 2페이지의 데이터 구조.
-    /// JSON 파일의 "page2" 섹션과 매핑되며, 화면에 표시할 설명 텍스트 설정을 담고 있음.
-    /// </summary>
     [Serializable]
     public class TutorialPage2Data
     {
         public TextSetting descriptionText;
     }
 
-    /// <summary>
-    /// 튜토리얼의 두 번째 페이지를 제어하는 컨트롤러.
-    /// 일정 시간(3초) 후 자동으로 다음 단계로 넘어가거나, 사용자 입력으로 즉시 스킵할 수 있는 기능을 제공함.
-    /// </summary>
     public class TutorialPage2Controller : GamePage<TutorialPage2Data>
     {
         [Header("UI Components")]
@@ -30,16 +22,10 @@ namespace My.Scripts._01_Tutorial.Pages
 
         private bool _isCompleted;
 
-        /// <summary>
-        /// 로드된 데이터를 UI 컴포넌트에 적용함.
-        /// </summary>
-        /// <param name="data">페이지 설정 데이터</param>
         protected override void SetupData(TutorialPage2Data data)
         {
             if (data == null) return;
 
-            // UIManager를 통해 텍스트의 스타일(폰트, 색상 등)과 내용을 일괄 적용하여
-            // 데이터 기반의 UI 구성을 유지함.
             if (descriptionText != null && data.descriptionText != null)
             {
                 if (UIManager.Instance != null)
@@ -49,29 +35,23 @@ namespace My.Scripts._01_Tutorial.Pages
             }
         }
 
-        /// <summary>
-        /// 페이지가 활성화될 때 호출되어 초기화 및 자동 진행 로직을 시작함.
-        /// </summary>
         public override void OnEnter()
         {
             base.OnEnter();
             
-            // 페이지 재진입 시 상태가 꼬이지 않도록 플래그를 초기화함
+            // 이유: 유저 입력 없이 자동으로 넘어가는 연출 구간이므로 글로벌 무입력 타이머를 정지시킴
+            if (GameManager.Instance) GameManager.Instance.IsAutoProgressing = true;
+
             _isCompleted = false;
 
-            // 사용자가 가만히 있어도 튜토리얼이 진행되도록 자동 넘김 타이머를 시작함
             StartCoroutine(AutoPassRoutine());
         }
 
-        /// <summary>
-        /// 일정 시간 대기 후 다음 단계로 진행하는 코루틴.
-        /// </summary>
         private IEnumerator AutoPassRoutine()
         {
-            SoundManager.Instance?.PlaySFX("공통_6");
+            if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_6");
             yield return CoroutineData.GetWaitForSeconds(3.0f);
 
-            // 대기 시간 동안 사용자가 이미 스킵하지 않았을 경우에만 완료 처리
             if (!_isCompleted)
             {
                 _isCompleted = true;
@@ -79,13 +59,9 @@ namespace My.Scripts._01_Tutorial.Pages
             }
         }
         
-        /// <summary>
-        /// 페이지가 비활성화될 때 호출되어 정리 작업을 수행함.
-        /// </summary>
         public override void OnExit()
         {
             base.OnExit();
-            // 페이지를 나간 후에는 더 이상 자동 넘김 로직이 돌지 않도록 확실하게 정리함
             StopAllCoroutines(); 
         }
     }

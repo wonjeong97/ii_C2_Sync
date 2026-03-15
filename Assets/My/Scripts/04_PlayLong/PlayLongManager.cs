@@ -71,6 +71,8 @@ namespace My.Scripts._04_PlayLong
         private const float RequiredRightDistance = 10.0f;
         private const float RequiredLeftDistance = 6.0f;
 
+        public bool IsGameActive => _isGameActive;
+
         private void Awake()
         {
             if (!Instance) Instance = this;
@@ -177,7 +179,7 @@ namespace My.Scripts._04_PlayLong
             StartIntroMission();
         }
 
-        private bool IsAnyPlayerStunned()
+        public bool IsAnyPlayerStunned()
         {
             if (players == null || players.Length < 2) return true;
 
@@ -282,6 +284,9 @@ namespace My.Scripts._04_PlayLong
 
                 float stepMove = (totalDistanceToMove / duration) * deltaTime;
                 if (env) env.ScrollByMeter(stepMove);
+                
+                // 이유: 현재 IsGameActive가 false라 기본 스크롤 로직이 차단된 상태이므로, 튜토리얼 연출을 위해 장애물 강제 이동 함수를 명시적으로 호출함
+                if (obstacleManager) obstacleManager.ForceMoveActiveObstacles(stepMove);
 
                 if (IsAnyPlayerStunned()) break;
 
@@ -615,7 +620,6 @@ namespace My.Scripts._04_PlayLong
                             ColorData colorData = (i == 0) ? GameManager.Instance.PlayerAColor : GameManager.Instance.PlayerBColor;
                             Sprite targetSprite = GameManager.Instance.GetColorSprite(colorData);
 
-                            // 이유: API에 등록된 스프라이트가 존재하면 해당 이미지를 씌우고, 없다면 기존 틴트(Color) 방식을 예비책(Fallback)으로 적용하기 위함
                             if (targetSprite)
                             {
                                 players[i].SetCharacterSprite(targetSprite);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using My.Scripts.Core;
+using My.Scripts.Hardware;
 using UnityEngine;
 using UnityEngine.Networking; 
 using UnityEngine.SceneManagement;
@@ -16,11 +17,11 @@ namespace My.Scripts._00_Title
     public class TitleManager : MonoBehaviour
     {
         [Header("Polling Settings")]
-        [SerializeField] private float basePollInterval = 1.0f; // 기본 API 폴링 간격
-        [SerializeField] private float maxPollInterval = 10.0f; // 통신 실패 시 지수 백오프 최대 한도
+        [SerializeField] private float basePollInterval = 1.0f; 
+        [SerializeField] private float maxPollInterval = 10.0f; 
 
         private float _currentPollInterval; 
-        private bool _isTransitioning; // 중복 씬 로드 방지 가드 플래그
+        private bool _isTransitioning; 
         
         private Coroutine _soundCoroutine;
         private Coroutine _pollCoroutine;
@@ -28,6 +29,12 @@ namespace My.Scripts._00_Title
         /// <summary> 씬 진입 시 초기 상태를 구성하고 API 폴링을 시작합니다. </summary>
         private void Start()
         {
+            // 모든 게임 세트가 끝나고 타이틀로 돌아왔을 때 누적된 하드웨어 통신 오류를 털어내고 아두이노를 새롭게 재부팅시켜 통신 안정성을 확보하기 위함
+            if (ArduinoManager.Instance)
+            {
+                ArduinoManager.Instance.Reconnect();
+            }
+
             if (_soundCoroutine == null)
             {
                 _soundCoroutine = StartCoroutine(StartMainBGM());
@@ -59,7 +66,6 @@ namespace My.Scripts._00_Title
                     
                     yield return webRequest.SendWebRequest();
 
-                    // 네트워크 오류 시 즉각적인 재시도로 인한 서버 과부하를 막기 위해 지수 백오프(Exponential Backoff) 적용
                     if (webRequest.result == UnityWebRequest.Result.ConnectionError || 
                         webRequest.result == UnityWebRequest.Result.ProtocolError)
                     {
@@ -68,12 +74,10 @@ namespace My.Scripts._00_Title
                     }
                     else
                     {
-                        // 통신 성공 시 폴링 주기를 기본값으로 즉시 복구
                         _currentPollInterval = basePollInterval;
 
                         string responseText = webRequest.downloadHandler.text;
                         
-                        // 서버에서 'USING' 응답 반환 시 출입문 태그 완료(유저 입장)로 간주하고 자동 진행
                         if (!string.IsNullOrEmpty(responseText) && responseText.IndexOf("USING", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
                             Debug.Log($"[TitleManager] RoomState 'USING' 감지. 튜토리얼로 이동.");
@@ -92,7 +96,6 @@ namespace My.Scripts._00_Title
         {
             if (_isTransitioning) return; 
 
-            // 엔터 키 입력 시 통신 결과와 무관하게 즉시 튜토리얼로 강제 진입
             if (Input.GetKeyDown(KeyCode.Return))
             {
                 GoToTutorial();

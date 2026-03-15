@@ -1,9 +1,9 @@
 using System;
 using System.Collections;
-using System.IO;
 using Cysharp.Threading.Tasks;
 using My.Scripts.Core.Data;
 using My.Scripts.Global;
+using My.Scripts.Hardware;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
@@ -60,7 +60,6 @@ namespace My.Scripts.Core
         public ApiSettings ApiConfig { get; set; } 
         
         // --- Session Data Proxy ---
-        // 하위 호환성을 유지하기 위해 데이터는 SessionManager에서 꺼내오도록 중계(Proxy)합니다.
         public int CurrentUserId => SessionManager.Instance ? SessionManager.Instance.CurrentUserId : 0;
         public string CurrentLanguage => SessionManager.Instance ? SessionManager.Instance.CurrentLanguage : "ko";
         public string Cartridge => SessionManager.Instance ? SessionManager.Instance.Cartridge : "";
@@ -99,7 +98,6 @@ namespace My.Scripts.Core
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
                 
-                // SessionManager 자동 생성 보장
                 if (!SessionManager.Instance)
                 {
                     GameObject sessionObj = new GameObject("SessionManager");
@@ -137,11 +135,37 @@ namespace My.Scripts.Core
                     _systemPopupCg.gameObject.SetActive(false);
                 }
             }
+
+            if (InputManager.Instance)
+            {
+                InputManager.Instance.OnPadDown -= HandlePadInputForInactivity; 
+                InputManager.Instance.OnPadDown += HandlePadInputForInactivity;
+                
+                InputManager.Instance.OnPadUp -= HandlePadInputForInactivity; 
+                InputManager.Instance.OnPadUp += HandlePadInputForInactivity;
+            }
+
+            if (ArduinoManager.Instance)
+            {
+                ArduinoManager.Instance.OnHardwareInput -= HandleRawHardwareInput;
+                ArduinoManager.Instance.OnHardwareInput += HandleRawHardwareInput;
+            }
         }
 
         private void OnDestroy()
         {
             if (Instance == this) Application.wantsToQuit -= WantsToQuit;
+
+            if (InputManager.Instance)
+            {
+                InputManager.Instance.OnPadDown -= HandlePadInputForInactivity;
+                InputManager.Instance.OnPadUp -= HandlePadInputForInactivity;
+            }
+
+            if (ArduinoManager.Instance)
+            {
+                ArduinoManager.Instance.OnHardwareInput -= HandleRawHardwareInput;
+            }
         }
 
         private void LoadSettings()
@@ -236,6 +260,16 @@ namespace My.Scripts.Core
             }
         }
 
+        private void HandlePadInputForInactivity(int playerIdx, int laneIdx, int padIdx)
+        {
+            ResetInactivityTimer();
+        }
+
+        private void HandleRawHardwareInput(int padNumber, bool isDown)
+        {
+            ResetInactivityTimer();
+        }
+
         public void ResetInactivityTimer()
         {
             _currentInactivityTimer = 0f;
@@ -302,7 +336,6 @@ namespace My.Scripts.Core
 
             yield return new WaitForSeconds(3.0f);
 
-            _isInactivitySequenceRunning = false;
             ReturnToTitle();
         }
 
@@ -341,13 +374,37 @@ namespace My.Scripts.Core
             }
 
             bool fadeDone = false;
-            FadeManager.Instance.FadeOut(_fadeTime, () => { fadeDone = true; });
-            while (!fadeDone) yield return null;
+            try
+            {
+                FadeManager.Instance.FadeOut(_fadeTime, () => { fadeDone = true; });
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[GameManager] FadeOut 호출 실패. 강제 진행: {e.Message}");
+                fadeDone = true;
+            }
+
+            float timeout = Time.unscaledTime + _fadeTime + 1.0f;
+            while (!fadeDone && Time.unscaledTime < timeout) 
+            {
+                yield return null;
+            }
 
             AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
-            while (asyncLoad != null && !asyncLoad.isDone) yield return null;
+            while (asyncLoad != null && !asyncLoad.isDone) 
+            {
+                yield return null;
+            }
 
-            FadeManager.Instance.FadeIn(_fadeTime);
+            try
+            {
+                FadeManager.Instance.FadeIn(_fadeTime);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[GameManager] FadeIn 호출 실패: {e.Message}");
+            }
+            
             _isTransitioning = false;
         }
 
@@ -357,6 +414,13 @@ namespace My.Scripts.Core
             
             isAutoProgressing = false;
             CurrentInactivityTextType = InactivityTextType.Warning; 
+            
+            if (_systemPopupCg)
+            {
+                _systemPopupCg.alpha = 0f;
+                _systemPopupCg.gameObject.SetActive(false);
+            }
+
             ResetInactivityTimer();
             
             if (SessionManager.Instance) SessionManager.Instance.ClearSession();
@@ -366,6 +430,11 @@ namespace My.Scripts.Core
         
         #region API 호출 로직
 
+        /// <summary>
+        /// 서버의 현재 방 상태를 10회 재시도 정책으로 조회합니다.
+        /// </summary>
+        /// <param name="callback">통신 결과 문자열을 반환하는 콜백</param>
+        /// <returns>코루틴 IEnumerator</returns>
         public IEnumerator CheckRoomStateRoutine(Action<string> callback)
         {
             if (ApiConfig == null)
@@ -375,23 +444,35 @@ namespace My.Scripts.Core
             }
 
             string url = $"{ApiConfig.CheckRoomStateUrl}?code=c2";
-            using (UnityWebRequest req = UnityWebRequest.Get(url))
-            {
-                req.timeout = 5;
-                yield return req.SendWebRequest();
+            int maxRetries = 10;
 
-                if (req.result == UnityWebRequest.Result.Success)
+            // 이유: 일시적 네트워크 장애 시 방 상태 조회 실패를 막기 위해 최대 10회(1초 대기) 재시도함.
+            for (int i = 0; i < maxRetries; i++)
+            {
+                using (UnityWebRequest req = UnityWebRequest.Get(url))
                 {
-                    if (callback != null) callback(req.downloadHandler.text.Trim());
-                }
-                else
-                {
-                    Debug.LogWarning($"[API] CheckRoomState 통신 에러: {req.error}");
-                    if (callback != null) callback("EMPTY");
+                    req.timeout = 5;
+                    yield return req.SendWebRequest();
+
+                    if (req.result == UnityWebRequest.Result.Success)
+                    {
+                        if (callback != null) callback(req.downloadHandler.text.Trim());
+                        yield break;
+                    }
+                    
+                    Debug.LogWarning($"[API] CheckRoomState 통신 에러 ({i + 1}/{maxRetries}): {req.error}");
+                    if (i < maxRetries - 1) yield return new WaitForSeconds(1.0f);
                 }
             }
+
+            if (callback != null) callback("EMPTY");
         }
 
+        /// <summary>
+        /// 현재 방에 접속한 유저 목록을 10회 재시도 정책으로 조회합니다.
+        /// </summary>
+        /// <param name="callback">통신 결과 문자열을 반환하는 콜백</param>
+        /// <returns>코루틴 IEnumerator</returns>
         public IEnumerator GetCurrentRoomUserRoutine(Action<string> callback)
         {
             if (ApiConfig == null)
@@ -401,23 +482,32 @@ namespace My.Scripts.Core
             }
 
             string url = $"{ApiConfig.GetCurrentRoomUserUrl}?code=c2";
-            using (UnityWebRequest req = UnityWebRequest.Get(url))
-            {
-                req.timeout = 5;
-                yield return req.SendWebRequest();
+            int maxRetries = 10;
 
-                if (req.result == UnityWebRequest.Result.Success)
+            for (int i = 0; i < maxRetries; i++)
+            {
+                using (UnityWebRequest req = UnityWebRequest.Get(url))
                 {
-                    if (callback != null) callback(req.downloadHandler.text.Trim());
-                }
-                else
-                {
-                    Debug.LogWarning($"[API] GetCurrentRoomUser 통신 에러: {req.error}");
-                    if (callback != null) callback("EMPTY");
+                    req.timeout = 5;
+                    yield return req.SendWebRequest();
+
+                    if (req.result == UnityWebRequest.Result.Success)
+                    {
+                        if (callback != null) callback(req.downloadHandler.text.Trim());
+                        yield break;
+                    }
+                    
+                    Debug.LogWarning($"[API] GetCurrentRoomUser 통신 에러 ({i + 1}/{maxRetries}): {req.error}");
+                    if (i < maxRetries - 1) yield return new WaitForSeconds(1.0f);
                 }
             }
+            
+            if (callback != null) callback("EMPTY");
         }
 
+        /// <summary>
+        /// 게임 초기화(리셋) 시작을 서버에 알립니다.
+        /// </summary>
         public void SendResetStartAPI()
         {
             if (CurrentUserId == 0 || ApiConfig == null) return;
@@ -427,13 +517,26 @@ namespace My.Scripts.Core
         private IEnumerator ResetStartRoutine()
         {
             string url = $"{ApiConfig.ResetStartUrl}?idx_user={CurrentUserId}&code=c2";
-            using (UnityWebRequest req = UnityWebRequest.Get(url))
+            int maxRetries = 10;
+
+            for (int i = 0; i < maxRetries; i++)
             {
-                req.timeout = 5;
-                yield return req.SendWebRequest();
+                using (UnityWebRequest req = UnityWebRequest.Get(url))
+                {
+                    req.timeout = 5;
+                    yield return req.SendWebRequest();
+                    
+                    if (req.result == UnityWebRequest.Result.Success) yield break;
+                    
+                    Debug.LogWarning($"[API] ResetStart 통신 에러 ({i + 1}/{maxRetries}): {req.error}");
+                    if (i < maxRetries - 1) yield return new WaitForSeconds(1.0f);
+                }
             }
         }
 
+        /// <summary>
+        /// 현재 방 퇴장을 서버에 알립니다.
+        /// </summary>
         public void SendExitRoomAPI()
         {
             if (CurrentUserId == 0 || ApiConfig == null) return;
@@ -443,13 +546,26 @@ namespace My.Scripts.Core
         private IEnumerator ExitRoomRoutine()
         {
             string url = $"{ApiConfig.ExitRoomUrl}?code=c2&idx_user={CurrentUserId}";
-            using (UnityWebRequest req = UnityWebRequest.Get(url))
+            int maxRetries = 10;
+
+            for (int i = 0; i < maxRetries; i++)
             {
-                req.timeout = 5;
-                yield return req.SendWebRequest();
+                using (UnityWebRequest req = UnityWebRequest.Get(url))
+                {
+                    req.timeout = 5;
+                    yield return req.SendWebRequest();
+                    
+                    if (req.result == UnityWebRequest.Result.Success) yield break;
+                    
+                    Debug.LogWarning($"[API] ExitRoom 통신 에러 ({i + 1}/{maxRetries}): {req.error}");
+                    if (i < maxRetries - 1) yield return new WaitForSeconds(1.0f);
+                }
             }
         }
 
+        /// <summary>
+        /// 플레이 종료 시각 갱신을 서버에 요청합니다.
+        /// </summary>
         public void SendTimeUpdateAPI()
         {
             if (CurrentUserId == 0 || ApiConfig == null) return;
@@ -459,13 +575,29 @@ namespace My.Scripts.Core
         private IEnumerator TimeUpdateRoutine()
         {
             string url = $"{ApiConfig.UpdateTimeUrl}?idx_user={CurrentUserId}&option=end&code=c2";
-            using (UnityWebRequest req = UnityWebRequest.Get(url))
+            int maxRetries = 10;
+
+            for (int i = 0; i < maxRetries; i++)
             {
-                req.timeout = 10;
-                yield return req.SendWebRequest();
+                using (UnityWebRequest req = UnityWebRequest.Get(url))
+                {
+                    req.timeout = 10;
+                    yield return req.SendWebRequest();
+                    
+                    if (req.result == UnityWebRequest.Result.Success) yield break;
+                    
+                    Debug.LogWarning($"[API] TimeUpdate 통신 에러 ({i + 1}/{maxRetries}): {req.error}");
+                    if (i < maxRetries - 1) yield return new WaitForSeconds(1.0f);
+                }
             }
         }
 
+        /// <summary>
+        /// 선택지 문항별 유저의 응답(가치관) 값을 서버에 전송합니다.
+        /// </summary>
+        /// <param name="qNo">문항 번호</param>
+        /// <param name="side">좌/우 유저 식별 문자열</param>
+        /// <param name="value">선택한 값</param>
         public void SendValueUpdateAPI(int qNo, string side, int value)
         {
             if (CurrentUserId == 0 || ApiConfig == null) return;
@@ -476,13 +608,27 @@ namespace My.Scripts.Core
         {
             string safeSide = Uri.EscapeDataString(side ?? string.Empty);
             string url = $"{ApiConfig.UpdateValueUrl}?idx_user={CurrentUserId}&q_no={qNo}&side={safeSide}&code=c2&value={value}";
-            using (UnityWebRequest req = UnityWebRequest.Get(url))
+            int maxRetries = 10;
+
+            for (int i = 0; i < maxRetries; i++)
             {
-                req.timeout = 10;
-                yield return req.SendWebRequest();
+                using (UnityWebRequest req = UnityWebRequest.Get(url))
+                {
+                    req.timeout = 10;
+                    yield return req.SendWebRequest();
+                    
+                    if (req.result == UnityWebRequest.Result.Success) yield break;
+                    
+                    Debug.LogWarning($"[API] ValueUpdate 통신 에러 ({i + 1}/{maxRetries}): {req.error}");
+                    if (i < maxRetries - 1) yield return new WaitForSeconds(1.0f);
+                }
             }
         }
 
+        /// <summary>
+        /// 조각 획득 이벤트를 서버에 전송하여 상태를 동기화합니다.
+        /// </summary>
+        /// <param name="value">획득한 조각 상태 값</param>
         public void SendPieceUpdateAPI(int value)
         {
             if (CurrentUserId == 0 || ApiConfig == null) return;
@@ -492,10 +638,20 @@ namespace My.Scripts.Core
         private IEnumerator PieceUpdateRoutine(int value)
         {
             string url = $"{ApiConfig.UpdatePieceUrl}?idx_user={CurrentUserId}&code=c2&value={value}";
-            using (UnityWebRequest req = UnityWebRequest.Get(url))
+            int maxRetries = 10;
+
+            for (int i = 0; i < maxRetries; i++)
             {
-                req.timeout = 10;
-                yield return req.SendWebRequest();
+                using (UnityWebRequest req = UnityWebRequest.Get(url))
+                {
+                    req.timeout = 10;
+                    yield return req.SendWebRequest();
+                    
+                    if (req.result == UnityWebRequest.Result.Success) yield break;
+                    
+                    Debug.LogWarning($"[API] PieceUpdate 통신 에러 ({i + 1}/{maxRetries}): {req.error}");
+                    if (i < maxRetries - 1) yield return new WaitForSeconds(1.0f);
+                }
             }
         }
 
@@ -517,6 +673,7 @@ namespace My.Scripts.Core
 
         private IEnumerator QuitRoutine()
         {
+            // 프로그램 강제 종료 시퀀스이므로 무한 지연을 막기 위해 10회 재시도를 생략하고 즉시 1회만 호출 후 종료시킴
             if (CurrentUserId != 0 && ApiConfig != null)
             {   
                 string resetUrl = $"{ApiConfig.ResetStartUrl}?idx_user={CurrentUserId}&code=c2";
@@ -534,8 +691,6 @@ namespace My.Scripts.Core
                 }
             }
 
-            yield return ClearSourceFoldersAsync().ToCoroutine();
-            
             _isQuitSafe = true; 
             
 #if UNITY_EDITOR
@@ -550,6 +705,7 @@ namespace My.Scripts.Core
         {
             if (_isQuitSafe) return; 
 
+            // 에디터 강제 종료 시에도 지연을 최소화하기 위해 재시도 루프 없이 즉시 1회만 처리함
             if (CurrentUserId != 0 && ApiConfig != null)
             {   
                 string resetUrl = $"{ApiConfig.ResetStartUrl}?idx_user={CurrentUserId}&code=c2";
@@ -576,45 +732,8 @@ namespace My.Scripts.Core
                     }
                 }
             }
-
-            ClearSourceFoldersAsync().Forget();
         }
 #endif
-
-        private async UniTask ClearSourceFoldersAsync()
-        {
-            string dataPath = Application.dataPath;
-            string dateFolder = DateTime.Now.ToString("yyyy-MM-dd");
-
-            try
-            {
-                await UniTask.RunOnThreadPool(() =>
-                {
-                    DirectoryInfo parentDir = Directory.GetParent(dataPath);
-                    string rootPath = parentDir != null ? parentDir.FullName : dataPath;
-
-                    string timelapseSource = Path.Combine(rootPath, "Timelapse", "Timelapse_Source", dateFolder);
-                    string realtimeSource = Path.Combine(rootPath, "Timelapse", "Realtime_Source", dateFolder);
-
-                    if (Directory.Exists(timelapseSource))
-                    {
-                        foreach (string file in Directory.GetFiles(timelapseSource))
-                        {
-                            try { File.Delete(file); } catch { }
-                        }
-                    }
-
-                    if (Directory.Exists(realtimeSource))
-                    {
-                        foreach (string file in Directory.GetFiles(realtimeSource))
-                        {
-                            try { File.Delete(file); } catch { }
-                        }
-                    }
-                });
-            }
-            catch { }
-        }
         #endregion
     }
 }

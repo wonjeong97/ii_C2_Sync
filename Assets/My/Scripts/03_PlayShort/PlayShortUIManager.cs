@@ -169,7 +169,7 @@ namespace My.Scripts._03_PlayShort
             targetPopup.gameObject.SetActive(true);
             targetPopup.alpha = 0f;
             
-            SoundManager.Instance?.PlaySFX("공통_7");
+            if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_7");
             StartCoroutine(FadeCanvasGroup(targetPopup, 0f, 1f, 0.1f));
         }
 
@@ -225,10 +225,8 @@ namespace My.Scripts._03_PlayShort
 
             if (targetDistText) targetDistText.text = $"{distance}M";
             
-            // 공통 스타일(폰트, 색상, 정렬 등)을 먼저 적용함
             ApplyTextSetting(targetQueP1, questionData);
             
-            // JSON에 '||' 구분자로 분리해둔 텍스트를 나누어 해당 컴포넌트에 각각 주입함.
             if (questionData != null && !string.IsNullOrEmpty(questionData.text))
             {
                 string[] texts = questionData.text.Split(new string[] { "||" }, System.StringSplitOptions.None);
@@ -240,7 +238,6 @@ namespace My.Scripts._03_PlayShort
                 
                 if (targetQueP2) 
                 {
-                    // 구분자가 누락되었을 경우를 대비하여 Fallback 처리 (\n을 띄어쓰기로 대체)
                     targetQueP2.text = texts.Length > 1 ? texts[1] : texts[0].Replace("\n", " ");
                 }
             }
@@ -354,8 +351,12 @@ namespace My.Scripts._03_PlayShort
                 targetImages = isYesLane ? p2YesImages : p2NoImages;
                 targetIcon = isYesLane ? p2ImageYes : p2ImageNo;
             }
+            
             if (targetImages == null || targetImages.Length == 0) return false;
-            float totalFillNeeded = stepCount * 0.5f;
+            
+            // 이유: 기획 변경에 따라 총 5번만 밟아도 게이지가 모두 차도록 1회 밟을 때마다 1칸(1.0f)씩 채움
+            float totalFillNeeded = stepCount * 1.0f;
+            
             for (int i = targetImages.Length - 1; i >= 0; i--)
             {
                 if (!targetImages[i]) continue;
@@ -363,10 +364,12 @@ namespace My.Scripts._03_PlayShort
                 targetImages[i].fillAmount = amount;
                 totalFillNeeded -= 1.0f;
             }
-            if (stepCount >= 10)
+            
+            // 이유: 10회가 아닌 5회 입력 시 선택지 확정 및 시스템으로 true 반환
+            if (stepCount >= 5)
             {
                 if (targetIcon) targetIcon.color = activeColor;
-                SoundManager.Instance?.PlaySFX("공통_22");
+                if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_22");
                 return true; 
             }
             return false; 

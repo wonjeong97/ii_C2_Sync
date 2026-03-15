@@ -18,25 +18,18 @@ namespace My.Scripts.Hardware
     {
         public static ArduinoManager Instance;
 
-        /// <summary> 
-        /// 하드웨어 발판 입력 발생 시 구독 중인 클래스로 신호를 전달하는 이벤트.
-        /// (int padNumber: 1~12, bool isDown: 눌림 여부)
-        /// </summary>
         public Action<int, bool> OnHardwareInput;
 
         private SerialPort _arduinoPort;
 
-        // 백그라운드 스레드에서 수신된 데이터를 메인 스레드로 안전하게 넘기기 위한 스레드-세이프 큐
         private ConcurrentQueue<(int padNumber, bool isDown)> _inputQueue =
             new ConcurrentQueue<(int padNumber, bool isDown)>();
 
         private Thread _readThread;
         private bool _isRunning = false;
         
-        // 비동기 작업 안전 종료를 위한 취소 토큰 소스
         private CancellationTokenSource _cts;
 
-        // 예외 로그 스로틀링용 변수
         private DateTime _lastWarnTime = DateTime.MinValue;
         private readonly TimeSpan WarnThrottle = TimeSpan.FromSeconds(5);
 
@@ -61,16 +54,28 @@ namespace My.Scripts.Hardware
             _isRunning = true;
             _cts = new CancellationTokenSource();
             
-            // 토큰을 전달하여 씬 전환 및 객체 파괴 시 비동기 스캔 작업이 즉시 중단되도록 함
             AutoConnectAsync(_cts.Token).Forget();
         }
 
         private void Update()
         {
-            // 스레드-세이프 큐에 쌓인 입력 데이터를 메인 스레드에서 꺼내어 이벤트로 발송
-            while (_inputQueue.TryDequeue(out (int padNumber, bool isDown) result))
+            int processCount = 0;
+            const int maxProcessPerFrame = 30; 
+
+            if (_inputQueue.Count > 100)
+            {
+                Debug.LogWarning($"[ArduinoManager] 비정상적인 입력 폭주 감지 (현재 큐: {_inputQueue.Count}개). 오래된 큐를 강제 정리합니다.");
+                
+                while (_inputQueue.Count > 20)
+                {
+                    _inputQueue.TryDequeue(out _);
+                }
+            }
+
+            while (processCount < maxProcessPerFrame && _inputQueue.TryDequeue(out (int padNumber, bool isDown) result))
             {
                 ProcessHardwareInput(result.padNumber, result.isDown);
+                processCount++;
             }
         }
 
@@ -82,6 +87,41 @@ namespace My.Scripts.Hardware
             }
         }
 
+        /// <summary>
+        /// 아두이노와의 직렬 연결을 강제로 끊고 다시 연결합니다.
+        /// </summary>
+        public void Reconnect()
+        {
+            Debug.Log("[ArduinoManager] 아두이노 재연결 및 하드웨어 리셋 시도...");
+            
+            _isRunning = false;
+
+            if (_cts != null)
+            {
+                _cts.Cancel();
+                _cts.Dispose();
+                _cts = null;
+            }
+
+            if (_readThread != null && _readThread.IsAlive)
+            {
+                _readThread.Join(500); 
+            }
+
+            if (_arduinoPort != null)
+            {
+                try { if (_arduinoPort.IsOpen) _arduinoPort.Close(); } catch { }
+                try { _arduinoPort.Dispose(); } catch { }
+                _arduinoPort = null;
+            }
+
+            while (_inputQueue.TryDequeue(out _)) { }
+
+            _isRunning = true;
+            _cts = new CancellationTokenSource();
+            AutoConnectAsync(_cts.Token).Forget();
+        }
+
         private async UniTaskVoid AutoConnectAsync(CancellationToken token)
         {
             string[] portNames = SerialPort.GetPortNames();
@@ -89,7 +129,6 @@ namespace My.Scripts.Hardware
 
             foreach (string portName in portNames)
             {
-                // 이유: 작업 중 취소 요청이 들어오면 불필요한 포트 스캔을 즉시 중단하기 위함
                 if (token.IsCancellationRequested) return;
                 
                 if (IsConnected) break;
@@ -143,8 +182,6 @@ namespace My.Scripts.Hardware
                     return;
                 }
 
-                // 아두이노 재부팅 및 초기화 대기 시간
-                // 이유: 연결 직후 아두이노 보드가 재부팅되므로 시리얼 통신 안정화를 위해 잠시 대기함
                 bool isCanceled = await UniTask.Delay(TimeSpan.FromSeconds(2.5f), cancellationToken: token).SuppressCancellationThrow();
                 
                 if (isCanceled || token.IsCancellationRequested)
@@ -180,8 +217,7 @@ namespace My.Scripts.Hardware
                     return;
                 }
 
-                // 이유: GameConstants.Hardware 하위에 C2용 아두이노 식별 문자열이 있다고 가정하고 매칭 검사
-                if (response.Contains("Arduino_C2") || response.Contains("Pad_Controller")) 
+                if (response.Contains("Sensor")) 
                 {
                     tempPort.ReadTimeout = 10;
                     _arduinoPort = tempPort;
@@ -239,13 +275,10 @@ namespace My.Scripts.Hardware
                     }
                 }
 
-                Thread.Sleep(10); // CPU 점유율 방지
+                Thread.Sleep(10); 
             }
         }
 
-        /// <summary>
-        /// "1 On", "12 Off" 형식의 문자열을 분석하여 큐에 삽입합니다.
-        /// </summary>
         private void ParseAndEnqueueInput(string rawInput)
         {
             string[] parts = rawInput.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -263,15 +296,10 @@ namespace My.Scripts.Hardware
                     {
                         _inputQueue.Enqueue((padNumber, false));
                     }
-                    else
-                    {
-                        Debug.LogWarning($"[ArduinoManager] 알 수 없는 상태 값 수신: {rawInput}");
-                    }
                 }
             }
         }
 
-        /// <summary> 아두이노로 명령을 전송합니다. (LED 제어 등 필요 시 사용) </summary>
         public void SendCommand(string command)
         {
             if (IsConnected)
@@ -291,7 +319,6 @@ namespace My.Scripts.Hardware
         {
             _isRunning = false;
 
-            // 이유: 오브젝트가 파괴될 때 실행 중이던 비동기 스캔 작업을 즉각적으로 중단시켜 메모리 누수를 막기 위함
             if (_cts != null)
             {
                 _cts.Cancel();
@@ -301,7 +328,7 @@ namespace My.Scripts.Hardware
 
             if (_readThread != null && _readThread.IsAlive)
             {
-                _readThread.Join(500); // 스레드 종료 대기
+                _readThread.Join(500); 
             }
 
             if (IsConnected)

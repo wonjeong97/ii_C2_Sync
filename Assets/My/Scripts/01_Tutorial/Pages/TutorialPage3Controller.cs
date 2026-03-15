@@ -5,7 +5,6 @@ using UnityEngine.UI;
 using My.Scripts.Core;
 using Wonjeong.Data;
 using Wonjeong.UI;
-using Wonjeong.Utils; 
 
 namespace My.Scripts._01_Tutorial.Pages
 {
@@ -31,12 +30,11 @@ namespace My.Scripts._01_Tutorial.Pages
         [Header("Settings")]
         [SerializeField] private float jumpLandingTolerance = 0.25f; 
 
-        private TutorialPage3Data _data; // [추가] 런타임 이름 치환을 위해 원본 데이터 캐싱
+        private TutorialPage3Data _data; 
 
         private bool _isAFinished;
         private bool _isBFinished;
         private bool _isStepCompleted; 
-        private float _lastInputTime; 
 
         private bool _pAPad0, _pAPad1;
         private bool _pBPad0, _pBPad1;
@@ -57,9 +55,8 @@ namespace My.Scripts._01_Tutorial.Pages
                 return;
             }
 
-            _data = data; // 원본 데이터를 기억해둡니다.
+            _data = data; 
 
-            // SetupData는 씬 시작 시(API 통신 전) 호출되므로, 여기서는 폰트/색상 등 UI 스타일만 덮어씌웁니다.
             if (playerAText && data.playerAName != null)
             {
                 if (UIManager.Instance) UIManager.Instance.SetText(playerAText.gameObject, data.playerAName);
@@ -81,10 +78,12 @@ namespace My.Scripts._01_Tutorial.Pages
         {
             base.OnEnter();
             
+            // 이유: 사용자가 직접 점프 입력을 해야 하는 구간이므로 글로벌 방치 타이머를 다시 가동시킴
+            if (GameManager.Instance) GameManager.Instance.IsAutoProgressing = false;
+
             _isAFinished = false;
             _isBFinished = false;
             _isStepCompleted = false; 
-            _lastInputTime = Time.time;
 
             _pAIsReady = _pAHasJumped = false;
             _pBIsReady = _pBHasJumped = false;
@@ -93,10 +92,7 @@ namespace My.Scripts._01_Tutorial.Pages
             InitCheckImage(checkImageA);
             InitCheckImage(checkImageB);
 
-            // --- [수정] OnEnter 시점(API 통신 완료 후)에 동적 이름 치환 수행 ---
             ApplyDynamicNames();
-            // ------------------------------------------------------------------
-
             ApplyPlayerColors();
             SyncInitialInputState();
 
@@ -107,10 +103,6 @@ namespace My.Scripts._01_Tutorial.Pages
             }
         }
 
-        /// <summary>
-        /// API 연동이 완료된 최신 이름을 가져와 텍스트에 적용합니다.
-        /// 이유: SetupData는 통신 전에 실행되므로 "NoName"이 들어가는 문제를 해결하기 위함.
-        /// </summary>
         private void ApplyDynamicNames()
         {
             if (_data == null) return;
@@ -123,7 +115,6 @@ namespace My.Scripts._01_Tutorial.Pages
                 nameA = GameManager.Instance.PlayerAName;
                 nameB = GameManager.Instance.PlayerBName;
 
-                // 통신 실패나 빈 값에 대한 방어 로직
                 if (string.IsNullOrEmpty(nameA) || nameA == "NoNameA") nameA = "Player A";
                 if (string.IsNullOrEmpty(nameB) || nameB == "NoNameB") nameB = "Player B";
             }
@@ -143,24 +134,13 @@ namespace My.Scripts._01_Tutorial.Pages
         {
             base.OnExit();
             
+            // 이유: 페이지 퇴장 시 다시 타이머를 잠가 다음 연출(4페이지) 중 예기치 않게 팝업이 뜨는 것을 방지함
+            if (GameManager.Instance) GameManager.Instance.IsAutoProgressing = true;
+            
             if (InputManager.Instance)
             {
                 InputManager.Instance.OnPadDown -= HandlePadDown;
                 InputManager.Instance.OnPadUp -= HandlePadUp;
-            }
-        }
-
-        private void Update()
-        {
-            if (_isStepCompleted) return;
-
-            if (Time.time - _lastInputTime >= 20f)
-            {
-                if (GameManager.Instance)
-                {
-                    GameManager.Instance.ForceInactivitySequence();
-                }
-                _lastInputTime = float.MaxValue; 
             }
         }
 
@@ -210,8 +190,6 @@ namespace My.Scripts._01_Tutorial.Pages
 
         private void UpdateLogic(int playerIdx, int laneIdx, int padIdx, bool isDown)
         {
-            _lastInputTime = Time.time;
-
             if (laneIdx != 1) return; 
 
             if (playerIdx == 0)
@@ -291,7 +269,7 @@ namespace My.Scripts._01_Tutorial.Pages
 
         private IEnumerator WaitAndCompleteRoutine()
         {
-            yield return CoroutineData.GetWaitForSeconds(1.0f);
+            yield return new WaitForSeconds(1.0f);
             CompleteStep();
         }
     }

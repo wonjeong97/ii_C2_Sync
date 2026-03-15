@@ -32,10 +32,6 @@ namespace My.Scripts._03_PlayShort
         public TextSetting[] questions;
     }
 
-    /// <summary>
-    /// Play Short 모드의 흐름과 각 플레이어의 거리, 질문 팝업 등을 관리하는 클래스.
-    /// 연출 시퀀스와 실제 사용자 입력 구간을 구분하여 글로벌 방치 타이머를 제어함.
-    /// </summary>
     public class PlayShortManager : MonoBehaviour
     {
         private readonly static int Idle = Animator.StringToHash("Idle");
@@ -75,8 +71,12 @@ namespace My.Scripts._03_PlayShort
         private readonly int[] _lastActiveLane = new int[2] { -1, -1 }; 
         
         private readonly int[] _currentQuestionNumbers = new int[2]; 
+        private readonly float[] _prevDistances = new float[2];
 
         private float _lastHitSoundTime = -1f;
+
+        // 이유: 카운트다운 도중 장애물이 미리 다가오는 것을 막기 위해 장애물 매니저에 현재 게임 시작 여부를 노출함
+        public bool IsGameStarted => _gameStarted;
 
         private void Awake()
         {
@@ -169,7 +169,6 @@ namespace My.Scripts._03_PlayShort
                         ColorData colorData = (i == 0) ? GameManager.Instance.PlayerAColor : GameManager.Instance.PlayerBColor;
                         Sprite targetSprite = GameManager.Instance.GetColorSprite(colorData);
 
-                        // 이유: API에 등록된 스프라이트가 존재하면 해당 이미지를 씌우고, 없다면 기존 틴트(Color) 방식을 예비책(Fallback)으로 적용하기 위함
                         if (targetSprite)
                         {
                             players[i].SetCharacterSprite(targetSprite);
@@ -201,7 +200,9 @@ namespace My.Scripts._03_PlayShort
                 for (int i = 0; i < indices.Count; i++)
                 {
                     int rnd = Random.Range(i, indices.Count);
-                    (indices[i], indices[rnd]) = (indices[rnd], indices[i]);
+                    int temp = indices[i];
+                    indices[i] = indices[rnd];
+                    indices[rnd] = temp;
                 }
                 _questionQueues[p] = new Queue<int>(indices);
             }
@@ -240,8 +241,33 @@ namespace My.Scripts._03_PlayShort
 
             float stopLimit = targetDistance + 1.0f; 
             
-            float s1 = (players[0] && !_isPlayerPaused[0] && players[0].currentDistance < stopLimit) ? players[0].currentSpeed : 0f;
-            float s2 = (players[1] && !_isPlayerPaused[1] && players[1].currentDistance < stopLimit) ? players[1].currentSpeed : 0f;
+            float s1 = 0f;
+            float s2 = 0f;
+            
+            if (Time.deltaTime > 0f)
+            {
+                if (players[0])
+                {
+                    float currentDist = players[0].currentDistance;
+                    if (currentDist < stopLimit)
+                    {
+                        float delta = currentDist - _prevDistances[0];
+                        s1 = (delta / metricMultiplier) / Time.deltaTime;
+                    }
+                    _prevDistances[0] = currentDist;
+                }
+
+                if (players[1])
+                {
+                    float currentDist = players[1].currentDistance;
+                    if (currentDist < stopLimit)
+                    {
+                        float delta = currentDist - _prevDistances[1];
+                        s2 = (delta / metricMultiplier) / Time.deltaTime;
+                    }
+                    _prevDistances[1] = currentDist;
+                }
+            }
 
             if (env) env.ScrollEnvironment(s1, s2);
         }
@@ -468,6 +494,24 @@ namespace My.Scripts._03_PlayShort
                 }
                 players[playerIdx].OnHit(2.0f);
             }
+        }
+
+        public bool IsPlayerPaused(int playerIdx)
+        {
+            if (playerIdx >= 0 && playerIdx < 2)
+            {
+                return _isPlayerPaused[playerIdx];
+            }
+            return false;
+        }
+
+        public bool IsPlayerStunned(int playerIdx)
+        {
+            if (playerIdx >= 0 && playerIdx < 2 && players[playerIdx])
+            {
+                return players[playerIdx].IsStunned;
+            }
+            return false;
         }
 
         private IEnumerator StartSequence()

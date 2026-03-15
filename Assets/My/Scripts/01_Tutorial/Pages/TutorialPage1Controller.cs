@@ -12,7 +12,6 @@ using Wonjeong.Utils;
 
 namespace My.Scripts._01_Tutorial.Pages
 {   
-    /// <summary> 튜토리얼 1페이지용 데이터 구조체 </summary>
     [Serializable]
     public class TutorialPage1Data
     {
@@ -30,7 +29,6 @@ namespace My.Scripts._01_Tutorial.Pages
         [SerializeField] private float maxPollInterval = 10.0f; 
 
         private float _currentPollInterval; 
-        // 텍스트 페이드인 시간 0.5초로 변경
         private readonly float fadeTime = 0.5f; 
         private Coroutine _pollCoroutine; 
 
@@ -53,6 +51,10 @@ namespace My.Scripts._01_Tutorial.Pages
         public override void OnEnter()
         {
             base.OnEnter(); 
+
+            // 이유: 단순 연출/대기 페이지이므로 글로벌 무입력 초기화 타이머를 강제로 정지시킴
+            if (GameManager.Instance) GameManager.Instance.IsAutoProgressing = true;
+
             if (descriptionText) StartCoroutine(FadeInTextRoutine());
         }
 
@@ -198,7 +200,6 @@ namespace My.Scripts._01_Tutorial.Pages
                 yield return null;
             }
             
-            // 루프 종료 후 오차 보정을 위해 확실하게 알파값 1로 세팅
             if (descriptionText)
             {
                 Color c = descriptionText.color;
@@ -206,7 +207,6 @@ namespace My.Scripts._01_Tutorial.Pages
                 descriptionText.color = c;
             }
             
-            // 불필요한 추가 대기시간(0.5초)을 제거하고 즉시 폴링 시작
             if (_pollCoroutine != null) StopCoroutine(_pollCoroutine);
             _pollCoroutine = StartCoroutine(PollRoomStateRoutine());
         }

@@ -9,20 +9,12 @@ using Wonjeong.Utils;
 
 namespace My.Scripts._01_Tutorial.Pages
 {
-    /// <summary>
-    /// 튜토리얼 4페이지의 데이터 구조.
-    /// JSON의 "page4" 섹션과 매핑되며, 순차적으로 보여줄 여러 개의 텍스트 설정을 배열로 담고 있음.
-    /// </summary>
     [Serializable]
     public class TutorialPage4Data
     {
         public TextSetting[] descriptionTexts;
     }
 
-    /// <summary>
-    /// 튜토리얼의 네 번째 페이지를 제어하는 컨트롤러.
-    /// 여러 텍스트를 순서대로 페이드 인/아웃하며 시네마틱하게 연출하는 역할을 담당함.
-    /// </summary>
     public class TutorialPage4Controller : GamePage<TutorialPage4Data>
     {
         [Header("UI Components")]
@@ -34,7 +26,6 @@ namespace My.Scripts._01_Tutorial.Pages
         private const float DisplayTime = 3f;
         private const float FadeOutTime = 0.5f;
 
-        /// <summary> 외부 데이터를 받아 컴포넌트를 초기화함. </summary>
         protected override void SetupData(TutorialPage4Data data)
         {
             _data = data;
@@ -47,10 +38,12 @@ namespace My.Scripts._01_Tutorial.Pages
             }
         }
 
-        /// <summary> 페이지 진입 시 연출 시퀀스를 시작함. </summary>
         public override void OnEnter()
         {
             base.OnEnter();
+
+            // 이유: 시네마틱 텍스트 연출 구간이므로 유저가 가만히 있어도 타이머가 울리지 않게 정지시킴
+            if (GameManager.Instance) GameManager.Instance.IsAutoProgressing = true;
 
             if (_data != null && _data.descriptionTexts != null && _data.descriptionTexts.Length > 0)
             {
@@ -62,7 +55,6 @@ namespace My.Scripts._01_Tutorial.Pages
             }
         }
 
-        /// <summary> 정의된 텍스트 배열을 순회하며 페이드 연출을 수행하는 메인 코루틴. </summary>
         private IEnumerator ScenarioRoutine()
         {
             for (int i = 0; i < _data.descriptionTexts.Length; i++)
@@ -94,13 +86,11 @@ namespace My.Scripts._01_Tutorial.Pages
                 }
             }
             
-            // 페이지 완료 시점에 전체 캔버스 그룹의 알파값이 1로 유지되도록 명시적으로 고정함
             SetAlpha(1f);
             
             CompleteStep();
         }
 
-        /// <summary> 텍스트의 알파값을 즉시 변경하는 헬퍼 메서드. </summary>
         private void SetTextAlpha(float alpha)
         {
             if (!descriptionText) return;
@@ -108,7 +98,6 @@ namespace My.Scripts._01_Tutorial.Pages
             descriptionText.color = new Color(c.r, c.g, c.b, alpha);
         }
 
-        /// <summary> 텍스트의 투명도를 부드럽게 변경하는 코루틴. </summary>
         private IEnumerator FadeText(float startAlpha, float endAlpha, float duration)
         {
             if (!descriptionText) yield break;
