@@ -22,17 +22,20 @@ namespace My.Scripts._03_PlayShort
         public TextSetting popupInfoText;
         public TextSetting waitingText;
         public TextSetting centerFinishText;
+        
         public TextSetting[] questions;
     }
 
-    /// <summary>
-    /// Play Short 모드의 흐름과 각 플레이어의 거리, 질문 팝업 등을 관리하는 클래스.
-    /// 연출 시퀀스와 실제 사용자 입력 구간을 구분하여 글로벌 방치 타이머를 제어함.
-    /// </summary>
+    [Serializable]
+    public class PlayShortQuestionData
+    {
+        public TextSetting[] questions;
+    }
+
     public class PlayShortManager : MonoBehaviour
     {
-        private static readonly int Idle = Animator.StringToHash("Idle");
-        private static readonly int FinishJump = Animator.StringToHash("FinishJump");
+        private readonly static int Idle = Animator.StringToHash("Idle");
+        private readonly static int FinishJump = Animator.StringToHash("FinishJump");
         public static PlayShortManager Instance { get; private set; }
 
         [Header("Settings")]
@@ -66,7 +69,14 @@ namespace My.Scripts._03_PlayShort
 
         private readonly int[] _playerStepCounts = new int[2]; 
         private readonly int[] _lastActiveLane = new int[2] { -1, -1 }; 
+        
+        private readonly int[] _currentQuestionNumbers = new int[2]; 
+        private readonly float[] _prevDistances = new float[2];
+
         private float _lastHitSoundTime = -1f;
+
+        // 이유: 카운트다운 도중 장애물이 미리 다가오는 것을 막기 위해 장애물 매니저에 현재 게임 시작 여부를 노출함
+        public bool IsGameStarted => _gameStarted;
 
         private void Awake()
         {
@@ -74,10 +84,28 @@ namespace My.Scripts._03_PlayShort
             else if (Instance != this) Destroy(gameObject);
         }
 
-      private void Start()
+        private void Start()
         {
             _data = JsonLoader.Load<PlayShortData>(GameConstants.Path.PlayShort);
             
+            if (GameManager.Instance)
+            {
+                string typeStr = GameManager.Instance.currentUserType.ToString(); 
+                string questionJsonPath = $"JSON/PlayShort_{typeStr}";
+                
+                PlayShortQuestionData qData = JsonLoader.Load<PlayShortQuestionData>(questionJsonPath);
+                
+                if (qData != null && qData.questions != null)
+                {
+                    _data.questions = qData.questions;
+                    Debug.Log($"[PlayShortManager] {questionJsonPath} 파일에서 관계 맞춤형 질문 데이터를 로드했습니다.");
+                }
+                else
+                {
+                    Debug.LogWarning($"[PlayShortManager] {questionJsonPath} 파일을 찾을 수 없어 기본(PlayShort.json) 질문을 사용합니다.");
+                }
+            }
+
             if (!settings) { Debug.LogError("[PlayShortManager] Settings Missing"); return; }
             if (players == null || players.Length < 2) return;
 
@@ -87,18 +115,16 @@ namespace My.Scripts._03_PlayShort
             {
                 ui.InitUI(targetDistance);
                 
-                // API 연동 데이터(이름)와 JSON 스타일 데이터를 함께 UI에 전달하여 동적 텍스트를 구성함.
                 if (GameManager.Instance)
                 {
-                    string nameA = string.IsNullOrEmpty(GameManager.Instance.PlayerALastName) ? "Player A" : GameManager.Instance.PlayerALastName;
-                    string nameB = string.IsNullOrEmpty(GameManager.Instance.PlayerBLastName) ? "Player B" : GameManager.Instance.PlayerBLastName;
+                    string nameA = string.IsNullOrEmpty(GameManager.Instance.PlayerAName) ? "Player A" : GameManager.Instance.PlayerAName;
+                    string nameB = string.IsNullOrEmpty(GameManager.Instance.PlayerBName) ? "Player B" : GameManager.Instance.PlayerBName;
                     
                     TextSetting settingA = _data != null ? _data.playerAName : null;
                     TextSetting settingB = _data != null ? _data.playerBName : null;
 
                     ui.SetPlayerNames(nameA, nameB, settingA, settingB);
 
-                    // 컬러 데이터를 기반으로 UI 공 이미지의 스프라이트를 변경함.
                     Sprite spriteA = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerAColor);
                     Sprite spriteB = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerBColor);
                     ui.SetPlayerBalls(spriteA, spriteB);
@@ -138,19 +164,26 @@ namespace My.Scripts._03_PlayShort
                     players[i].OnDistanceChanged -= HandlePlayerDistanceChanged;
                     players[i].OnDistanceChanged += HandlePlayerDistanceChanged;
 
-                    // API로 받아온 컬러값을 기반으로 플레이어 캐릭터의 색상을 동기화함
                     if (GameManager.Instance)
                     {
                         ColorData colorData = (i == 0) ? GameManager.Instance.PlayerAColor : GameManager.Instance.PlayerBColor;
-                        Color targetColor = GameManager.Instance.GetColorFromData(colorData);
-                        players[i].SetCharacterColor(targetColor);
+                        Sprite targetSprite = GameManager.Instance.GetColorSprite(colorData);
+
+                        if (targetSprite)
+                        {
+                            players[i].SetCharacterSprite(targetSprite);
+                        }
+                        else
+                        {
+                            Color targetColor = GameManager.Instance.GetColorFromData(colorData);
+                            players[i].SetCharacterColor(targetColor);
+                        }
                     }
                 }
             }
 
             if (InputManager.Instance) InputManager.Instance.OnPadDown += HandlePadDown;
 
-            // 게임 시작 직후 카운트다운 연출이 나오므로 글로벌 방치 타이머를 일시 정지시킴
             SetAutoProgressing(true);
             StartCoroutine(StartSequence());
         }
@@ -167,7 +200,9 @@ namespace My.Scripts._03_PlayShort
                 for (int i = 0; i < indices.Count; i++)
                 {
                     int rnd = Random.Range(i, indices.Count);
-                    (indices[i], indices[rnd]) = (indices[rnd], indices[i]);
+                    int temp = indices[i];
+                    indices[i] = indices[rnd];
+                    indices[rnd] = temp;
                 }
                 _questionQueues[p] = new Queue<int>(indices);
             }
@@ -183,7 +218,6 @@ namespace My.Scripts._03_PlayShort
                     if (player) player.OnDistanceChanged -= HandlePlayerDistanceChanged;
             }
 
-            // 씬이 파괴될 때 글로벌 방치 타이머를 기본 상태(동작)로 복구함
             if (GameManager.Instance)
             {
                 GameManager.Instance.IsAutoProgressing = false;
@@ -207,24 +241,43 @@ namespace My.Scripts._03_PlayShort
 
             float stopLimit = targetDistance + 1.0f; 
             
-            float s1 = (players[0] && !_isPlayerPaused[0] && players[0].currentDistance < stopLimit) ? players[0].currentSpeed : 0f;
-            float s2 = (players[1] && !_isPlayerPaused[1] && players[1].currentDistance < stopLimit) ? players[1].currentSpeed : 0f;
+            float s1 = 0f;
+            float s2 = 0f;
+            
+            if (Time.deltaTime > 0f)
+            {
+                if (players[0])
+                {
+                    float currentDist = players[0].currentDistance;
+                    if (currentDist < stopLimit)
+                    {
+                        float delta = currentDist - _prevDistances[0];
+                        s1 = (delta / metricMultiplier) / Time.deltaTime;
+                    }
+                    _prevDistances[0] = currentDist;
+                }
+
+                if (players[1])
+                {
+                    float currentDist = players[1].currentDistance;
+                    if (currentDist < stopLimit)
+                    {
+                        float delta = currentDist - _prevDistances[1];
+                        s2 = (delta / metricMultiplier) / Time.deltaTime;
+                    }
+                    _prevDistances[1] = currentDist;
+                }
+            }
 
             if (env) env.ScrollEnvironment(s1, s2);
         }
 
-        /// <summary>
-        /// 게임 매니저의 글로벌 방치 타이머 상태를 제어함.
-        /// 연출 구간에서는 타이머를 끄고(true), 실제 플레이 구간에서는 켬(false).
-        /// </summary>
-        /// <param name="isAuto">true: 타이머 멈춤(자동 연출 중), false: 타이머 가동(사용자 입력 대기)</param>
         private void SetAutoProgressing(bool isAuto)
         {
             if (GameManager.Instance)
             {
                 GameManager.Instance.IsAutoProgressing = isAuto;
                 
-                // 사용자가 직접 움직여야 하는 구간이 새롭게 시작될 때, 이전 입력 누적 시간을 초기화하여 온전한 20초를 보장함
                 if (!isAuto)
                 {
                     GameManager.Instance.ResetInactivityTimer();
@@ -247,8 +300,6 @@ namespace My.Scripts._03_PlayShort
             PlayerController player = players[playerIdx];
             if (!player) return;
 
-            // 팝업 상태 (답변 입력 구간)
-            // 팝업 질문 답변을 고르는 과정도 사용자 입력에 해당하므로 글로벌 방치 타이머가 가동(리셋)됨.
             if (_isPlayerPaused[playerIdx])
             {
                 if (ui) ui.NotifyInput(playerIdx);
@@ -270,6 +321,11 @@ namespace My.Scripts._03_PlayShort
                         
                         if (ui && ui.UpdateStepGauge(playerIdx, true, _playerStepCounts[playerIdx]))
                         {
+                            if (GameManager.Instance)
+                            {
+                                string side = (playerIdx == 0) ? "left" : "right";
+                                GameManager.Instance.SendValueUpdateAPI(_currentQuestionNumbers[playerIdx], side, 1);
+                            }
                             StartCoroutine(AnswerCompleteRoutine(playerIdx));
                         }
                     }
@@ -287,6 +343,11 @@ namespace My.Scripts._03_PlayShort
                         
                         if (ui && ui.UpdateStepGauge(playerIdx, false, _playerStepCounts[playerIdx]))
                         {
+                            if (GameManager.Instance)
+                            {
+                                string side = (playerIdx == 0) ? "left" : "right";
+                                GameManager.Instance.SendValueUpdateAPI(_currentQuestionNumbers[playerIdx], side, 0);
+                            }
                             StartCoroutine(AnswerCompleteRoutine(playerIdx));
                         }
                     }
@@ -298,7 +359,6 @@ namespace My.Scripts._03_PlayShort
                 return; 
             }
             
-            // 일반 달리기 입력 구간
             if (player.HandleInput(laneIdx, padIdx))
             {
                 player.MoveAndAccelerate(laneIdx);
@@ -329,7 +389,6 @@ namespace My.Scripts._03_PlayShort
                 
                 int otherPlayerIdx = (playerIdx == 0) ? 1 : 0;
 
-                // 먼저 도착한 플레이어는 다른 플레이어를 기다리는 동안 방치 타이머가 작동하여도 무방함 (다른 플레이어가 계속 달리고 있으므로 리셋됨)
                 if (!_playerFinished[otherPlayerIdx])
                 {
                     TextSetting waitData = _data != null ? _data.waitingText : null;
@@ -366,7 +425,6 @@ namespace My.Scripts._03_PlayShort
                     players[playerIdx].ForceStop();
                 }
 
-                // 즉시 입력 차단 후 시퀀스 시작
                 _isInputBlocked[playerIdx] = true;
                 if (padDotController) padDotController.SetCenterDotsAlpha(playerIdx, 0f);
 
@@ -377,6 +435,9 @@ namespace My.Scripts._03_PlayShort
                 if (_questionQueues[playerIdx] != null && _questionQueues[playerIdx].Count > 0)
                 {
                     int qIdx = _questionQueues[playerIdx].Dequeue();
+                    
+                    _currentQuestionNumbers[playerIdx] = qIdx + 1;
+
                     if (_data?.questions != null && qIdx < _data.questions.Length)
                     {
                         questionData = _data.questions[qIdx];
@@ -386,26 +447,20 @@ namespace My.Scripts._03_PlayShort
                 TextSetting infoData = _data != null ? _data.popupInfoText : null;
                 if (SoundManager.Instance) SoundManager.Instance.PlaySFX("달리기_3");
                 
-                // 팝업 시퀀스 코루틴 실행 (2초 대기 -> 페이드 -> 입력 허용)
                 StartCoroutine(QuestionSequenceRoutine(playerIdx, milestone, questionData, infoData));
 
                 if (env) env.RecycleFrameClosestToCamera(playerIdx); 
             }
         }
 
-        // 팝업 등장 시퀀스 제어
         private IEnumerator QuestionSequenceRoutine(int playerIdx, int milestone, TextSetting qData, TextSetting infoData)
         {
-            // 1. Page1(질문) 표시 (YesNo 그룹은 숨김 상태)
             if (ui) ui.ShowQuestionPopup(playerIdx, milestone, qData, infoData);
 
-            // 2. 2초 대기 (입력은 여전히 차단됨, 이때 다른 플레이어가 움직이고 있다면 방치 타이머 리셋)
             yield return CoroutineData.GetWaitForSeconds(2.0f);
 
-            // 3. YesNo 페이드인 + Page2로 전환 (0.5초)
             if (ui) yield return StartCoroutine(ui.ShowQuestionPhase2Routine(playerIdx, 0.5f, milestone));
 
-            // 4. 입력 허용
             _isInputBlocked[playerIdx] = false;
         }
 
@@ -439,6 +494,24 @@ namespace My.Scripts._03_PlayShort
                 }
                 players[playerIdx].OnHit(2.0f);
             }
+        }
+
+        public bool IsPlayerPaused(int playerIdx)
+        {
+            if (playerIdx >= 0 && playerIdx < 2)
+            {
+                return _isPlayerPaused[playerIdx];
+            }
+            return false;
+        }
+
+        public bool IsPlayerStunned(int playerIdx)
+        {
+            if (playerIdx >= 0 && playerIdx < 2 && players[playerIdx])
+            {
+                return players[playerIdx].IsStunned;
+            }
+            return false;
         }
 
         private IEnumerator StartSequence()
@@ -479,8 +552,6 @@ namespace My.Scripts._03_PlayShort
             }
             
             _gameStarted = true;
-            
-            // 달리기 페이즈 진입, 사용자 입력을 받아야 하므로 글로벌 방치 타이머 가동
             SetAutoProgressing(false);
             
             yield return CoroutineData.GetWaitForSeconds(1.0f);
@@ -492,8 +563,6 @@ namespace My.Scripts._03_PlayShort
             if (_isGameFinished) yield break;
     
             _isGameFinished = true;
-            
-            // 완료 컷신 및 씬 전환이 진행되므로 방치 타이머 정지
             SetAutoProgressing(true);
     
             if (ui)
@@ -511,7 +580,6 @@ namespace My.Scripts._03_PlayShort
                 ui.ShowCenterFinishPopup(centerData);
             }
             
-            // 캐릭터 점프 애니메이션 재생
             foreach (PlayerController player in players)
             {
                 if (player) player.CharacterAnimator.SetTrigger(Idle);

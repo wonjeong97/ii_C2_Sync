@@ -1,0 +1,204 @@
+{
+  "questions": [
+    {
+      "name": "Text_Question1",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.분위기가 어색해질 때면,\n먼저 말을 꺼내는 편이다.||Q.분위기가 어색해질 때면, 먼저 말을 꺼내는 편이다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question2",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.자주 보이는 작은 반응은,\n깊이 고민하지 않고 넘어가는 편이다.||Q.자주 보이는 작은 반응은,\n깊이 고민하지 않고 넘어가는 편이다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question3",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.상대가 나에게 무엇인가를\n기대하면 부담감을 느낀다.||Q.상대가 나에게 무엇인가를 기대하면 부담감을 느낀다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question4",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.상대방의 컨디션을 보고\n말을 할지 말지 결정하는 편이다.||Q.상대방의 컨디션을 보고 말을 할지 말지 결정하는 편이다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question5",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.상대가 어딘가 어색해 보이면,\n쉽게 넘기지 못하는 편이다.||Q.상대의 표정이나 분위기 변화가\n느껴지면 바로 반응하는 편이다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question6",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.경험적으로 특정 상황에서는\n반응하지 않게 되는 편이다.||Q.경험적으로 특정 상황에서는\n 반응하지 않게 되는 편이다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question7",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.한 번 정한 행동은,\n상대의 반응이 달라도\n그대로 유지하는 편이다.||Q.한 번 정한 행동은,\n상대의 반응이 달라도 그대로 유지하는 편이다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question8",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.서로 너무 잘 아는 사이라서\n더 가감없이 감정을\n표현할 때가 있다.||Q.서로 너무 잘 아는 사이라서\n더 가감없이 감정을 표현할 때가 있다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question9",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.감정적인 반응이 계속 될것 같으면\n대화를 멈추는 편이다.||Q.감정적인 반응이 계속 될것 같으면\n대화를 멈추는 편이다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question10",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.상대의 반응이 예상과 다르면,\n바로 반응하기보다\n잠시 멈추는 편이다.||Q.상대의 반응이 예상과 다르면,\n바로 반응하기보다 잠시 멈추는 편이다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question11",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.대화할 때, 내 반응이\n과하지 않은지 종종 살피는 편이다.||Q.대화할 때, 내 반응이 과하지 않은지 종종 살피는 편이다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question12",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.관계에서 감정 대응이 잦아지면,\n금세 피곤해지는 편이다.||Q.관계에서 감정 대응이 잦아지면, 금세 피곤해지는 편이다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question13",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.상대의 기분 변화가 느껴지면\n내가 맞춰주는 편이다.||Q.상대의 기분 변화가 느껴지면 내가 맞춰주는 편이다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question14",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.상대가 먼저 말하지 않는\n분위기라면, 나도 먼저\n말을 꺼내지 않는 편이다.||Q.상대가 먼저 말하지 않는 분위기라면,\n나도 먼저 말을 꺼내지 않는 편이다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question15",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.상대에게 어떻게 반응해야\n할지 막막하게 느낄 때가 있다.||Q.상대에게 어떻게 반응해야 할지 막막하게 느낄 때가 있다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question16",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.상대의 반응이 바로\n보이지 않아도,\n일단 믿고 기다리는 편이다.||Q.상대의 반응이 바로 보이지 않아도, \n일단 믿고 기다리는 편이다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question17",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.반응이 어떻게 돌아올지 예상되어,\n굳이 반응하지 않을 때가 있다.||Q.반응이 어떻게 돌아올지 예상되어,\n굳이 반응하지 않을 때가 있다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question18",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.갈등 상황에서는 감정을\n가라앉힌 뒤 반응하는 편이다.||Q.갈등 상황에서는 감정을\n가라앉힌 뒤 반응하는 편이다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question19",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.평소와 다른 상대의 반응이\n느껴지면,\n 말이나 행동이\n조심스러워진다.||Q.평소와 다른 상대의 반응이 느껴지면,\n말이나 행동이 조심스러워진다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    },
+    {
+      "name": "Text_Question20",
+      "position": { "x": 0, "y": 135 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "text": "Q.감정적으로 여유가 없을 때는,\n먼저 반응하지 않으려는 편이다.||Q.감정적으로 여유가 없을 때는,\n먼저 반응하지 않으려는 편이다.",
+      "fontName": "font7",
+      "fontSize": 43,
+      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+      "alignment": 1
+    }
+  ]
+}

@@ -1,96 +1,214 @@
 using System;
+using System.Collections;
+using Cysharp.Threading.Tasks; 
 using My.Scripts.Core;
+using My.Scripts.Global;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 using Wonjeong.Data;
 using Wonjeong.UI;
+using Wonjeong.Utils;
 
 namespace My.Scripts._01_Tutorial.Pages
-{
-    /// <summary>
-    /// 튜토리얼 1페이지의 데이터 구조를 정의하는 클래스.
-    /// JSON 파일의 "page1" 섹션 데이터와 매핑됨.
-    /// </summary>
+{   
     [Serializable]
     public class TutorialPage1Data
     {
-        public TextSetting descriptionText;
+        public TextSetting descriptionText; 
     }
-
-    /// <summary>
-    /// 튜토리얼의 첫 번째 페이지 동작을 제어하는 컨트롤러.
-    /// 텍스트 정보를 표시하고 사용자의 입력(넘기기)을 대기함.
-    /// 글로벌 방치 타이머에 영향을 주어 방치 시 특정 텍스트(tagText)가 뜨도록 유도함.
-    /// </summary>
+    
     public class TutorialPage1Controller : GamePage<TutorialPage1Data>
     {
-        [Header("UI Components")]
+        [Header("Page 1 UI")]
         [SerializeField] private Text descriptionText;
+        [Header("API Manager")]
+        [SerializeField] private APIManager apiManager;
+        [Header("Polling Settings")]
+        [SerializeField] private float basePollInterval = 1.0f; 
+        [SerializeField] private float maxPollInterval = 10.0f; 
 
-        /// <summary>
-        /// 외부에서 로드된 데이터를 받아 UI를 초기화함.
-        /// </summary>
-        /// <param name="data">JSON 파싱을 통해 생성된 페이지 데이터 객체</param>
+        private float _currentPollInterval; 
+        private readonly float fadeTime = 0.5f; 
+        private Coroutine _pollCoroutine; 
+
+        protected override void Awake()
+        {
+            base.Awake();
+            if (descriptionText)
+            {
+                Color c = descriptionText.color;
+                c.a = 0f;
+                descriptionText.color = c;
+            }
+        }
+
         protected override void SetupData(TutorialPage1Data data)
         {
-            if (data == null) return;
-            
-            if (descriptionText && data.descriptionText != null)
-            {
-                if (UIManager.Instance)
-                {
-                    UIManager.Instance.SetText(descriptionText.gameObject, data.descriptionText);
-                }
-                else
-                {
-                    Debug.LogWarning("[TutorialPage1Controller] UIManager.Instance가 null입니다. 텍스트 설정을 건너뜁니다.");
-                }
-            }
-        }
-        
-        /// <summary>
-        /// 페이지 진입 시 글로벌 방치 타이머가 작동하도록 설정하고, 출력 텍스트 타입을 변경함.
-        /// 이유: 튜토리얼 1페이지에서는 사용자 입력을 기다리며, 방치 시 전용 안내(tagText)를 띄워야 하기 때문임.
-        /// </summary>
-        public override void OnEnter()
-        {
-            base.OnEnter();
-            if (GameManager.Instance)
-            {
-                GameManager.Instance.IsAutoProgressing = false;
-                GameManager.Instance.CurrentInactivityTextType = InactivityTextType.Tag;
-            }
-            else
-            {
-                Debug.LogWarning("[TutorialPage1Controller] GameManager.Instance를 찾을 수 없습니다.");
-            }
+            if (descriptionText) UIManager.Instance.SetText(descriptionText.gameObject, data.descriptionText);
         }
 
-        /// <summary>
-        /// 페이지 퇴장 시 글로벌 방치 텍스트 타입을 기본값으로 원복함.
-        /// 이유: 다른 씬이나 구간에서 잘못된 방치 텍스트가 뜨는 것을 방지하기 위함.
-        /// </summary>
+        public override void OnEnter()
+        {
+            base.OnEnter(); 
+
+            // 이유: 단순 연출/대기 페이지이므로 글로벌 무입력 초기화 타이머를 강제로 정지시킴
+            if (GameManager.Instance) GameManager.Instance.IsAutoProgressing = true;
+
+            if (descriptionText) StartCoroutine(FadeInTextRoutine());
+        }
+
         public override void OnExit()
         {
-            base.OnExit();
-            if (GameManager.Instance)
+            if (SoundManager.Instance)
             {
-                GameManager.Instance.CurrentInactivityTextType = InactivityTextType.Warning;
+                SoundManager.Instance.StopBGM();
+                SoundManager.Instance.PlayBGM("MainBGM");
             }
+            if (_pollCoroutine != null)
+            {
+                StopCoroutine(_pollCoroutine);
+                _pollCoroutine = null;
+            }
+            base.OnExit();
         }
 
         private void Update()
         {
-            // 사용자가 내용을 확인하고 다음 단계로 넘어가려는 의도(엔터 또는 클릭)를 확인
-            if (Input.GetKeyDown(KeyCode.Return) || Input.GetMouseButtonDown(0))
+            if (Input.GetKeyDown(KeyCode.Return)) CompleteStep(); 
+        }
+
+        private IEnumerator PollRoomStateRoutine()
+        {
+            float emptyUserStartTime = -1f; 
+            _currentPollInterval = basePollInterval;
+
+            while (true)
             {
-                if (SoundManager.Instance)
+                if (!GameManager.Instance || GameManager.Instance.ApiConfig == null)
                 {
-                    SoundManager.Instance.StopBGM();
-                    SoundManager.Instance.PlayBGM("MainBGM");
+                    yield return CoroutineData.GetWaitForSeconds(_currentPollInterval);
+                    continue;
                 }
-                CompleteStep(); 
+
+                string checkUrl = $"{GameManager.Instance.ApiConfig.CheckRoomStateUrl}?code={GameConstants.Module.Code.ToLower()}";
+                string userUrl = $"{GameManager.Instance.ApiConfig.GetCurrentRoomUserUrl}?code={GameConstants.Module.Code.ToLower()}";
+
+                bool isRoomEmpty = false;
+                bool isNetworkError = false;
+
+                using (UnityWebRequest stateReq = UnityWebRequest.Get(checkUrl))
+                {
+                    stateReq.timeout = 10; 
+                    yield return stateReq.SendWebRequest();
+
+                    if (stateReq.result == UnityWebRequest.Result.Success)
+                    {
+                        if (stateReq.downloadHandler.text.IndexOf(GameConstants.Api.StatusEmpty, StringComparison.OrdinalIgnoreCase) >= 0)
+                            isRoomEmpty = true;
+                    }
+                    else isNetworkError = true;
+                }
+
+                if (!isNetworkError && !isRoomEmpty)
+                {
+                    bool isUserEmpty = false;
+                    using (UnityWebRequest userReq = UnityWebRequest.Get(userUrl))
+                    {
+                        userReq.timeout = 10; 
+                        yield return userReq.SendWebRequest();
+
+                        if (userReq.result == UnityWebRequest.Result.Success)
+                        {
+                            string rawText = userReq.downloadHandler.text;
+                            if (rawText.IndexOf(GameConstants.Api.StatusEmpty, StringComparison.OrdinalIgnoreCase) >= 0) isUserEmpty = true;
+                            else if (rawText.Contains(","))
+                            {
+                                _currentPollInterval = basePollInterval;
+                                emptyUserStartTime = -1f;
+
+                                string[] parts = rawText.Split(new[] { '\r', '\n', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                                if (parts.Length >= 1)
+                                {
+                                    string uidLeft = parts[0].Trim();
+                                    if (parts.Length >= 2 && SessionManager.Instance)
+                                    {
+                                        SessionManager.Instance.PlayerAUid = uidLeft;
+                                        SessionManager.Instance.PlayerBUid = parts[1].Trim();
+                                    }
+
+                                    if (apiManager)
+                                    {   
+                                        bool fetchSuccess = false;
+                                        bool fetchFaulted = false;
+
+                                        yield return apiManager.FetchDataAsync(uidLeft)
+                                                               .Timeout(TimeSpan.FromSeconds(25))
+                                                               .ToCoroutine(
+                                                                    r => fetchSuccess = r, 
+                                                                    ex => { fetchFaulted = true; }
+                                                                );
+
+                                        if (fetchFaulted || !fetchSuccess || !SessionManager.Instance || SessionManager.Instance.CurrentUserId == 0)
+                                        {
+                                            yield return CoroutineData.GetWaitForSeconds(_currentPollInterval);
+                                            continue;
+                                        }
+                                    }
+                                    CompleteStep(); 
+                                    yield break; 
+                                }
+                            }
+                        }
+                        else isNetworkError = true;
+                    }
+
+                    if (isUserEmpty)
+                    {
+                        if (emptyUserStartTime < 0f) emptyUserStartTime = Time.time;
+                        if (Time.time - emptyUserStartTime >= 15f) isRoomEmpty = true;
+                    }
+                }
+
+                if (isNetworkError)
+                {
+                    _currentPollInterval = Mathf.Min(_currentPollInterval * 2f, maxPollInterval);
+                }
+
+                if (isRoomEmpty)
+                {
+                    if (GameManager.Instance) GameManager.Instance.ReturnToTitle();
+                    yield break;
+                }
+
+                yield return CoroutineData.GetWaitForSeconds(_currentPollInterval);
             }
+        }
+
+        private IEnumerator FadeInTextRoutine()
+        {
+            float timer = 0f;
+            while (timer < fadeTime)
+            {
+                timer += Time.deltaTime;
+                if (descriptionText)
+                {
+                    Color c = descriptionText.color;
+                    c.a = Mathf.Clamp01(timer / fadeTime);
+                    descriptionText.color = c;
+                }
+                yield return null;
+            }
+            
+            if (descriptionText)
+            {
+                Color c = descriptionText.color;
+                c.a = 1f;
+                descriptionText.color = c;
+            }
+            
+            if (_pollCoroutine != null) StopCoroutine(_pollCoroutine);
+            _pollCoroutine = StartCoroutine(PollRoomStateRoutine());
         }
     }
 }

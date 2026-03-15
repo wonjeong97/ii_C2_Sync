@@ -59,10 +59,12 @@ namespace My.Scripts.Core
 
         private PlayerPhysicsConfig _config;
         private Vector2[] _lanePositions;
-        private readonly bool[] _leftPadFlags = new bool[3];
-        private readonly bool[] _rightPadFlags = new bool[3];
+        
         private Coroutine _stunCoroutine;
         private Coroutine _moveCoroutine;
+
+        // 한쪽 발판 꼼수 방지용 마지막 입력 발판 인덱스 저장 변수
+        private int _lastPadIdx = -1;
 
         private readonly static int RunSpeedParam = Animator.StringToHash("RunSpeed");
         private readonly static int Finish = Animator.StringToHash("Finish");
@@ -79,6 +81,7 @@ namespace My.Scripts.Core
 
             currentSpeed = 0f;
             currentDistance = 0f;
+            _lastPadIdx = -1; 
         
             if (!characterCanvasGroup && characterUI) 
                 characterCanvasGroup = characterUI.GetComponent<CanvasGroup>() ?? characterUI.gameObject.AddComponent<CanvasGroup>();
@@ -95,6 +98,19 @@ namespace My.Scripts.Core
             NotifyDistanceChanged();
         }
 
+        /// <summary> 캐릭터의 파츠(몸, 손)에 스프라이트 이미지를 직접 씌웁니다. </summary>
+        public void SetCharacterSprite(Sprite sprite)
+        {
+            if (!sprite) return;
+
+            if (bodyImage) bodyImage.sprite = sprite;
+            if (leftHandImage) leftHandImage.sprite = sprite;
+            if (rightHandImage) rightHandImage.sprite = sprite;
+        }
+
+        /// <summary>
+        /// 스프라이트가 없을 경우를 대비한 틴트 색상 덮어쓰기 로직입니다.
+        /// </summary>
         public void SetCharacterColor(Color color)
         {
             if (bodyImage) bodyImage.color = new Color(color.r, color.g, color.b, bodyImage.color.a);
@@ -147,7 +163,7 @@ namespace My.Scripts.Core
 
         private void UpdateAnimationSpeed()
         {
-            if (characterAnimator == null) return;
+            if (!characterAnimator) return;
             float normalizedSpeed = (_config.maxScrollSpeed > 0) ? (currentSpeed / _config.maxScrollSpeed) : 0f;
             if (normalizedSpeed < 0.1f) normalizedSpeed = 0f;
             characterAnimator.SetFloat(RunSpeedParam, normalizedSpeed * runSpeedMultiplier);
@@ -186,22 +202,21 @@ namespace My.Scripts.Core
             _stunCoroutine = null;
         }
 
+        /// <summary>
+        /// 발판 입력 시 이동 가능 여부를 판별합니다.
+        /// </summary>
         public bool HandleInput(int laneIdx, int padIdx)
         {
             if (IsStunned) return false; 
-            if (laneIdx < 0 || laneIdx >= _leftPadFlags.Length) return false;
+            if (_lanePositions == null || laneIdx < 0 || laneIdx >= _lanePositions.Length) return false;
             if (padIdx != 0 && padIdx != 1) return false;
 
-            if (padIdx == 0) _leftPadFlags[laneIdx] = true;
-            else _rightPadFlags[laneIdx] = true;
+            // 이유: 플레이어가 편법으로 한쪽 발판만 연속해서 밟는 것을 방지하기 위함.
+            // 직전에 밟은 발과 다른 발(좌->우 또는 우->좌)을 밟았을 때만 정상 입력으로 처리.
+            if (_lastPadIdx == padIdx) return false;
 
-            if (_leftPadFlags[laneIdx] && _rightPadFlags[laneIdx])
-            {
-                _leftPadFlags[laneIdx] = false;
-                _rightPadFlags[laneIdx] = false;
-                return true;
-            }
-            return false;
+            _lastPadIdx = padIdx;
+            return true;
         }
 
         public void MoveAndAccelerate(int laneIdx)
@@ -226,12 +241,15 @@ namespace My.Scripts.Core
 
         private void NotifyDistanceChanged()
         {
-            OnDistanceChanged?.Invoke(playerIndex, currentDistance, _config.maxDistance);
+            if (OnDistanceChanged != null)
+            {
+                OnDistanceChanged.Invoke(playerIndex, currentDistance, _config.maxDistance);
+            }
         }
 
         public void MoveToLane(int laneIdx)
         {
-            if (laneIdx < 0 || laneIdx >= _lanePositions.Length) return;
+            if (_lanePositions == null || laneIdx < 0 || laneIdx >= _lanePositions.Length) return;
             
             if (_moveCoroutine != null || currentLane == laneIdx) return;
         
@@ -246,7 +264,7 @@ namespace My.Scripts.Core
                 float actualArcHeight = jumpArcHeight * laneDiff; 
                 float actualDuration = jumpDuration * (1f + 0.3f * (laneDiff - 1));
                 
-                SoundManager.Instance?.PlaySFX("달리기_1");
+                if (SoundManager.Instance) SoundManager.Instance.PlaySFX("달리기_1");
                 _moveCoroutine = StartCoroutine(MoveLaneRoutine(startPos, targetPos, actualDuration, actualArcHeight));
             }
         }
@@ -263,11 +281,11 @@ namespace My.Scripts.Core
 
                 float heightOffset = Mathf.Sin(t * Mathf.PI) * arcHeight;
                 currentPos.y += heightOffset;
-                characterUI.anchoredPosition = currentPos;
+                if (characterUI) characterUI.anchoredPosition = currentPos;
                 yield return null;
             }
             
-            characterUI.anchoredPosition = targetPos;
+            if (characterUI) characterUI.anchoredPosition = targetPos;
             _moveCoroutine = null; 
         }
         

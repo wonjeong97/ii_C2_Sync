@@ -63,7 +63,7 @@ namespace My.Scripts._05_Ending.Pages
                 particleCg.gameObject.SetActive(false);
             }
 
-            // 2. 캐릭터 색상 동기화
+            // 2. 캐릭터 색상 및 스프라이트 동기화
             ApplyPlayerColors();
 
             // 3. 거리 텍스트 데이터 세팅
@@ -92,22 +92,42 @@ namespace My.Scripts._05_Ending.Pages
 
         /// <summary>
         /// GameManager에 저장된 API 컬러 데이터를 가져와 캐릭터(몸통, 손) 이미지에 적용함.
-        /// 엔딩 연출 시에도 플레이어가 자신의 캐릭터를 명확히 식별할 수 있도록 시각적 일관성을 유지하기 위함.
+        /// 이유: API에 등록된 스프라이트가 존재하면 해당 이미지를 씌우고, 없다면 기존 틴트(Color) 방식을 예비책(Fallback)으로 적용하여 시각적 일관성을 유지하기 위함.
         /// </summary>
         private void ApplyPlayerColors()
         {
             if (!GameManager.Instance) return;
 
-            Color colorA = GameManager.Instance.GetColorFromData(GameManager.Instance.PlayerAColor);
-            Color colorB = GameManager.Instance.GetColorFromData(GameManager.Instance.PlayerBColor);
+            Sprite spriteA = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerAColor);
+            Sprite spriteB = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerBColor);
 
-            if (p1Body) p1Body.color = colorA;
-            if (p1LeftHand) p1LeftHand.color = colorA;
-            if (p1RightHand) p1RightHand.color = colorA;
+            if (spriteA)
+            {
+                if (p1Body) p1Body.sprite = spriteA;
+                if (p1LeftHand) p1LeftHand.sprite = spriteA;
+                if (p1RightHand) p1RightHand.sprite = spriteA;
+            }
+            else
+            {
+                Color colorA = GameManager.Instance.GetColorFromData(GameManager.Instance.PlayerAColor);
+                if (p1Body) p1Body.color = new Color(colorA.r, colorA.g, colorA.b, p1Body.color.a);
+                if (p1LeftHand) p1LeftHand.color = new Color(colorA.r, colorA.g, colorA.b, p1LeftHand.color.a);
+                if (p1RightHand) p1RightHand.color = new Color(colorA.r, colorA.g, colorA.b, p1RightHand.color.a);
+            }
 
-            if (p2Body) p2Body.color = colorB;
-            if (p2LeftHand) p2LeftHand.color = colorB;
-            if (p2RightHand) p2RightHand.color = colorB;
+            if (spriteB)
+            {
+                if (p2Body) p2Body.sprite = spriteB;
+                if (p2LeftHand) p2LeftHand.sprite = spriteB;
+                if (p2RightHand) p2RightHand.sprite = spriteB;
+            }
+            else
+            {
+                Color colorB = GameManager.Instance.GetColorFromData(GameManager.Instance.PlayerBColor);
+                if (p2Body) p2Body.color = new Color(colorB.r, colorB.g, colorB.b, p2Body.color.a);
+                if (p2LeftHand) p2LeftHand.color = new Color(colorB.r, colorB.g, colorB.b, p2LeftHand.color.a);
+                if (p2RightHand) p2RightHand.color = new Color(colorB.r, colorB.g, colorB.b, p2RightHand.color.a);
+            }
         }
 
         /// <summary>

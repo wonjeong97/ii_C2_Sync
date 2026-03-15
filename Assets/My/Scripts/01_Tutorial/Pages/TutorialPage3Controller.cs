@@ -5,7 +5,6 @@ using UnityEngine.UI;
 using My.Scripts.Core;
 using Wonjeong.Data;
 using Wonjeong.UI;
-using Wonjeong.Utils; 
 
 namespace My.Scripts._01_Tutorial.Pages
 {
@@ -31,10 +30,11 @@ namespace My.Scripts._01_Tutorial.Pages
         [Header("Settings")]
         [SerializeField] private float jumpLandingTolerance = 0.25f; 
 
+        private TutorialPage3Data _data; 
+
         private bool _isAFinished;
         private bool _isBFinished;
         private bool _isStepCompleted; 
-        private float _lastInputTime; 
 
         private bool _pAPad0, _pAPad1;
         private bool _pBPad0, _pBPad1;
@@ -55,42 +55,22 @@ namespace My.Scripts._01_Tutorial.Pages
                 return;
             }
 
-            string nameA = GameManager.Instance ? GameManager.Instance.PlayerALastName : "Player A";
-            string nameB = GameManager.Instance ? GameManager.Instance.PlayerBLastName : "Player B";
-            
+            _data = data; 
+
             if (playerAText && data.playerAName != null)
             {
-                string replacedTextA = data.playerAName.text.Replace("{nameA}", nameA);
                 if (UIManager.Instance) UIManager.Instance.SetText(playerAText.gameObject, data.playerAName);
-                playerAText.text = replacedTextA;
-            }
-            else
-            {
-                Debug.LogWarning("[TutorialPage3Controller] Player A 이름 텍스트 설정에 필요한 컴포넌트나 데이터가 누락되었습니다.");
             }
 
             if (playerBText && data.playerBName != null)
             {
-                string replacedTextB = data.playerBName.text.Replace("{nameB}", nameB);
                 if (UIManager.Instance) UIManager.Instance.SetText(playerBText.gameObject, data.playerBName);
-                playerBText.text = replacedTextB;
-            }
-            else
-            {
-                Debug.LogWarning("[TutorialPage3Controller] Player B 이름 텍스트 설정에 필요한 컴포넌트나 데이터가 누락되었습니다.");
             }
 
             if (descriptionText && data.descriptionText != null)
             {
                 descriptionText.supportRichText = true;
-                if (UIManager.Instance)
-                {
-                    UIManager.Instance.SetText(descriptionText.gameObject, data.descriptionText);
-                }
-                else
-                {
-                    Debug.LogWarning("[TutorialPage3Controller] UIManager.Instance를 찾을 수 없습니다.");
-                }
+                if (UIManager.Instance) UIManager.Instance.SetText(descriptionText.gameObject, data.descriptionText);
             }
         }
 
@@ -98,10 +78,12 @@ namespace My.Scripts._01_Tutorial.Pages
         {
             base.OnEnter();
             
+            // 이유: 사용자가 직접 점프 입력을 해야 하는 구간이므로 글로벌 방치 타이머를 다시 가동시킴
+            if (GameManager.Instance) GameManager.Instance.IsAutoProgressing = false;
+
             _isAFinished = false;
             _isBFinished = false;
             _isStepCompleted = false; 
-            _lastInputTime = Time.time;
 
             _pAIsReady = _pAHasJumped = false;
             _pBIsReady = _pBHasJumped = false;
@@ -110,6 +92,7 @@ namespace My.Scripts._01_Tutorial.Pages
             InitCheckImage(checkImageA);
             InitCheckImage(checkImageB);
 
+            ApplyDynamicNames();
             ApplyPlayerColors();
             SyncInitialInputState();
 
@@ -118,9 +101,32 @@ namespace My.Scripts._01_Tutorial.Pages
                 InputManager.Instance.OnPadDown += HandlePadDown;
                 InputManager.Instance.OnPadUp += HandlePadUp;
             }
-            else
+        }
+
+        private void ApplyDynamicNames()
+        {
+            if (_data == null) return;
+
+            string nameA = "Player A";
+            string nameB = "Player B";
+
+            if (GameManager.Instance)
             {
-                Debug.LogWarning("[TutorialPage3Controller] InputManager.Instance를 찾을 수 없습니다.");
+                nameA = GameManager.Instance.PlayerAName;
+                nameB = GameManager.Instance.PlayerBName;
+
+                if (string.IsNullOrEmpty(nameA) || nameA == "NoNameA") nameA = "Player A";
+                if (string.IsNullOrEmpty(nameB) || nameB == "NoNameB") nameB = "Player B";
+            }
+
+            if (playerAText && _data.playerAName != null)
+            {
+                playerAText.text = _data.playerAName.text.Replace("{nameA}", nameA);
+            }
+
+            if (playerBText && _data.playerBName != null)
+            {
+                playerBText.text = _data.playerBName.text.Replace("{nameB}", nameB);
             }
         }
 
@@ -128,28 +134,13 @@ namespace My.Scripts._01_Tutorial.Pages
         {
             base.OnExit();
             
+            // 이유: 페이지 퇴장 시 다시 타이머를 잠가 다음 연출(4페이지) 중 예기치 않게 팝업이 뜨는 것을 방지함
+            if (GameManager.Instance) GameManager.Instance.IsAutoProgressing = true;
+            
             if (InputManager.Instance)
             {
                 InputManager.Instance.OnPadDown -= HandlePadDown;
                 InputManager.Instance.OnPadUp -= HandlePadUp;
-            }
-        }
-
-        private void Update()
-        {
-            if (_isStepCompleted) return;
-
-            if (Time.time - _lastInputTime >= 20f)
-            {
-                if (GameManager.Instance)
-                {
-                    GameManager.Instance.ForceInactivitySequence();
-                }
-                else
-                {
-                    Debug.LogWarning("[TutorialPage3Controller] GameManager.Instance를 찾을 수 없어 방치 팝업을 띄울 수 없습니다.");
-                }
-                _lastInputTime = float.MaxValue; 
             }
         }
 
@@ -199,8 +190,6 @@ namespace My.Scripts._01_Tutorial.Pages
 
         private void UpdateLogic(int playerIdx, int laneIdx, int padIdx, bool isDown)
         {
-            _lastInputTime = Time.time;
-
             if (laneIdx != 1) return; 
 
             if (playerIdx == 0)
@@ -280,7 +269,7 @@ namespace My.Scripts._01_Tutorial.Pages
 
         private IEnumerator WaitAndCompleteRoutine()
         {
-            yield return CoroutineData.GetWaitForSeconds(1.0f);
+            yield return new WaitForSeconds(1.0f);
             CompleteStep();
         }
     }

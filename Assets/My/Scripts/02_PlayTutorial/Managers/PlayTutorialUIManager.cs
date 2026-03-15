@@ -171,9 +171,9 @@ namespace My.Scripts._02_PlayTutorial.Managers
             centerText.gameObject.SetActive(true);
             SoundManager.Instance?.PlaySFX("공통_20");
             
-            yield return StartCoroutine(FadeTextAlpha(centerText, 0f, 1f, 0.5f));
+            yield return StartCoroutine(FadeTextAlpha(centerText, 0f, 1f, 0.25f));
             yield return CoroutineData.GetWaitForSeconds(duration);
-            yield return StartCoroutine(FadeTextAlpha(centerText, 1f, 0f, 0.5f));
+            yield return StartCoroutine(FadeTextAlpha(centerText, 1f, 0f, 0.25f));
 
             centerText.gameObject.SetActive(false);
         }
@@ -195,7 +195,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
             Color c = finalPageText.color;
             finalPageText.color = new Color(c.r, c.g, c.b, 0f);
 
-            yield return StartCoroutine(FadeCanvasGroup(finalPageCanvasGroup, 0f, 1f, 1f));
+            yield return StartCoroutine(FadeCanvasGroup(finalPageCanvasGroup, 0f, 1f, 0.5f));
 
             foreach (TextSetting setting in texts)
             {
@@ -215,9 +215,9 @@ namespace My.Scripts._02_PlayTutorial.Managers
                     SoundManager.Instance?.PlaySFX("공통_13");
                 }
                 
-                yield return StartCoroutine(FadeTextAlpha(finalPageText, 0f, 1f, 1f));
+                yield return StartCoroutine(FadeTextAlpha(finalPageText, 0f, 1f, 0.25f));
                 yield return CoroutineData.GetWaitForSeconds(3.0f);
-                yield return StartCoroutine(FadeTextAlpha(finalPageText, 1f, 0f, 1f));
+                yield return StartCoroutine(FadeTextAlpha(finalPageText, 1f, 0f, 0.25f));
             }
         }
 

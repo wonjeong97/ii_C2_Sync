@@ -27,8 +27,8 @@
       "position": {"x": -460, "y": -25},
       "scale": {"x": 1, "y": 1, "z": 1},
       "text": "{nameA}님 자리",
-      "fontName": "font4",
-      "fontSize": 80,
+      "fontName": "font8",
+      "fontSize": 66,
       "fontColor": {"r": 0.7098039, "g": 0.654902, "b": 0.6196079, "a": 1}
     },
     "playerBName":    {
@@ -36,8 +36,8 @@
       "position": {"x": 460, "y": -25},
       "scale": {"x": 1, "y": 1, "z": 1},
       "text": "{nameB}님 자리",
-      "fontName": "font4",
-      "fontSize": 80,
+      "fontName": "font8",
+      "fontSize": 66,
       "fontColor": {"r": 0.7098039, "g": 0.654902, "b": 0.6196079, "a": 1}
     },
     "descriptionText": {
@@ -46,7 +46,7 @@
       "scale": {"x": 1, "y": 1, "z": 1},
       "text": "각자의 자리 가운데 두 개의 발판 위에\n한발씩 올라서서 <color=#DC2525>제자리 점프하면</color>, 시작됩니다.",
       "fontName": "font4",
-      "fontSize": 60,
+      "fontSize": 61,
       "fontColor": {"r": 0.2588235, "g": 0.254902, "b": 0.2588235, "a": 1}      
     }
   },

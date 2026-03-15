@@ -89,8 +89,8 @@ namespace My.Scripts._02_PlayTutorial.Managers
                 // API 연동 데이터(이름, 컬러)와 JSON 스타일 데이터를 UI에 전달함.
                 if (GameManager.Instance)
                 {
-                    string nameA = string.IsNullOrEmpty(GameManager.Instance.PlayerALastName) ? "Player A" : GameManager.Instance.PlayerALastName;
-                    string nameB = string.IsNullOrEmpty(GameManager.Instance.PlayerBLastName) ? "Player B" : GameManager.Instance.PlayerBLastName;
+                    string nameA = string.IsNullOrEmpty(GameManager.Instance.PlayerAName) ? "Player A" : GameManager.Instance.PlayerAName;
+                    string nameB = string.IsNullOrEmpty(GameManager.Instance.PlayerBName) ? "Player B" : GameManager.Instance.PlayerBName;
                     
                     TextSetting settingA = _data != null ? _data.playerAName : null;
                     TextSetting settingB = _data != null ? _data.playerBName : null;
@@ -121,8 +121,18 @@ namespace My.Scripts._02_PlayTutorial.Managers
                         if (GameManager.Instance)
                         {
                             ColorData colorData = (i == 0) ? GameManager.Instance.PlayerAColor : GameManager.Instance.PlayerBColor;
-                            Color targetColor = GameManager.Instance.GetColorFromData(colorData);
-                            players[i].SetCharacterColor(targetColor);
+                            Sprite targetSprite = GameManager.Instance.GetColorSprite(colorData);
+    
+                            // API에 등록된 스프라이트가 존재하면 덮어씌우고, 없다면 기존의 색상 틴트 방식을 Fallback으로 사용함
+                            if (targetSprite)
+                            {
+                                players[i].SetCharacterSprite(targetSprite);
+                            }
+                            else
+                            {
+                                Color targetColor = GameManager.Instance.GetColorFromData(colorData);
+                                players[i].SetCharacterColor(targetColor);
+                            }
                         }
                     }
                 }
@@ -351,10 +361,10 @@ namespace My.Scripts._02_PlayTutorial.Managers
                 if (ui)
                 {
                     ui.PreparePopup(_data.guideTexts[2].text);
-                    StartCoroutine(ui.FadeInPopup(1f)); 
+                    StartCoroutine(ui.FadeInPopup(0.5f)); 
                 }
                 
-                if (env) env.FadeInAllObstacles(0, 3, 1f);
+                if (env) env.FadeInAllObstacles(0, 3, 0.5f);
                 
                 yield return CoroutineData.GetWaitForSeconds(3.0f);
                 
@@ -421,10 +431,10 @@ namespace My.Scripts._02_PlayTutorial.Managers
                 if (ui)
                 {
                     ui.PreparePopup(_data.guideTexts[4].text);
-                    StartCoroutine(ui.FadeInPopup(1f));
+                    StartCoroutine(ui.FadeInPopup(0.5f));
                 }
                 
-                if (env) env.FadeInAllObstacles(3, 1, 1.0f);
+                if (env) env.FadeInAllObstacles(3, 1, 0.5f);
                 yield return CoroutineData.GetWaitForSeconds(1.0f);
                 
                 _currentPhase = TutorialPhase.FinalAutoRun;

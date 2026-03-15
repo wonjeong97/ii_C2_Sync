@@ -26,5 +26,18 @@ namespace My.Scripts.Core
             public const string Ending = "JSON/Ending";
             public const string ApiSetting = "JSON/API";
         }
+        
+        /// <summary> 모듈 및 레벨 상수 모음 </summary>
+        public static class Module
+        {
+            public const string Code = "C2"; 
+        }
+
+        /// <summary> API 상태 상수 모음 </summary>
+        public static class Api
+        {
+            public const string StatusEmpty = "EMPTY";
+            public const string StatusUsing = "USING";
+        }
     }
 }

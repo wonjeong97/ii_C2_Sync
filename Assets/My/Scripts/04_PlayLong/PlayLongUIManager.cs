@@ -232,12 +232,12 @@ namespace My.Scripts._04_PlayLong
                     else popupText.text = textData.text;
                 }
 
-                yield return StartCoroutine(FadeTextAlpha(popupText, 0f, 1f, 0.5f));
+                yield return StartCoroutine(FadeTextAlpha(popupText, 0f, 1f, 0.25f));
                 yield return CoroutineData.GetWaitForSeconds(durationPerText);
 
                 if (i < textDatas.Length - 1 || hideAtEnd)
                 {
-                    yield return StartCoroutine(FadeTextAlpha(popupText, 1f, 0f, 0.5f));
+                    yield return StartCoroutine(FadeTextAlpha(popupText, 1f, 0f, 0.25f));
                 }
             }
 
@@ -309,7 +309,7 @@ namespace My.Scripts._04_PlayLong
             if (lines.Length >= 2) popupText.text = $"{lines[0]}\n<color=#00000000>{lines[1]}</color>";
             else popupText.text = fullText;
 
-            yield return StartCoroutine(FadeTextAlpha(popupText, 0f, 1f, 0.5f));
+            yield return StartCoroutine(FadeTextAlpha(popupText, 0f, 1f, 0.25f));
 
             if (redStringCanvasGroup) yield return StartCoroutine(UIUtils.FadeCanvasGroup(redStringCanvasGroup, 0f, 1f, 2.0f));
         }

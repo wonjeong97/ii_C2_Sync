@@ -38,8 +38,9 @@ namespace My.Scripts._03_PlayShort
 
         public void InitEnvironment()
         {
-            if (p1Floor) { p1Floor.enableScroll = true; p1Floor.scrollSpeedY = 0f; }
-            if (p2Floor) { p2Floor.enableScroll = true; p2Floor.scrollSpeedY = 0f; }
+            // [수정됨] TextureAdjuster의 자체 스크롤(Update 루프)을 끄고 외부에서 직접 제어합니다.
+            if (p1Floor) { p1Floor.enableScroll = false; p1Floor.scrollSpeedY = 0f; }
+            if (p2Floor) { p2Floor.enableScroll = false; p2Floor.scrollSpeedY = 0f; }
 
             if (p1Obstacles && leftCamera) p1Obstacles.Init(leftCamera);
             if (p2Obstacles && rightCamera) p2Obstacles.Init(rightCamera);
@@ -52,7 +53,6 @@ namespace My.Scripts._03_PlayShort
             _prevFogDensity = RenderSettings.fogDensity;
             _hasFogBackup = true;
 
-            // 백업 완료 후 새로운 설정 적용
             RenderSettings.fog = useFog;
 
             if (useFog)
@@ -74,15 +74,39 @@ namespace My.Scripts._03_PlayShort
 
         public void ScrollEnvironment(float p1Speed, float p2Speed)
         {
+            float dt = Time.deltaTime;
+
             // Player 1
-            if (p1Floor) p1Floor.scrollSpeedY = p1Speed;
+            // [수정됨] 바닥 스크롤을 동기화 전용 메서드로 직접 처리합니다.
+            if (p1Floor) ApplyScrollToFloor(p1Floor, p1Speed * dt);
             if (p1Frames) p1Frames.ScrollFrames(p1Speed);
             if (p1Obstacles) p1Obstacles.ScrollObstacles(p1Speed);
 
             // Player 2
-            if (p2Floor) p2Floor.scrollSpeedY = p2Speed;
+            // [수정됨] 바닥 스크롤을 동기화 전용 메서드로 직접 처리합니다.
+            if (p2Floor) ApplyScrollToFloor(p2Floor, p2Speed * dt);
             if (p2Frames) p2Frames.ScrollFrames(p2Speed);
             if (p2Obstacles) p2Obstacles.ScrollObstacles(p2Speed);
+        }
+
+        // [추가됨] TextureAdjuster에 직접 UV 오프셋을 더하고 루프를 처리하여 프레임 지연을 완벽히 없앱니다.
+        private void ApplyScrollToFloor(TextureAdjuster floor, float uvDelta)
+        {
+            if (uvDelta == 0f) return;
+            
+            floor.offset.y += uvDelta;
+            
+            if (floor.useCustomLoop)
+            {
+                float loopSize = floor.loopMaxY - floor.loopMinY;
+                if (loopSize > 0.0001f)
+                {
+                    while (floor.offset.y > floor.loopMaxY) floor.offset.y -= loopSize;
+                    while (floor.offset.y < floor.loopMinY) floor.offset.y += loopSize;
+                }
+            }
+            
+            floor.UpdateUVs();
         }
 
         public void RecycleFrameClosestToCamera(int playerIdx)

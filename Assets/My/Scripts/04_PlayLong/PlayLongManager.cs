@@ -71,6 +71,8 @@ namespace My.Scripts._04_PlayLong
         private const float RequiredRightDistance = 10.0f;
         private const float RequiredLeftDistance = 6.0f;
 
+        public bool IsGameActive => _isGameActive;
+
         private void Awake()
         {
             if (!Instance) Instance = this;
@@ -85,19 +87,16 @@ namespace My.Scripts._04_PlayLong
             {
                 ui.InitUI(targetDistance);
 
-                // API 연동 데이터(이름, 컬러)와 JSON 스타일 데이터를 UI에 전달함.
                 if (GameManager.Instance)
                 {
-                    string nameA = string.IsNullOrEmpty(GameManager.Instance.PlayerALastName) ? "Player A" : GameManager.Instance.PlayerALastName;
-                    string nameB = string.IsNullOrEmpty(GameManager.Instance.PlayerBLastName) ? "Player B" : GameManager.Instance.PlayerBLastName;
+                    string nameA = string.IsNullOrEmpty(GameManager.Instance.PlayerAName) ? "Player A" : GameManager.Instance.PlayerAName;
+                    string nameB = string.IsNullOrEmpty(GameManager.Instance.PlayerBName) ? "Player B" : GameManager.Instance.PlayerBName;
                     
                     TextSetting settingA = _setting != null ? _setting.playerAName : null;
                     TextSetting settingB = _setting != null ? _setting.playerBName : null;
 
                     ui.SetPlayerNames(nameA, nameB, settingA, settingB);
 
-                    // --- [추가] 팝업 텍스트 데이터의 이름 플레이스홀더 치환 ---
-                    // 이유: 특정 인덱스에 구애받지 않고, 기획자가 JSON 내 어떤 팝업 문구에든 {nameA}, {nameB}를 자유롭게 활용할 수 있도록 일괄 적용함.
                     if (_setting != null && _setting.popupTexts != null)
                     {
                         foreach (TextSetting popupText in _setting.popupTexts)
@@ -108,9 +107,7 @@ namespace My.Scripts._04_PlayLong
                             }
                         }
                     }
-                    // -------------------------------------------------------------
 
-                    // 컬러 데이터를 기반으로 UI 공 이미지의 스프라이트를 변경함.
                     Sprite spriteA = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerAColor);
                     Sprite spriteB = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerBColor);
                     ui.SetPlayerBalls(spriteA, spriteB);
@@ -121,7 +118,6 @@ namespace My.Scripts._04_PlayLong
             
             if (InputManager.Instance) InputManager.Instance.OnPadDown += HandlePadDown;
 
-            // 게임 시작 시 인트로 페이지가 나오므로 글로벌 방치 타이머를 일시 정지함
             SetAutoProgressing(true);
             StartCoroutine(InitialFlowRoutine());
         }
@@ -131,17 +127,12 @@ namespace My.Scripts._04_PlayLong
             if (InputManager.Instance) InputManager.Instance.OnPadDown -= HandlePadDown;
             if (Instance == this) Instance = null;
 
-            // 씬이 파괴될 때 글로벌 방치 타이머를 기본 상태(동작)로 복구함
             if (GameManager.Instance)
             {
                 GameManager.Instance.IsAutoProgressing = false;
             }
         }
 
-        /// <summary>
-        /// 게임 매니저의 글로벌 방치 타이머 상태를 제어함.
-        /// 연출 구간에서는 타이머를 끄고(true), 실제 플레이 구간에서는 켬(false).
-        /// </summary>
         private void SetAutoProgressing(bool isAuto)
         {
             if (GameManager.Instance)
@@ -188,7 +179,7 @@ namespace My.Scripts._04_PlayLong
             StartIntroMission();
         }
 
-        private bool IsAnyPlayerStunned()
+        public bool IsAnyPlayerStunned()
         {
             if (players == null || players.Length < 2) return true;
 
@@ -283,7 +274,7 @@ namespace My.Scripts._04_PlayLong
             yield return CoroutineData.GetWaitForSeconds(1.0f);
 
             float totalDistanceToMove = 2.0f;
-            float duration = 2.0f;
+            float duration = 1.0f;
             float elapsed = 0f;
 
             while (elapsed < duration)
@@ -293,6 +284,9 @@ namespace My.Scripts._04_PlayLong
 
                 float stepMove = (totalDistanceToMove / duration) * deltaTime;
                 if (env) env.ScrollByMeter(stepMove);
+                
+                // 이유: 현재 IsGameActive가 false라 기본 스크롤 로직이 차단된 상태이므로, 튜토리얼 연출을 위해 장애물 강제 이동 함수를 명시적으로 호출함
+                if (obstacleManager) obstacleManager.ForceMoveActiveObstacles(stepMove);
 
                 if (IsAnyPlayerStunned()) break;
 
@@ -621,12 +615,20 @@ namespace My.Scripts._04_PlayLong
                         Vector2[] lanes = (i == 0) ? p1LongLanePositions : p2LongLanePositions;
                         players[i].Setup(i, lanes, config);
 
-                        // 플레이어 캐릭터의 색상을 API 컬러로 동기화함
                         if (GameManager.Instance)
                         {
                             ColorData colorData = (i == 0) ? GameManager.Instance.PlayerAColor : GameManager.Instance.PlayerBColor;
-                            Color targetColor = GameManager.Instance.GetColorFromData(colorData);
-                            players[i].SetCharacterColor(targetColor);
+                            Sprite targetSprite = GameManager.Instance.GetColorSprite(colorData);
+
+                            if (targetSprite)
+                            {
+                                players[i].SetCharacterSprite(targetSprite);
+                            }
+                            else
+                            {
+                                Color targetColor = GameManager.Instance.GetColorFromData(colorData);
+                                players[i].SetCharacterColor(targetColor);
+                            }
                         }
                     }
                 }
