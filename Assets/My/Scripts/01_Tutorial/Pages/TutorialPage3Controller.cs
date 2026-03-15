@@ -143,6 +143,15 @@ namespace My.Scripts._01_Tutorial.Pages
                 InputManager.Instance.OnPadUp -= HandlePadUp;
             }
         }
+        
+        private void OnDestroy()
+        {
+            if (InputManager.Instance)
+            {
+                InputManager.Instance.OnPadDown -= HandlePadDown;
+                InputManager.Instance.OnPadUp -= HandlePadUp;
+            }
+        }
 
         private void ApplyPlayerColors()
         {
