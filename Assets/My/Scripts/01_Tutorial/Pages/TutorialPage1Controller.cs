@@ -22,13 +22,13 @@ namespace My.Scripts._01_Tutorial.Pages
     {
         [Header("Page 1 UI")]
         [SerializeField] private Text descriptionText;
+        
         [Header("API Manager")]
         [SerializeField] private APIManager apiManager;
+        
         [Header("Polling Settings")]
-        [SerializeField] private float basePollInterval = 1.0f; 
-        [SerializeField] private float maxPollInterval = 10.0f; 
+        [SerializeField] private float pollInterval = 3.0f; 
 
-        private float _currentPollInterval; 
         private readonly float fadeTime = 0.5f; 
         private Coroutine _pollCoroutine; 
 
@@ -52,7 +52,6 @@ namespace My.Scripts._01_Tutorial.Pages
         {
             base.OnEnter(); 
 
-            // 이유: 단순 연출/대기 페이지이므로 글로벌 무입력 초기화 타이머를 강제로 정지시킴
             if (GameManager.Instance) GameManager.Instance.IsAutoProgressing = true;
 
             if (descriptionText) StartCoroutine(FadeInTextRoutine());
@@ -81,13 +80,12 @@ namespace My.Scripts._01_Tutorial.Pages
         private IEnumerator PollRoomStateRoutine()
         {
             float emptyUserStartTime = -1f; 
-            _currentPollInterval = basePollInterval;
 
             while (true)
             {
                 if (!GameManager.Instance || GameManager.Instance.ApiConfig == null)
                 {
-                    yield return CoroutineData.GetWaitForSeconds(_currentPollInterval);
+                    yield return CoroutineData.GetWaitForSeconds(pollInterval);
                     continue;
                 }
 
@@ -95,7 +93,6 @@ namespace My.Scripts._01_Tutorial.Pages
                 string userUrl = $"{GameManager.Instance.ApiConfig.GetCurrentRoomUserUrl}?code={GameConstants.Module.Code.ToLower()}";
 
                 bool isRoomEmpty = false;
-                bool isNetworkError = false;
 
                 using (UnityWebRequest stateReq = UnityWebRequest.Get(checkUrl))
                 {
@@ -105,83 +102,90 @@ namespace My.Scripts._01_Tutorial.Pages
                     if (stateReq.result == UnityWebRequest.Result.Success)
                     {
                         if (stateReq.downloadHandler.text.IndexOf(GameConstants.Api.StatusEmpty, StringComparison.OrdinalIgnoreCase) >= 0)
-                            isRoomEmpty = true;
-                    }
-                    else isNetworkError = true;
-                }
-
-                if (!isNetworkError && !isRoomEmpty)
-                {
-                    bool isUserEmpty = false;
-                    using (UnityWebRequest userReq = UnityWebRequest.Get(userUrl))
-                    {
-                        userReq.timeout = 10; 
-                        yield return userReq.SendWebRequest();
-
-                        if (userReq.result == UnityWebRequest.Result.Success)
                         {
-                            string rawText = userReq.downloadHandler.text;
-                            if (rawText.IndexOf(GameConstants.Api.StatusEmpty, StringComparison.OrdinalIgnoreCase) >= 0) isUserEmpty = true;
-                            else if (rawText.Contains(","))
-                            {
-                                _currentPollInterval = basePollInterval;
-                                emptyUserStartTime = -1f;
-
-                                string[] parts = rawText.Split(new[] { '\r', '\n', ',' }, StringSplitOptions.RemoveEmptyEntries);
-                                if (parts.Length >= 1)
-                                {
-                                    string uidLeft = parts[0].Trim();
-                                    if (parts.Length >= 2 && SessionManager.Instance)
-                                    {
-                                        SessionManager.Instance.PlayerAUid = uidLeft;
-                                        SessionManager.Instance.PlayerBUid = parts[1].Trim();
-                                    }
-
-                                    if (apiManager)
-                                    {   
-                                        bool fetchSuccess = false;
-                                        bool fetchFaulted = false;
-
-                                        yield return apiManager.FetchDataAsync(uidLeft)
-                                                               .Timeout(TimeSpan.FromSeconds(25))
-                                                               .ToCoroutine(
-                                                                    r => fetchSuccess = r, 
-                                                                    ex => { fetchFaulted = true; }
-                                                                );
-
-                                        if (fetchFaulted || !fetchSuccess || !SessionManager.Instance || SessionManager.Instance.CurrentUserId == 0)
-                                        {
-                                            yield return CoroutineData.GetWaitForSeconds(_currentPollInterval);
-                                            continue;
-                                        }
-                                    }
-                                    CompleteStep(); 
-                                    yield break; 
-                                }
-                            }
+                            isRoomEmpty = true;
                         }
-                        else isNetworkError = true;
                     }
-
-                    if (isUserEmpty)
-                    {
-                        if (emptyUserStartTime < 0f) emptyUserStartTime = Time.time;
-                        if (Time.time - emptyUserStartTime >= 15f) isRoomEmpty = true;
-                    }
-                }
-
-                if (isNetworkError)
-                {
-                    _currentPollInterval = Mathf.Min(_currentPollInterval * 2f, maxPollInterval);
                 }
 
                 if (isRoomEmpty)
                 {
+                    // 방 상태가 명시적으로 비어있음(Empty)으로 확인된 경우 1초 대기 후 즉시 타이틀로 복귀시킴
+                    yield return CoroutineData.GetWaitForSeconds(1.0f);
                     if (GameManager.Instance) GameManager.Instance.ReturnToTitle();
                     yield break;
                 }
 
-                yield return CoroutineData.GetWaitForSeconds(_currentPollInterval);
+                bool isUserEmpty = false;
+
+                using (UnityWebRequest userReq = UnityWebRequest.Get(userUrl))
+                {
+                    userReq.timeout = 10; 
+                    yield return userReq.SendWebRequest();
+
+                    if (userReq.result == UnityWebRequest.Result.Success)
+                    {
+                        string rawText = userReq.downloadHandler.text;
+                        if (rawText.IndexOf(GameConstants.Api.StatusEmpty, StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            isUserEmpty = true;
+                        }
+                        else if (rawText.Contains(","))
+                        {
+                            emptyUserStartTime = -1f;
+
+                            string[] parts = rawText.Split(new[] { '\r', '\n', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                            if (parts.Length >= 1)
+                            {
+                                string uidLeft = parts[0].Trim();
+                                if (parts.Length >= 2 && SessionManager.Instance)
+                                {
+                                    SessionManager.Instance.PlayerAUid = uidLeft;
+                                    SessionManager.Instance.PlayerBUid = parts[1].Trim();
+                                }
+
+                                if (apiManager)
+                                {   
+                                    bool fetchSuccess = false;
+                                    bool fetchFaulted = false;
+
+                                    yield return apiManager.FetchDataAsync(uidLeft)
+                                                           .Timeout(TimeSpan.FromSeconds(25))
+                                                           .ToCoroutine(
+                                                                r => fetchSuccess = r, 
+                                                                ex => { fetchFaulted = true; }
+                                                            );
+
+                                    if (fetchFaulted || !fetchSuccess || !SessionManager.Instance || SessionManager.Instance.CurrentUserId == 0)
+                                    {
+                                        yield return CoroutineData.GetWaitForSeconds(pollInterval);
+                                        continue;
+                                    }
+                                }
+                                CompleteStep(); 
+                                yield break; 
+                            }
+                        }
+                    }
+                }
+
+                if (isUserEmpty)
+                {
+                    if (emptyUserStartTime < 0f) emptyUserStartTime = Time.time;
+                    
+                    // 방 상태는 Using 이지만, 실제로 할당된 유저 정보가 없는 상태가 15초간 지속되면 타이틀로 복귀함
+                    if (Time.time - emptyUserStartTime >= 15f)
+                    {
+                        if (GameManager.Instance) GameManager.Instance.ReturnToTitle();
+                        yield break;
+                    }
+                }
+                else
+                {
+                    emptyUserStartTime = -1f;
+                }
+
+                yield return CoroutineData.GetWaitForSeconds(pollInterval);
             }
         }
 
