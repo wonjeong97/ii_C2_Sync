@@ -17,19 +17,19 @@ namespace My.Scripts._00_Title
     public class TitleManager : MonoBehaviour
     {
         [Header("Polling Settings")]
-        [SerializeField] private float basePollInterval = 1.0f; 
-        [SerializeField] private float maxPollInterval = 10.0f; 
+        [SerializeField] private float pollInterval = 3.0f; 
 
-        private float _currentPollInterval; 
         private bool _isTransitioning; 
         
         private Coroutine _soundCoroutine;
         private Coroutine _pollCoroutine;
 
-        /// <summary> 씬 진입 시 초기 상태를 구성하고 API 폴링을 시작합니다. </summary>
+        /// <summary> 
+        /// 씬 진입 시 초기 상태를 구성하고 API 폴링을 시작합니다. 
+        /// </summary>
         private void Start()
         {
-            // 모든 게임 세트가 끝나고 타이틀로 돌아왔을 때 누적된 하드웨어 통신 오류를 털어내고 아두이노를 새롭게 재부팅시켜 통신 안정성을 확보하기 위함
+            // 타이틀로 돌아왔을 때 누적된 하드웨어 통신 오류를 털어내고 아두이노를 새롭게 재부팅시켜 통신 안정성을 확보
             if (ArduinoManager.Instance)
             {
                 ArduinoManager.Instance.Reconnect();
@@ -48,13 +48,11 @@ namespace My.Scripts._00_Title
         /// </summary>
         private IEnumerator PollRoomStateRoutine()
         {
-            _currentPollInterval = basePollInterval;
-
             while (!_isTransitioning)
             {
                 if (!GameManager.Instance || GameManager.Instance.ApiConfig == null)
                 {
-                    yield return CoroutineData.GetWaitForSeconds(_currentPollInterval);
+                    yield return CoroutineData.GetWaitForSeconds(pollInterval);
                     continue;
                 }
 
@@ -65,17 +63,9 @@ namespace My.Scripts._00_Title
                     webRequest.timeout = 10;
                     
                     yield return webRequest.SendWebRequest();
-
-                    if (webRequest.result == UnityWebRequest.Result.ConnectionError || 
-                        webRequest.result == UnityWebRequest.Result.ProtocolError)
+                    
+                    if (webRequest.result == UnityWebRequest.Result.Success)
                     {
-                        _currentPollInterval = Mathf.Min(_currentPollInterval * 2f, maxPollInterval);
-                        Debug.LogWarning($"[TitleManager] 상태 체크 통신 실패: {webRequest.error}. 백오프 적용: {_currentPollInterval}초 후 재시도");
-                    }
-                    else
-                    {
-                        _currentPollInterval = basePollInterval;
-
                         string responseText = webRequest.downloadHandler.text;
                         
                         if (!string.IsNullOrEmpty(responseText) && responseText.IndexOf("USING", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -85,13 +75,19 @@ namespace My.Scripts._00_Title
                             yield break;
                         }
                     }
+                    else
+                    {
+                        Debug.LogWarning($"[TitleManager] 상태 체크 통신 실패: {webRequest.error}. 3초 후 재시도합니다.");
+                    }
                 }
 
-                yield return CoroutineData.GetWaitForSeconds(_currentPollInterval);
+                yield return CoroutineData.GetWaitForSeconds(pollInterval);
             }
         }
 
-        /// <summary> 관리자 테스트 및 비상용 수동 전환 단축키 입력 대기 </summary>
+        /// <summary> 
+        /// 관리자 테스트 및 비상용 수동 전환 단축키 입력 대기 
+        /// </summary>
         private void Update()
         {
             if (_isTransitioning) return; 
@@ -102,7 +98,9 @@ namespace My.Scripts._00_Title
             }
         }
 
-        /// <summary> 튜토리얼 씬으로 전환하며 중복 호출을 차단합니다. </summary>
+        /// <summary> 
+        /// 튜토리얼 씬으로 전환하며 중복 호출을 차단합니다. 
+        /// </summary>
         private void GoToTutorial()
         {
             if (_isTransitioning) return;
@@ -110,10 +108,7 @@ namespace My.Scripts._00_Title
 
             SceneManager.LoadScene(GameConstants.Scene.Tutorial);
         }
-
-        /// <summary> 
-        /// 이전 씬(엔딩)의 잔여 사운드와 겹치거나 갑작스러운 소음으로 인한 불쾌감을 막기 위해 일정 시간 대기 후 BGM을 재생합니다. 
-        /// </summary>
+        
         private IEnumerator StartMainBGM()
         {
             if (!SoundManager.Instance) yield break;
@@ -123,7 +118,9 @@ namespace My.Scripts._00_Title
             SoundManager.Instance.PlayBGM("MainBGM");
         }
 
-        /// <summary> 오브젝트 파괴 시 백그라운드 코루틴을 정리하여 메모리 누수를 방지합니다. </summary>
+        /// <summary> 
+        /// 오브젝트 파괴 시 백그라운드 코루틴을 정리하여 메모리 누수를 방지합니다. 
+        /// </summary>
         private void OnDestroy()
         {   
             StopAllCoroutines();
