@@ -54,6 +54,9 @@ namespace My.Scripts._04_PlayLong
         private Coroutine _textBlinkCoroutine;
         
         private int _lastActiveMarkerCount;
+        
+        private Color _defaultTimerColor = Color.white;
+        private bool _isTimerColorSaved;
 
         public void InitUI(float maxDistance)
         {
@@ -70,7 +73,15 @@ namespace My.Scripts._04_PlayLong
             }
 
             if (centerText) centerText.gameObject.SetActive(false);
-            if (timerText) timerText.text = "60";
+            
+            if (timerText) 
+            {
+                timerText.text = "60";
+                if (_isTimerColorSaved)
+                {
+                    timerText.color = _defaultTimerColor;
+                }
+            }
 
             if (p1LongGauge) p1LongGauge.ResetGauge();
             if (p2LongGauge) p2LongGauge.ResetGauge();
@@ -134,7 +145,7 @@ namespace My.Scripts._04_PlayLong
             
             if (activeCount > _lastActiveMarkerCount)
             {
-                SoundManager.Instance?.PlaySFX("달리기_3");
+                if (SoundManager.Instance) SoundManager.Instance.PlaySFX("달리기_3");
                 _lastActiveMarkerCount = activeCount;
             }
             
@@ -355,7 +366,26 @@ namespace My.Scripts._04_PlayLong
 
         public void UpdateTimer(float time)
         {
-            if (timerText) timerText.text = Mathf.CeilToInt(Mathf.Max(0f, time)).ToString();
+            if (timerText)
+            {
+                if (!_isTimerColorSaved)
+                {
+                    _defaultTimerColor = timerText.color;
+                    _isTimerColorSaved = true;
+                }
+
+                timerText.text = Mathf.CeilToInt(Mathf.Max(0f, time)).ToString();
+
+                // 이유: 남은 시간이 5초 이하일 때 유저에게 직관적인 경고 효과를 주기 위해 텍스트 색상을 빨간색으로 변경함
+                if (time <= 5f)
+                {
+                    timerText.color = Color.red;
+                }
+                else
+                {
+                    timerText.color = _defaultTimerColor;
+                }
+            }
         }
 
         private IEnumerator FadeTextAlpha(Text txt, float start, float end, float duration)

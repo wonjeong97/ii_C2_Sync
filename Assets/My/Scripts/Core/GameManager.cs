@@ -36,6 +36,9 @@ namespace My.Scripts.Core
 
         [Header("Debug / Testing")]
         public float lastPlayDistance = 100f;
+        [Tooltip("체크 시 서버 API 응답을 무시하고 강제로 아래의 UserType을 적용합니다.")]
+        public bool forceUserType = false; 
+        public UserType debugUserType = UserType.B; 
         
         private bool isAutoProgressing = false; 
 
@@ -73,7 +76,12 @@ namespace My.Scripts.Core
 
         public UserType currentUserType 
         {
-            get => SessionManager.Instance ? SessionManager.Instance.CurrentUserType : UserType.A;
+            get 
+            {
+                // 이유: 에디터에서 특정 유형(B유형 등)을 쉽게 디버깅 및 테스트하기 위해 강제 오버라이드 기능을 추가함
+                if (forceUserType) return debugUserType;
+                return SessionManager.Instance ? SessionManager.Instance.CurrentUserType : UserType.A;
+            }
             set { if (SessionManager.Instance) SessionManager.Instance.CurrentUserType = value; }
         }
 
@@ -446,7 +454,6 @@ namespace My.Scripts.Core
             string url = $"{ApiConfig.CheckRoomStateUrl}?code=c2";
             int maxRetries = 10;
 
-            // 이유: 일시적 네트워크 장애 시 방 상태 조회 실패를 막기 위해 최대 10회(1초 대기) 재시도함.
             for (int i = 0; i < maxRetries; i++)
             {
                 using (UnityWebRequest req = UnityWebRequest.Get(url))
@@ -673,7 +680,6 @@ namespace My.Scripts.Core
 
         private IEnumerator QuitRoutine()
         {
-            // 프로그램 강제 종료 시퀀스이므로 무한 지연을 막기 위해 10회 재시도를 생략하고 즉시 1회만 호출 후 종료시킴
             if (CurrentUserId != 0 && ApiConfig != null)
             {   
                 string resetUrl = $"{ApiConfig.ResetStartUrl}?idx_user={CurrentUserId}&code=c2";
@@ -705,7 +711,6 @@ namespace My.Scripts.Core
         {
             if (_isQuitSafe) return; 
 
-            // 에디터 강제 종료 시에도 지연을 최소화하기 위해 재시도 루프 없이 즉시 1회만 처리함
             if (CurrentUserId != 0 && ApiConfig != null)
             {   
                 string resetUrl = $"{ApiConfig.ResetStartUrl}?idx_user={CurrentUserId}&code=c2";
