@@ -236,9 +236,10 @@ namespace My.Scripts._03_PlayShort
                     targetQueP1.text = texts[0];
                 }
                 
+                // 이유: Page2에 출력할 때 구분자가 없더라도 줄바꿈(\n)을 공백으로 치환하지 않고 원래 줄바꿈을 유지하도록 변경함
                 if (targetQueP2) 
                 {
-                    targetQueP2.text = texts.Length > 1 ? texts[1] : texts[0].Replace("\n", " ");
+                    targetQueP2.text = texts.Length > 1 ? texts[1] : texts[0];
                 }
             }
             else
@@ -354,7 +355,6 @@ namespace My.Scripts._03_PlayShort
             
             if (targetImages == null || targetImages.Length == 0) return false;
             
-            // 이유: 기획 변경에 따라 총 5번만 밟아도 게이지가 모두 차도록 1회 밟을 때마다 1칸(1.0f)씩 채움
             float totalFillNeeded = stepCount * 1.0f;
             
             for (int i = targetImages.Length - 1; i >= 0; i--)
@@ -365,7 +365,6 @@ namespace My.Scripts._03_PlayShort
                 totalFillNeeded -= 1.0f;
             }
             
-            // 이유: 10회가 아닌 5회 입력 시 선택지 확정 및 시스템으로 true 반환
             if (stepCount >= 5)
             {
                 if (targetIcon) targetIcon.color = activeColor;
