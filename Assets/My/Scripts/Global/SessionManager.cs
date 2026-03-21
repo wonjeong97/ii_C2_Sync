@@ -5,7 +5,10 @@ namespace My.Scripts.Global
 {
     public enum UserType
     {
-        A, B, C, D, E, F
+        A1, A2, A3, A4, A5, A6,
+        B1, B2, B3, B4, B5, B6,
+        C1, C2, C3, C4, C5, C6,
+        D1, D2, D3, D4, D5, D6
     }
 
     /// <summary>
@@ -27,7 +30,7 @@ namespace My.Scripts.Global
         public ColorData PlayerAColor { get; set; } = ColorData.NotSet;
         public ColorData PlayerBColor { get; set; } = ColorData.NotSet;
 
-        public UserType CurrentUserType { get; set; } = UserType.A;
+        public UserType CurrentUserType { get; set; } = UserType.A1;
         public string CurrentModuleCode { get; set; } = GameConstants.Module.Code; // "C2"
         public string Cartridge { get; set; } = string.Empty;
         
@@ -38,7 +41,6 @@ namespace My.Scripts.Global
         public int PieceC1 { get; set; } public int PieceC2 { get; set; } public int PieceC3 { get; set; }
         public int PieceD1 { get; set; } public int PieceD2 { get; set; } public int PieceD3 { get; set; }
         
-        // [수정됨] C2 콘텐츠이므로, 실시간 중복 누적을 방지하기 위해 PieceC2를 합산에서 제외합니다.
         public int TotalPieces => PieceA1 + PieceA2 + PieceA3 + 
                                   PieceB1 + PieceB2 + PieceB3 + 
                                   PieceC1 + PieceC3 + 
@@ -70,7 +72,7 @@ namespace My.Scripts.Global
             PlayerAColor = ColorData.NotSet;
             PlayerBColor = ColorData.NotSet;
 
-            CurrentUserType = UserType.A;
+            CurrentUserType = UserType.A1;
             CurrentModuleCode = GameConstants.Module.Code;
             Cartridge = string.Empty;
             

@@ -17,11 +17,9 @@ namespace My.Scripts.Core.Data
         public string updatePiece;
         public string checkRoomState;
         public string getCurrentRoomUser;
-        public string uploadFile;
         public string exitRoom;
         public string resetStart;
-        public string getCartridgeContent;
-
+        
         /// <summary> 
         /// 슬래시 중복이나 누락을 방지하며 완전한 URL을 구성합니다.
         /// 데이터가 비어있을 경우를 대비해 하드코딩된 기본 경로(Fallback)를 적용합니다.
@@ -58,16 +56,11 @@ namespace My.Scripts.Core.Data
         /// <summary> 룸 내 진입 중인 유저 확인용 URL </summary>
         public string GetCurrentRoomUserUrl => BuildUrl(baseUrl, getCurrentRoomUser, "/getCurrentRoomUser.cfm");
         
-        /// <summary> 이미지 및 파일 서버 업로드용 URL </summary>
-        public string UploadFileUrl => BuildUrl(baseUrl, uploadFile, "/uploadFile.cfm");
-        
         /// <summary> 세션 종료 및 퇴장 처리용 URL </summary>
         public string ExitRoomUrl => BuildUrl(baseUrl, exitRoom, "/exitRoom.cfm");
         
         /// <summary> 룸 상태 초기화용 URL </summary>
         public string ResetStartUrl => BuildUrl(baseUrl, resetStart, "/resetStart.cfm");
         
-        /// <summary> 카트리지별 콘텐츠 클리어 상태 조회용 URL </summary>
-        public string GetCartridgeContentUrl => BuildUrl(baseUrl, getCartridgeContent, "/getCartridgeContent.cfm");
     }
 }

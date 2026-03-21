@@ -38,7 +38,7 @@ namespace My.Scripts.Core
         public float lastPlayDistance = 100f;
         [Tooltip("체크 시 서버 API 응답을 무시하고 강제로 아래의 UserType을 적용합니다.")]
         public bool forceUserType = false; 
-        public UserType debugUserType = UserType.B; 
+        public UserType debugUserType = UserType.A1; 
         
         private bool isAutoProgressing = false; 
 
@@ -62,7 +62,6 @@ namespace My.Scripts.Core
         
         public ApiSettings ApiConfig { get; set; } 
         
-        // --- Session Data Proxy ---
         public int CurrentUserId => SessionManager.Instance ? SessionManager.Instance.CurrentUserId : 0;
         public string CurrentLanguage => SessionManager.Instance ? SessionManager.Instance.CurrentLanguage : "ko";
         public string Cartridge => SessionManager.Instance ? SessionManager.Instance.Cartridge : "";
@@ -78,9 +77,8 @@ namespace My.Scripts.Core
         {
             get 
             {
-                // 이유: 에디터에서 특정 유형(B유형 등)을 쉽게 디버깅 및 테스트하기 위해 강제 오버라이드 기능을 추가함
                 if (forceUserType) return debugUserType;
-                return SessionManager.Instance ? SessionManager.Instance.CurrentUserType : UserType.A;
+                return SessionManager.Instance ? SessionManager.Instance.CurrentUserType : UserType.A1;
             }
             set { if (SessionManager.Instance) SessionManager.Instance.CurrentUserType = value; }
         }
@@ -92,7 +90,6 @@ namespace My.Scripts.Core
         }
         
         public int TotalPieces => SessionManager.Instance ? SessionManager.Instance.TotalPieces : 0;
-        // -----------------------------
 
         public event Action OnUserDataUpdated;
         
@@ -227,17 +224,20 @@ namespace My.Scripts.Core
         {
             if (questionNumber <= 0) return ""; 
 
-            switch (currentUserType)
+            string typeStr = currentUserType.ToString();
+            char relationChar = typeStr.Length > 1 ? typeStr[1] : '1';
+
+            switch (relationChar)
             {
-                case UserType.A: return "_A"; 
-                case UserType.B: return (questionNumber == 4) ? "_B" : "_A";
-                case UserType.C:
+                case '1': return "_A"; 
+                case '2': return (questionNumber == 4) ? "_B" : "_A";
+                case '3':
                     if (questionNumber == 4 || questionNumber == 10 || questionNumber == 11 || 
                         questionNumber == 13 || questionNumber == 14 || questionNumber == 15) return "_C";
                     return "_A";
-                case UserType.D: return "_D"; 
-                case UserType.E: return "_E"; 
-                case UserType.F: return "_F";
+                case '4': return "_D"; 
+                case '5': return "_E"; 
+                case '6': return "_F";
                 default: return "_A";
             }
         }
@@ -435,19 +435,16 @@ namespace My.Scripts.Core
 
             ChangeScene(GameConstants.Scene.Title);
         }
-        
-        #region API 호출 로직
 
-        /// <summary>
-        /// 서버의 현재 방 상태를 10회 재시도 정책으로 조회합니다.
-        /// </summary>
-        /// <param name="callback">통신 결과 문자열을 반환하는 콜백</param>
-        /// <returns>코루틴 IEnumerator</returns>
         public IEnumerator CheckRoomStateRoutine(Action<string> callback)
         {
+#if UNITY_EDITOR
+            callback?.Invoke("USING");
+            yield break;
+#endif
             if (ApiConfig == null)
             {
-                if (callback != null) callback("EMPTY");
+                callback?.Invoke("EMPTY");
                 yield break;
             }
 
@@ -463,7 +460,7 @@ namespace My.Scripts.Core
 
                     if (req.result == UnityWebRequest.Result.Success)
                     {
-                        if (callback != null) callback(req.downloadHandler.text.Trim());
+                        callback?.Invoke(req.downloadHandler.text.Trim());
                         yield break;
                     }
                     
@@ -472,19 +469,18 @@ namespace My.Scripts.Core
                 }
             }
 
-            if (callback != null) callback("EMPTY");
+            callback?.Invoke("EMPTY");
         }
 
-        /// <summary>
-        /// 현재 방에 접속한 유저 목록을 10회 재시도 정책으로 조회합니다.
-        /// </summary>
-        /// <param name="callback">통신 결과 문자열을 반환하는 콜백</param>
-        /// <returns>코루틴 IEnumerator</returns>
         public IEnumerator GetCurrentRoomUserRoutine(Action<string> callback)
         {
+#if UNITY_EDITOR
+            callback?.Invoke("TEST_UID_A,TEST_UID_B");
+            yield break;
+#endif
             if (ApiConfig == null)
             {
-                if (callback != null) callback("EMPTY");
+                callback?.Invoke("EMPTY");
                 yield break;
             }
 
@@ -500,7 +496,7 @@ namespace My.Scripts.Core
 
                     if (req.result == UnityWebRequest.Result.Success)
                     {
-                        if (callback != null) callback(req.downloadHandler.text.Trim());
+                        callback?.Invoke(req.downloadHandler.text.Trim());
                         yield break;
                     }
                     
@@ -509,14 +505,16 @@ namespace My.Scripts.Core
                 }
             }
             
-            if (callback != null) callback("EMPTY");
+            callback?.Invoke("EMPTY");
         }
 
-        /// <summary>
-        /// 게임 초기화(리셋) 시작을 서버에 알립니다.
-        /// </summary>
         public void SendResetStartAPI()
         {
+#if UNITY_EDITOR
+            // 이유: 에디터 테스트 중 실수로 실제 DB 룸을 리셋시키는 현상을 방지함.
+            Debug.Log("[API - Editor] 룸 리셋 API 전송 생략");
+            return;
+#endif
             if (CurrentUserId == 0 || ApiConfig == null) return;
             StartCoroutine(ResetStartRoutine());
         }
@@ -541,11 +539,13 @@ namespace My.Scripts.Core
             }
         }
 
-        /// <summary>
-        /// 현재 방 퇴장을 서버에 알립니다.
-        /// </summary>
         public void SendExitRoomAPI()
         {
+#if UNITY_EDITOR
+            // 이유: 에디터 테스트 중 실제 유저의 퇴장 상태를 오염시키지 않기 위함.
+            Debug.Log("[API - Editor] 룸 퇴장 API 전송 생략");
+            return;
+#endif
             if (CurrentUserId == 0 || ApiConfig == null) return;
             StartCoroutine(ExitRoomRoutine());
         }
@@ -570,11 +570,13 @@ namespace My.Scripts.Core
             }
         }
 
-        /// <summary>
-        /// 플레이 종료 시각 갱신을 서버에 요청합니다.
-        /// </summary>
         public void SendTimeUpdateAPI()
         {
+#if UNITY_EDITOR
+            // 이유: 가짜 유저의 종료 시간이 DB에 삽입되는 것을 방지함.
+            Debug.Log("[API - Editor] 게임 종료 시간 업데이트 API 전송 생략");
+            return;
+#endif
             if (CurrentUserId == 0 || ApiConfig == null) return;
             StartCoroutine(TimeUpdateRoutine());
         }
@@ -599,14 +601,13 @@ namespace My.Scripts.Core
             }
         }
 
-        /// <summary>
-        /// 선택지 문항별 유저의 응답(가치관) 값을 서버에 전송합니다.
-        /// </summary>
-        /// <param name="qNo">문항 번호</param>
-        /// <param name="side">좌/우 유저 식별 문자열</param>
-        /// <param name="value">선택한 값</param>
         public void SendValueUpdateAPI(int qNo, string side, int value)
         {
+#if UNITY_EDITOR
+            // 이유: 가치관 테스트 결과 더미 데이터가 라이브 DB에 업로드되는 것을 방지함.
+            Debug.Log($"[API - Editor] 가치관 데이터 전송 생략 (문항:{qNo}, 방향:{side}, 응답:{value})");
+            return;
+#endif
             if (CurrentUserId == 0 || ApiConfig == null) return;
             StartCoroutine(ValueUpdateRoutine(qNo, side, value));
         }
@@ -632,12 +633,13 @@ namespace My.Scripts.Core
             }
         }
 
-        /// <summary>
-        /// 조각 획득 이벤트를 서버에 전송하여 상태를 동기화합니다.
-        /// </summary>
-        /// <param name="value">획득한 조각 상태 값</param>
         public void SendPieceUpdateAPI(int value)
         {
+#if UNITY_EDITOR
+            // 이유: 더미 마음 조각 데이터가 DB에 업로드되어 다른 콘텐츠 진엔딩 판별에 오류를 주는 것을 방지함.
+            Debug.Log($"[API - Editor] 마음 조각 개수 갱신 API 전송 생략 (추가 획득량:{value})");
+            return;
+#endif
             if (CurrentUserId == 0 || ApiConfig == null) return;
             StartCoroutine(PieceUpdateRoutine(value));
         }
@@ -662,10 +664,6 @@ namespace My.Scripts.Core
             }
         }
 
-        #endregion
-        
-        #region 프로그램 강제 종료 시 예외 처리
-
         private bool WantsToQuit()
         {
             if (_isQuitSafe) return true;
@@ -680,6 +678,7 @@ namespace My.Scripts.Core
 
         private IEnumerator QuitRoutine()
         {
+#if !UNITY_EDITOR
             if (CurrentUserId != 0 && ApiConfig != null)
             {   
                 string resetUrl = $"{ApiConfig.ResetStartUrl}?idx_user={CurrentUserId}&code=c2";
@@ -696,7 +695,7 @@ namespace My.Scripts.Core
                     yield return req.SendWebRequest();
                 }
             }
-
+#endif
             _isQuitSafe = true; 
             
 #if UNITY_EDITOR
@@ -704,41 +703,16 @@ namespace My.Scripts.Core
 #else
             Application.Quit(); 
 #endif
+            yield break;
         }
 
 #if UNITY_EDITOR
         private void OnApplicationQuit()
         {
+            // 에디터에서는 강제 종료 시 API 통신 생략
             if (_isQuitSafe) return; 
-
-            if (CurrentUserId != 0 && ApiConfig != null)
-            {   
-                string resetUrl = $"{ApiConfig.ResetStartUrl}?idx_user={CurrentUserId}&code=c2";
-                using (UnityWebRequest req = UnityWebRequest.Get(resetUrl))
-                {   
-                    req.timeout = 2;
-                    UnityWebRequestAsyncOperation op = req.SendWebRequest();
-                    float deadline = Time.realtimeSinceStartup + 2.0f;
-                    while (!op.isDone && Time.realtimeSinceStartup < deadline)
-                    {
-                        System.Threading.Thread.Sleep(10);
-                    }
-                }
-
-                string exitUrl = $"{ApiConfig.ExitRoomUrl}?code=c2&idx_user={CurrentUserId}";
-                using (UnityWebRequest req = UnityWebRequest.Get(exitUrl))
-                {   
-                    req.timeout = 2;
-                    UnityWebRequestAsyncOperation op = req.SendWebRequest();
-                    float deadline = Time.realtimeSinceStartup + 2.0f;
-                    while (!op.isDone && Time.realtimeSinceStartup < deadline)
-                    {
-                        System.Threading.Thread.Sleep(10);
-                    }
-                }
-            }
+            _isQuitSafe = true;
         }
 #endif
-        #endregion
     }
 }

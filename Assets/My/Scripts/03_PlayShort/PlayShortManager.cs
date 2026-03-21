@@ -75,7 +75,6 @@ namespace My.Scripts._03_PlayShort
 
         private float _lastHitSoundTime = -1f;
 
-        // 이유: 카운트다운 도중 장애물이 미리 다가오는 것을 막기 위해 장애물 매니저에 현재 게임 시작 여부를 노출함
         public bool IsGameStarted => _gameStarted;
 
         private void Awake()
@@ -91,7 +90,9 @@ namespace My.Scripts._03_PlayShort
             if (GameManager.Instance)
             {
                 string typeStr = GameManager.Instance.currentUserType.ToString(); 
-                string questionJsonPath = $"JSON/PlayShort_{typeStr}";
+                char cartridgeChar = typeStr.Length > 0 ? typeStr[0] : 'A';
+                
+                string questionJsonPath = $"JSON/Cartridge_{cartridgeChar}/PlayShort_{typeStr}";
                 
                 PlayShortQuestionData qData = JsonLoader.Load<PlayShortQuestionData>(questionJsonPath);
                 
@@ -102,7 +103,19 @@ namespace My.Scripts._03_PlayShort
                 }
                 else
                 {
-                    Debug.LogWarning($"[PlayShortManager] {questionJsonPath} 파일을 찾을 수 없어 기본(PlayShort.json) 질문을 사용합니다.");
+                    // 지정된 관계의 질문 파일이 누락되거나 오류가 발생할 경우, 에러 방지를 위해 해당 카트리지의 1번(기본) 파일을 우선적으로 로드함
+                    string fallbackPath = $"JSON/Cartridge_{cartridgeChar}/PlayShort_{cartridgeChar}1";
+                    PlayShortQuestionData fallbackData = JsonLoader.Load<PlayShortQuestionData>(fallbackPath);
+                    
+                    if (fallbackData != null && fallbackData.questions != null)
+                    {
+                        _data.questions = fallbackData.questions;
+                        Debug.LogWarning($"[PlayShortManager] {questionJsonPath} 로드 실패. 카트리지 기본값({fallbackPath})을 사용합니다.");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[PlayShortManager] 카트리지 기본값({fallbackPath}) 로드 실패. 공통 기본 질문을 사용합니다.");
+                    }
                 }
             }
 

@@ -79,6 +79,21 @@ namespace My.Scripts._01_Tutorial.Pages
 
         private IEnumerator PollRoomStateRoutine()
         {
+#if UNITY_EDITOR
+            // 이유: 에디터에서는 실제 유저의 매칭을 기다리는 API 폴링을 생략하고, 즉시 가상 데이터 패치를 호출하여 진행함.
+            Debug.Log("[TutorialPage1] 에디터 모드: 유저 할당 대기를 생략합니다.");
+            yield return CoroutineData.GetWaitForSeconds(1.0f);
+            
+            if (apiManager)
+            {
+                bool fetchSuccess = false;
+                bool fetchFaulted = false;
+                yield return apiManager.FetchDataAsync("EDITOR_TEST").ToCoroutine(r => fetchSuccess = r, ex => { fetchFaulted = true; });
+            }
+            
+            CompleteStep();
+            yield break;
+#endif
             float emptyUserStartTime = -1f; 
 
             while (true)
@@ -110,7 +125,6 @@ namespace My.Scripts._01_Tutorial.Pages
 
                 if (isRoomEmpty)
                 {
-                    // 방 상태가 명시적으로 비어있음(Empty)으로 확인된 경우 1초 대기 후 즉시 타이틀로 복귀시킴
                     yield return CoroutineData.GetWaitForSeconds(1.0f);
                     if (GameManager.Instance) GameManager.Instance.ReturnToTitle();
                     yield break;
@@ -173,7 +187,6 @@ namespace My.Scripts._01_Tutorial.Pages
                 {
                     if (emptyUserStartTime < 0f) emptyUserStartTime = Time.time;
                     
-                    // 방 상태는 Using 이지만, 실제로 할당된 유저 정보가 없는 상태가 15초간 지속되면 타이틀로 복귀함
                     if (Time.time - emptyUserStartTime >= 15f)
                     {
                         if (GameManager.Instance) GameManager.Instance.ReturnToTitle();
