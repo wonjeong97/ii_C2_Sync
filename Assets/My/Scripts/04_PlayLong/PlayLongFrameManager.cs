@@ -4,15 +4,12 @@ using My.Scripts.Environment;
 
 namespace My.Scripts._04_PlayLong
 {
-    /// <summary>
-    /// PlayLong 모드 전용 프레임 매니저.
-    /// 생성된 프레임이 카메라 뒤로 넘어가면 리사이클링 대신 파괴 처리함.
-    /// </summary>
     public class PlayLongFrameManager : MonoBehaviour
     {
         [Header("Prefab Settings")]
         [SerializeField] private GameObject framePrefab;
-        [SerializeField] private int poolSize = 25;
+        [Tooltip("최적화를 위해 소수의 프레임만 무한 순환시킵니다.")]
+        [SerializeField] private int poolSize = 5;
 
         [Header("Path Settings (Fixed Height)")]
         public Vector3 pathStart = new Vector3(0f, 0.6f, 1.531f);
@@ -50,7 +47,7 @@ namespace My.Scripts._04_PlayLong
         {
             for (int i = 0; i < poolSize; i++)
             {
-                if (framePrefab == null) continue;
+                if (!framePrefab) continue;
 
                 GameObject obj = Instantiate(framePrefab, transform);
                 float targetVirtualMeters = (i + 1) * frameIntervalMeters;
@@ -60,22 +57,17 @@ namespace My.Scripts._04_PlayLong
                 spawnPos.y = pathStart.y;
                 obj.transform.position = spawnPos;
 
-                FrameData data = new FrameData
-                {
-                    gameObject = obj,
-                    transform = obj.transform,
-                    label = obj.GetComponent<FrameDistanceLabel>(),
-                    currentMeters = targetVirtualMeters
-                };
+                FrameData data = new FrameData();
+                data.gameObject = obj;
+                data.transform = obj.transform;
+                data.label = obj.GetComponent<FrameDistanceLabel>();
+                data.currentMeters = targetVirtualMeters;
 
                 _frames.Add(data);
                 UpdateFrameLabel(data);
             }
         }
 
-        /// <summary>
-        /// 프레임을 이동시키고 기준점보다 뒤로 가면 리스트에서 제거 및 파괴함.
-        /// </summary>
         public void MoveFrames(float movedMeters)
         {
             if (_frames.Count == 0) return;
@@ -83,23 +75,30 @@ namespace My.Scripts._04_PlayLong
             Vector3 displacement = _moveDirection * (movedMeters * _worldPerVirtualMeter);
             Vector3 forwardDir = _segmentVector.normalized;
 
-            // 리스트를 역순으로 순회하여 파괴 시 인덱스 꼬임 방지
+            float totalVirtualDistance = frameIntervalMeters * _frames.Count;
+            Vector3 totalTrackOffset = _segmentVector.normalized * (totalVirtualDistance * _worldPerVirtualMeter);
+
             for (int i = _frames.Count - 1; i >= 0; i--)
             {
-                var frame = _frames[i];
+                FrameData frame = _frames[i];
                 frame.transform.position += displacement;
                 frame.currentMeters += movedMeters;
 
-                // 리사이클링 로직 대신 파괴 로직 적용
                 if (movedMeters > 0)
                 {
                     float distFromStart = Vector3.Dot(frame.transform.position - pathStart, forwardDir);
                     
-                    // 기준점(0M)보다 프레임 간격만큼 뒤로 가면 삭제
+                    // 이유: 카메라 뒤로 넘어간 프레임을 파괴(Destroy)하지 않고 트랙 맨 앞으로 위치시켜 무한 재사용(Recycling)함
                     if (distFromStart < -frameIntervalMeters * _worldPerVirtualMeter)
                     {
-                        Destroy(frame.gameObject);
-                        _frames.RemoveAt(i);
+                        float nextMeters = frame.currentMeters + totalVirtualDistance;
+                        
+                        if (nextMeters <= finishDistance)
+                        {
+                            frame.transform.position += totalTrackOffset;
+                            frame.currentMeters = nextMeters;
+                            UpdateFrameLabel(frame);
+                        }
                     }
                 }
             }
@@ -120,7 +119,6 @@ namespace My.Scripts._04_PlayLong
 
         public void ResetFrames()
         {
-            // 리스트에 남은 프레임들만 갱신
             for (int i = _frames.Count - 1; i >= 0; i--)
             {
                 if (_frames[i] != null) UpdateFrameLabel(_frames[i]);
@@ -129,10 +127,9 @@ namespace My.Scripts._04_PlayLong
 
         public void RebuildFramesFromZero()
         {
-            foreach (var frame in _frames)
+            foreach (FrameData frame in _frames)
             {
-                if (frame != null && frame.gameObject != null)
-                    Destroy(frame.gameObject);
+                if (frame != null && frame.gameObject) Destroy(frame.gameObject);
             }
             _frames.Clear();
             CreateAndPlaceFrames();

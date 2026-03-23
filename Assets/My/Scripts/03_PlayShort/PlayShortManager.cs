@@ -103,7 +103,6 @@ namespace My.Scripts._03_PlayShort
                 }
                 else
                 {
-                    // 지정된 관계의 질문 파일이 누락되거나 오류가 발생할 경우, 에러 방지를 위해 해당 카트리지의 1번(기본) 파일을 우선적으로 로드함
                     string fallbackPath = $"JSON/Cartridge_{cartridgeChar}/PlayShort_{cartridgeChar}1";
                     PlayShortQuestionData fallbackData = JsonLoader.Load<PlayShortQuestionData>(fallbackPath);
                     
@@ -388,6 +387,9 @@ namespace My.Scripts._03_PlayShort
             {
                 _playerFinished[playerIdx] = true;
                 _isInputBlocked[playerIdx] = false;
+
+                // 이유: 결승선을 통과했으므로 더 이상 날아오는 장애물이 시야를 방해하지 않도록 지워줌
+                if (env) env.ClearObstaclesForPlayer(playerIdx, 0.5f);
 
                 if (players[playerIdx])
                 {
