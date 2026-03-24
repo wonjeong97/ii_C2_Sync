@@ -19,7 +19,7 @@
     "font9": "Fonts/Freesentation-9Black.ttf"
   },
   "sounds": [
-    {"key": "MainBGM", "clipPath": "Sound/Anous_Sound_C2장애물 달리기_공간BGM_1.mp3", "volume": 0.7},
+    {"key": "MainBGM", "clipPath": "Sound/Anous_Sound_C2장애물 달리기_공간BGM_1.mp3", "volume": 0.5},
     {"key": "달리기_1", "clipPath": "Sound/Anous_Sound_장애물 달리기_1.mp3", "volume": 1.0},
     {"key": "달리기_2", "clipPath": "Sound/Anous_Sound_장애물 달리기_2.mp3", "volume": 1.0},
     {"key": "달리기_3", "clipPath": "Sound/Anous_Sound_장애물 달리기_3.mp3", "volume": 1.0},
