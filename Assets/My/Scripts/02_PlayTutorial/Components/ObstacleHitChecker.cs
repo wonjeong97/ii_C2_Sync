@@ -26,6 +26,7 @@ namespace My.Scripts._02_PlayTutorial.Components
         // 연속 충돌 검사(CCD)를 위한 이전 위치 저장
         private Vector3 _prevPos;
         private bool _hasPrevPos;
+        private readonly RaycastHit[] _ccdHits = new RaycastHit[8];
 
         private void Awake()
         {
@@ -65,9 +66,16 @@ namespace My.Scripts._02_PlayTutorial.Components
             // 이유: 속도가 최고조일 때 장애물이 단 1프레임 만에 판정선을 건너뛰는 터널링을 막기 위해 궤적을 훑어 충돌을 검사함
             if (dist > 0.001f)
             {
-                RaycastHit[] hits = Physics.RaycastAll(_prevPos, dir.normalized, dist, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide);
-                foreach (var hit in hits)
-                {
+                int hitCount = Physics.RaycastNonAlloc(
+                    _prevPos,
+                    dir.normalized,
+                    _ccdHits,
+                    dist,
+                    Physics.DefaultRaycastLayers,
+                    QueryTriggerInteraction.Collide);
+                for (int i = 0; i < hitCount; i++)
+                {   
+                    RaycastHit hit = _ccdHits[i];
                     if (hit.collider.name.Contains("Left") || hit.collider.name.Contains("Center") ||
                         hit.collider.name.Contains("Right") || hit.collider.CompareTag("Player"))
                     {
@@ -107,7 +115,7 @@ namespace My.Scripts._02_PlayTutorial.Components
             int obstacleLaneConverted = _obstacleLaneIndex + 1; 
             bool isHit = false;
 
-            if (PlayLongManager.Instance != null)
+            if (PlayLongManager.Instance)
             {
                 int p1Lane = PlayLongManager.Instance.GetCurrentLane(0); 
                 int p2Lane = PlayLongManager.Instance.GetCurrentLane(1); 
@@ -128,11 +136,11 @@ namespace My.Scripts._02_PlayTutorial.Components
             
                     PlayLongManager.Instance.OnBothPlayersHit();
             
-                    if (_animator != null) _animator.SetTrigger(Hit); 
+                    if (_animator) _animator.SetTrigger(Hit); 
                     StartCoroutine(DestroyRoutine());
                 }
             }
-            else if (PlayTutorialManager.Instance != null)
+            else if (PlayTutorialManager.Instance)
             {
                 int playerCurrentLane = PlayTutorialManager.Instance.GetCurrentLane(_ownerPlayerIdx); 
                 if (playerCurrentLane == obstacleLaneConverted)
@@ -142,7 +150,7 @@ namespace My.Scripts._02_PlayTutorial.Components
                     PlayTutorialManager.Instance.OnPlayerHit(_ownerPlayerIdx);
                 }
             }
-            else if (PlayShortManager.Instance != null)
+            else if (PlayShortManager.Instance)
             {
                 int playerCurrentLane = PlayShortManager.Instance.GetCurrentLane(_ownerPlayerIdx); 
                 if (playerCurrentLane == obstacleLaneConverted)
@@ -155,7 +163,7 @@ namespace My.Scripts._02_PlayTutorial.Components
 
             if (isHit)
             {       
-                if (_animator != null) _animator.SetTrigger(Hit);
+                if (_animator) _animator.SetTrigger(Hit);
                 if (Time.time - _lastSoundPlayTime > 0.1f)
                 {
                     _lastSoundPlayTime = Time.time;

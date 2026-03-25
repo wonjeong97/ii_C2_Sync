@@ -601,6 +601,7 @@ namespace My.Scripts.Core
             }
         }
 
+        /// <summary> PlayShort 등의 질문에 대한 플레이어의 응답 값을 API 서버에 전송합니다. </summary>
         public void SendValueUpdateAPI(int qNo, string side, int value)
         {
 #if UNITY_EDITOR
@@ -608,27 +609,38 @@ namespace My.Scripts.Core
             Debug.Log($"[API - Editor] 가치관 데이터 전송 생략 (문항:{qNo}, 방향:{side}, 응답:{value})");
             return;
 #endif
-            if (CurrentUserId == 0 || ApiConfig == null) return;
+            if (CurrentUserId == 0 || ApiConfig == null)
+            {
+                Debug.LogWarning("[GameManager] CurrentUserId가 0이거나 ApiConfig가 없습니다. 가치관 데이터 전송 실패.");
+                return;
+            }
             StartCoroutine(ValueUpdateRoutine(qNo, side, value));
         }
 
+        /// <summary>
+        /// 답변을 서버에 업로드하는 실질적인 통신 코루틴.
+        /// 통신이 불안정할 경우 데이터 유실을 방지하기 위해 타임아웃 10초, 실패 시 1초 대기 후 최대 10회까지 재시도함.
+        /// </summary>
         private IEnumerator ValueUpdateRoutine(int qNo, string side, int value)
         {
             string safeSide = Uri.EscapeDataString(side ?? string.Empty);
             string url = $"{ApiConfig.UpdateValueUrl}?idx_user={CurrentUserId}&q_no={qNo}&side={safeSide}&code=c2&value={value}";
-            int maxRetries = 10;
+            int maxRetries = 10; // 이유: 일시적인 네트워크 장애를 극복하기 위한 최대 재시도 횟수 지정
 
             for (int i = 0; i < maxRetries; i++)
             {
                 using (UnityWebRequest req = UnityWebRequest.Get(url))
                 {
-                    req.timeout = 10;
+                    req.timeout = 10; // 이유: 서버 지연 시 무한 대기를 막기 위한 10초 타임아웃 설정
                     yield return req.SendWebRequest();
                     
+                    // 이유: 정상적으로 데이터가 전송되었다면 즉시 코루틴을 종료함
                     if (req.result == UnityWebRequest.Result.Success) yield break;
                     
                     Debug.LogWarning($"[API] ValueUpdate 통신 에러 ({i + 1}/{maxRetries}): {req.error}");
-                    if (i < maxRetries - 1) yield return new WaitForSeconds(1.0f);
+                    
+                    // 이유: 재시도 전 서버 및 네트워크 부하를 줄이기 위해 1초간 대기함
+                    if (i < maxRetries - 1) yield return CoroutineData.GetWaitForSeconds(1.0f);
                 }
             }
         }
