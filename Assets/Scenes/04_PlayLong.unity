@@ -432,7 +432,8 @@ MonoBehaviour:
   obstaclePrefab: {fileID: 6135019632209041587, guid: 075b0d8d7a3b23b499e21803cf34f900,
     type: 3}
   startSpawnDistance: 10
-  maxSpawnDistance: 500
+  spawnAheadDistance: 40
+  despawnBehindDistance: -5
   laneWidth: 3
   pathStart: {x: 0, y: -1.5, z: 4.375}
   pathEnd: {x: 0, y: -1.5, z: 29.375}
@@ -440,6 +441,8 @@ MonoBehaviour:
   useDistanceFade: 1
   fullyVisibleDist: 20
   invisibleDist: 40
+  minApproachSpeed: 3
+  maxApproachSpeed: 8
 --- !u!1 &214996947
 GameObject:
   m_ObjectHideFlags: 0
@@ -763,7 +766,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: "\uAE38\uB3D9\uB2D8"
+  m_Text: "{nameB}\uB2D8"
 --- !u!222 &258131687
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1561,7 +1564,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: "\uC544\uC601\uB2D8"
+  m_Text: "{nameA}\uB2D8"
 --- !u!222 &537632486
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2135,6 +2138,7 @@ MonoBehaviour:
   popupText: {fileID: 1572212062}
   centerText: {fileID: 1057946599}
   timerText: {fileID: 220464645}
+  timerIconImage: {fileID: 1700824603}
   padImagesCg: {fileID: 1849251622}
   redStringCanvasGroup: {fileID: 409546768}
   p1LongGauge: {fileID: 1276199854}
@@ -2573,56 +2577,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1057946597}
   m_CullTransparentMesh: 1
---- !u!1 &1073639563
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1073639565}
-  - component: {fileID: 1073639564}
-  m_Layer: 0
-  m_Name: TestGameManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1073639564
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1073639563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 30be05df904216d47a9023824e1040c3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  reporter: {fileID: 0}
-  systemPopupPrefab: {fileID: 0}
-  lastPlayDistance: 0
-  firstTaggedPlayer: 0
-  currentUserType: 0
-  playerColorSprites: []
---- !u!4 &1073639565
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1073639563}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -34.874348, y: 20.165247, z: 49.15041}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1102768808
 GameObject:
   m_ObjectHideFlags: 0
@@ -6068,4 +6022,3 @@ SceneRoots:
   - {fileID: 1294183280}
   - {fileID: 823285676}
   - {fileID: 902630580}
-  - {fileID: 1073639565}

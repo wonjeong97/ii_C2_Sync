@@ -23,10 +23,23 @@ namespace My.Scripts._02_PlayTutorial.Components
         
         public bool IsStopMove { get; private set; }
 
+        // 연속 충돌 검사(CCD)를 위한 이전 위치 저장
+        private Vector3 _prevPos;
+        private bool _hasPrevPos;
+        private readonly RaycastHit[] _ccdHits = new RaycastHit[8];
+
         private void Awake()
         {
             _animator = GetComponent<Animator>();
             if (_animator == null) _animator = GetComponentInChildren<Animator>();
+        }
+
+        // 이유: 오브젝트 풀링 환경에서 재사용될 때 이전 궤적 데이터가 남아 엉뚱한 위치에서 충돌하는 것을 방지함
+        private void OnEnable()
+        {
+            _hasPrevPos = false;
+            _isHitProcessed = false;
+            IsStopMove = false;
         }
 
         public void Setup(int playerIdx, int laneIndex)
@@ -35,11 +48,61 @@ namespace My.Scripts._02_PlayTutorial.Components
             _obstacleLaneIndex = laneIndex;
         }
 
+        private void Update()
+        {
+            if (_isHitProcessed || IsStopMove) return;
+
+            if (!_hasPrevPos)
+            {
+                _prevPos = transform.position;
+                _hasPrevPos = true;
+                return;
+            }
+
+            Vector3 currentPos = transform.position;
+            Vector3 dir = currentPos - _prevPos;
+            float dist = dir.magnitude;
+
+            // 이유: 속도가 최고조일 때 장애물이 단 1프레임 만에 판정선을 건너뛰는 터널링을 막기 위해 궤적을 훑어 충돌을 검사함
+            if (dist > 0.001f)
+            {
+                int hitCount = Physics.RaycastNonAlloc(
+                    _prevPos,
+                    dir.normalized,
+                    _ccdHits,
+                    dist,
+                    Physics.DefaultRaycastLayers,
+                    QueryTriggerInteraction.Collide);
+                for (int i = 0; i < hitCount; i++)
+                {   
+                    RaycastHit hit = _ccdHits[i];
+                    if (hit.collider.name.Contains("Left") || hit.collider.name.Contains("Center") ||
+                        hit.collider.name.Contains("Right") || hit.collider.CompareTag("Player"))
+                    {
+                        CheckHitLogic();
+                        if (_isHitProcessed) break;
+                    }
+                }
+            }
+
+            _prevPos = currentPos;
+        }
+
         private void OnTriggerEnter(Collider other)
         {   
             if (_isHitProcessed) return;
             
-            // DebugTrackerVisualizer 큐브 등 판정 범위 확인
+            if (other.name.Contains("Left") || other.name.Contains("Center") ||
+                other.name.Contains("Right") || other.CompareTag("Player"))
+            {   
+                CheckHitLogic();
+            }
+        }
+
+        private void OnTriggerStay(Collider other)
+        {
+            if (_isHitProcessed) return;
+
             if (other.name.Contains("Left") || other.name.Contains("Center") ||
                 other.name.Contains("Right") || other.CompareTag("Player"))
             {   
@@ -52,16 +115,14 @@ namespace My.Scripts._02_PlayTutorial.Components
             int obstacleLaneConverted = _obstacleLaneIndex + 1; 
             bool isHit = false;
 
-            if (PlayLongManager.Instance != null)
+            if (PlayLongManager.Instance)
             {
                 int p1Lane = PlayLongManager.Instance.GetCurrentLane(0); 
                 int p2Lane = PlayLongManager.Instance.GetCurrentLane(1); 
 
-                // [A] 직접 충돌: 통일된 인덱스(0, 1, 2)로 비교
                 bool p1DirectHit = (p1Lane == obstacleLaneConverted);
                 bool p2DirectHit = (p2Lane == obstacleLaneConverted);
 
-                // [B] 붉은 실 충돌: 중앙 장애물(변환 후 1)일 때 양 끝(0과 2)으로 갈라졌는가
                 bool redStringHit = false;
                 if (obstacleLaneConverted == 1)
                 {
@@ -75,14 +136,13 @@ namespace My.Scripts._02_PlayTutorial.Components
             
                     PlayLongManager.Instance.OnBothPlayersHit();
             
-                    if (_animator != null) _animator.SetTrigger(Hit); 
+                    if (_animator) _animator.SetTrigger(Hit); 
                     StartCoroutine(DestroyRoutine());
                 }
             }
-            // 2. Tutorial 모드 (개별 판정)
-            else if (PlayTutorialManager.Instance != null)
+            else if (PlayTutorialManager.Instance)
             {
-                int playerCurrentLane = PlayTutorialManager.Instance.GetCurrentLane(_ownerPlayerIdx); //
+                int playerCurrentLane = PlayTutorialManager.Instance.GetCurrentLane(_ownerPlayerIdx); 
                 if (playerCurrentLane == obstacleLaneConverted)
                 {
                     _isHitProcessed = true;
@@ -90,10 +150,9 @@ namespace My.Scripts._02_PlayTutorial.Components
                     PlayTutorialManager.Instance.OnPlayerHit(_ownerPlayerIdx);
                 }
             }
-            // 3. PlayShort 모드 (개별 판정)
-            else if (PlayShortManager.Instance != null)
+            else if (PlayShortManager.Instance)
             {
-                int playerCurrentLane = PlayShortManager.Instance.GetCurrentLane(_ownerPlayerIdx); //
+                int playerCurrentLane = PlayShortManager.Instance.GetCurrentLane(_ownerPlayerIdx); 
                 if (playerCurrentLane == obstacleLaneConverted)
                 {
                     _isHitProcessed = true;
@@ -104,7 +163,7 @@ namespace My.Scripts._02_PlayTutorial.Components
 
             if (isHit)
             {       
-                if (_animator != null) _animator.SetTrigger(Hit);
+                if (_animator) _animator.SetTrigger(Hit);
                 if (Time.time - _lastSoundPlayTime > 0.1f)
                 {
                     _lastSoundPlayTime = Time.time;

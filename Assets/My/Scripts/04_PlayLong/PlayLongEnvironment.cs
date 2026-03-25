@@ -3,9 +3,6 @@ using UnityEngine;
 
 namespace My.Scripts._04_PlayLong
 {
-    /// <summary>
-    /// PlayLong 씬의 바닥, 프레임, 장애물 등 환경 요소의 스크롤을 관리합니다.
-    /// </summary>
     public class PlayLongEnvironment : MonoBehaviour
     {
         [Header("Environment References")]
@@ -99,9 +96,6 @@ namespace My.Scripts._04_PlayLong
             }
         }
 
-        /// <summary>
-        /// 환경 오프셋을 0으로 부드럽게 되돌리며, 중단 시에도 finally를 통해 안전하게 초기화를 보장합니다.
-        /// </summary>
         public IEnumerator SmoothResetEnvironment(float duration = 1.0f)
         {
             _isSmoothResetting = true; 
@@ -160,6 +154,16 @@ namespace My.Scripts._04_PlayLong
                 mainFloor.offset = new Vector2(mainFloor.offset.x, 0f);
                 mainFloor.UpdateUVs();
             }
+        }
+        
+        /// <summary>
+        /// 게임 종료 시 환경에 남아있는 장애물들을 부드럽게 지웁니다.
+        /// </summary>
+        /// <param name="duration">페이드아웃 시간</param>
+        public void ClearObstacles(float duration)
+        {
+            if (obstacleManager) obstacleManager.StopAndFadeOutObstacles(duration);
+            else Debug.LogWarning("[PlayLongEnvironment] 장애물 매니저가 연결되지 않아 클리어할 수 없습니다.");
         }
         
         private void BackupFogSettings()

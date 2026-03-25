@@ -91,31 +91,51 @@ namespace My.Scripts._03_PlayShort
             {
                 string typeStr = GameManager.Instance.currentUserType.ToString(); 
                 char cartridgeChar = typeStr.Length > 0 ? typeStr[0] : 'A';
+                string relationStr = typeStr.Length > 1 ? typeStr.Substring(1) : "1";
                 
-                string questionJsonPath = $"JSON/Cartridge_{cartridgeChar}/PlayShort_{typeStr}";
+                bool isLoaded = false;
                 
-                PlayShortQuestionData qData = JsonLoader.Load<PlayShortQuestionData>(questionJsonPath);
+                string primaryPath = $"JSON/Cartridge_{cartridgeChar}/PlayShort_{typeStr}";
+                PlayShortQuestionData qData = JsonLoader.Load<PlayShortQuestionData>(primaryPath);
                 
                 if (qData != null && qData.questions != null)
                 {
                     _data.questions = qData.questions;
-                    Debug.Log($"[PlayShortManager] {questionJsonPath} 파일에서 관계 맞춤형 질문 데이터를 로드했습니다.");
+                    Debug.Log($"[PlayShortManager] {primaryPath} 파일에서 질문 데이터를 로드했습니다.");
+                    isLoaded = true;
                 }
-                else
+                
+                // 이유: B, C, D 카트리지에서 파일 누락 시 1차적으로 동일한 관계의 A 카트리지 질문(예: B2 -> A2)으로 대응함
+                if (!isLoaded && cartridgeChar != 'A')
                 {
-                    // 지정된 관계의 질문 파일이 누락되거나 오류가 발생할 경우, 에러 방지를 위해 해당 카트리지의 1번(기본) 파일을 우선적으로 로드함
-                    string fallbackPath = $"JSON/Cartridge_{cartridgeChar}/PlayShort_{cartridgeChar}1";
-                    PlayShortQuestionData fallbackData = JsonLoader.Load<PlayShortQuestionData>(fallbackPath);
+                    string fallbackAPath = $"JSON/Cartridge_A/PlayShort_A{relationStr}";
+                    PlayShortQuestionData fallbackAData = JsonLoader.Load<PlayShortQuestionData>(fallbackAPath);
                     
-                    if (fallbackData != null && fallbackData.questions != null)
+                    if (fallbackAData != null && fallbackAData.questions != null)
                     {
-                        _data.questions = fallbackData.questions;
-                        Debug.LogWarning($"[PlayShortManager] {questionJsonPath} 로드 실패. 카트리지 기본값({fallbackPath})을 사용합니다.");
+                        _data.questions = fallbackAData.questions;
+                        Debug.LogWarning($"[PlayShortManager] {primaryPath} 로드 실패. 같은 관계의 A 카트리지 폴백({fallbackAPath})을 사용합니다.");
+                        isLoaded = true;
                     }
-                    else
+                }
+                
+                // 이유: A 카트리지에서 누락되었거나(A2 실패), 1차 폴백(A2)마저 누락된 최악의 경우 가장 기본 형태인 A1으로 2차 대응함
+                if (!isLoaded && typeStr != "A1")
+                {
+                    string fallbackA1Path = "JSON/Cartridge_A/PlayShort_A1";
+                    PlayShortQuestionData fallbackA1Data = JsonLoader.Load<PlayShortQuestionData>(fallbackA1Path);
+                    
+                    if (fallbackA1Data != null && fallbackA1Data.questions != null)
                     {
-                        Debug.LogWarning($"[PlayShortManager] 카트리지 기본값({fallbackPath}) 로드 실패. 공통 기본 질문을 사용합니다.");
+                        _data.questions = fallbackA1Data.questions;
+                        Debug.LogWarning($"[PlayShortManager] 맞춤형 질문 로드 실패. 최종 카트리지 기본값({fallbackA1Path})을 사용합니다.");
+                        isLoaded = true;
                     }
+                }
+                
+                if (!isLoaded)
+                {
+                    Debug.LogWarning($"[PlayShortManager] 모든 카트리지 폴백 실패. 공통 기본 질문(PlayShort.json)을 유지합니다.");
                 }
             }
 
@@ -388,6 +408,8 @@ namespace My.Scripts._03_PlayShort
             {
                 _playerFinished[playerIdx] = true;
                 _isInputBlocked[playerIdx] = false;
+
+                if (env) env.ClearObstaclesForPlayer(playerIdx, 0.5f);
 
                 if (players[playerIdx])
                 {

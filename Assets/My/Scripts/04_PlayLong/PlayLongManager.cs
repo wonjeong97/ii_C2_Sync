@@ -285,7 +285,6 @@ namespace My.Scripts._04_PlayLong
                 float stepMove = (totalDistanceToMove / duration) * deltaTime;
                 if (env) env.ScrollByMeter(stepMove);
                 
-                // 이유: 현재 IsGameActive가 false라 기본 스크롤 로직이 차단된 상태이므로, 튜토리얼 연출을 위해 장애물 강제 이동 함수를 명시적으로 호출함
                 if (obstacleManager) obstacleManager.ForceMoveActiveObstacles(stepMove);
 
                 if (IsAnyPlayerStunned()) break;
@@ -447,7 +446,7 @@ namespace My.Scripts._04_PlayLong
                 int delta = currentSynced - _syncedStepCount;
                 _syncedStepCount = currentSynced;
 
-                float addMeters = delta * 1.0f; 
+                float addMeters = delta * 2.0f; 
                 _currentCoopDistance += addMeters;
 
                 if (_isGameActive && ui)
@@ -550,6 +549,9 @@ namespace My.Scripts._04_PlayLong
         private IEnumerator FinishGameSequence()
         {
             SetAutoProgressing(true);
+
+            // 이유: 게임이 종료(성공/실패)되었으므로 시야를 가리지 않도록 남은 장애물들을 모두 지워줌
+            if (env) env.ClearObstacles(0.5f);
 
             foreach (PlayerController p in players)
             {

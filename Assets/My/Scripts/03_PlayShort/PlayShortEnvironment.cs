@@ -38,7 +38,6 @@ namespace My.Scripts._03_PlayShort
 
         public void InitEnvironment()
         {
-            // [수정됨] TextureAdjuster의 자체 스크롤(Update 루프)을 끄고 외부에서 직접 제어합니다.
             if (p1Floor) { p1Floor.enableScroll = false; p1Floor.scrollSpeedY = 0f; }
             if (p2Floor) { p2Floor.enableScroll = false; p2Floor.scrollSpeedY = 0f; }
 
@@ -76,20 +75,15 @@ namespace My.Scripts._03_PlayShort
         {
             float dt = Time.deltaTime;
 
-            // Player 1
-            // [수정됨] 바닥 스크롤을 동기화 전용 메서드로 직접 처리합니다.
             if (p1Floor) ApplyScrollToFloor(p1Floor, p1Speed * dt);
             if (p1Frames) p1Frames.ScrollFrames(p1Speed);
             if (p1Obstacles) p1Obstacles.ScrollObstacles(p1Speed);
 
-            // Player 2
-            // [수정됨] 바닥 스크롤을 동기화 전용 메서드로 직접 처리합니다.
             if (p2Floor) ApplyScrollToFloor(p2Floor, p2Speed * dt);
             if (p2Frames) p2Frames.ScrollFrames(p2Speed);
             if (p2Obstacles) p2Obstacles.ScrollObstacles(p2Speed);
         }
 
-        // [추가됨] TextureAdjuster에 직접 UV 오프셋을 더하고 루프를 처리하여 프레임 지연을 완벽히 없앱니다.
         private void ApplyScrollToFloor(TextureAdjuster floor, float uvDelta)
         {
             if (uvDelta == 0f) return;
@@ -119,6 +113,15 @@ namespace My.Scripts._03_PlayShort
             {
                 p2Frames.ForceRecycleFrameClosestToCamera(rightCamera.transform);
             }
+        }
+
+        /// <summary>
+        /// 결승선을 넘은 플레이어 라인에 배치된 장애물들을 깨끗하게 치웁니다.
+        /// </summary>
+        public void ClearObstaclesForPlayer(int playerIdx, float duration)
+        {
+            if (playerIdx == 0 && p1Obstacles) p1Obstacles.StopAndFadeOutObstacles(duration);
+            else if (playerIdx == 1 && p2Obstacles) p2Obstacles.StopAndFadeOutObstacles(duration);
         }
 
         private void OnDisable()
