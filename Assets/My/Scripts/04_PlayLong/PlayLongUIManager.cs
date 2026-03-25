@@ -28,6 +28,7 @@ namespace My.Scripts._04_PlayLong
         [Header("HUD")]
         [SerializeField] private Text centerText;
         [SerializeField] private Text timerText;
+        [SerializeField] private Image timerIconImage;
         [SerializeField] private CanvasGroup padImagesCg;
 
         [Header("Red String Animation")]
@@ -57,7 +58,14 @@ namespace My.Scripts._04_PlayLong
         
         private Color _defaultTimerColor = Color.white;
         private bool _isTimerColorSaved;
+        
+        private Color _defaultTimerIconColor = Color.white;
+        private bool _isTimerIconColorSaved;
 
+        /// <summary>
+        /// UI 컴포넌트들의 초기 상태를 설정.
+        /// </summary>
+        /// <param name="maxDistance">목표 최대 거리</param>
         public void InitUI(float maxDistance)
         {
             if (popup)
@@ -81,6 +89,22 @@ namespace My.Scripts._04_PlayLong
                 {
                     timerText.color = _defaultTimerColor;
                 }
+            }
+            else
+            {
+                Debug.LogWarning("[PlayLongUIManager] timerText 컴포넌트 누락");
+            }
+
+            if (timerIconImage)
+            {
+                if (_isTimerIconColorSaved)
+                {
+                    timerIconImage.color = _defaultTimerIconColor;
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[PlayLongUIManager] timerIconImage 컴포넌트 누락");
             }
 
             if (p1LongGauge) p1LongGauge.ResetGauge();
@@ -352,6 +376,7 @@ namespace My.Scripts._04_PlayLong
         public IEnumerator BlinkRedString(int count, float duration)
         {
             if (!redStringCanvasGroup) yield break;
+            if (SoundManager.Instance) SoundManager.Instance.PlaySFX("달리기_6");
 
             float waitTime = duration / (count * 2);
             for (int i = 0; i < count; i++)
@@ -364,6 +389,10 @@ namespace My.Scripts._04_PlayLong
             }
         }
 
+        /// <summary>
+        /// 화면에 타이머 시간을 갱신.
+        /// </summary>
+        /// <param name="time">남은 시간</param>
         public void UpdateTimer(float time)
         {
             if (timerText)
@@ -376,7 +405,7 @@ namespace My.Scripts._04_PlayLong
 
                 timerText.text = Mathf.CeilToInt(Mathf.Max(0f, time)).ToString();
 
-                // 이유: 남은 시간이 5초 이하일 때 유저에게 직관적인 경고 효과를 주기 위해 텍스트 색상을 빨간색으로 변경함
+                // 남은 시간이 5초 이하일 때 유저에게 직관적인 경고 효과를 주기 위해 텍스트 색상을 빨간색으로 변경함
                 if (time <= 5f)
                 {
                     timerText.color = Color.red;
@@ -384,6 +413,25 @@ namespace My.Scripts._04_PlayLong
                 else
                 {
                     timerText.color = _defaultTimerColor;
+                }
+            }
+
+            if (timerIconImage)
+            {
+                if (!_isTimerIconColorSaved)
+                {
+                    _defaultTimerIconColor = timerIconImage.color;
+                    _isTimerIconColorSaved = true;
+                }
+
+                // 시계 아이콘도 텍스트와 함께 빨간색으로 변경하여 경고 시인성을 높임
+                if (time <= 5f)
+                {
+                    timerIconImage.color = Color.red;
+                }
+                else
+                {
+                    timerIconImage.color = _defaultTimerIconColor;
                 }
             }
         }

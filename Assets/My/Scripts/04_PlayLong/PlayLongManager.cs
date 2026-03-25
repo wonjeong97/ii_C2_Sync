@@ -446,7 +446,7 @@ namespace My.Scripts._04_PlayLong
                 int delta = currentSynced - _syncedStepCount;
                 _syncedStepCount = currentSynced;
 
-                float addMeters = delta * 1.0f; 
+                float addMeters = delta * 2.0f; 
                 _currentCoopDistance += addMeters;
 
                 if (_isGameActive && ui)

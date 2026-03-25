@@ -10,7 +10,7 @@ namespace My.Scripts.Environment
         public float targetDistance = 1.0f;
 
         [Tooltip("큐브 크기")]
-        public Vector3 cubeScale = new Vector3(0.5f, 0.5f, 0.5f);
+        public Vector3 cubeScale = new Vector3(1.5f, 2.0f, 2.0f);
     
         [Header("Layer Settings")]
         public string targetLayer = "Default";
@@ -57,27 +57,23 @@ namespace My.Scripts.Environment
         private void SpawnCube(string cubeName, Vector3 pos, Color color)
         {
             GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.name = cubeName; // 이름에 Left, Center, Right가 포함되어 있어야 ObstacleHitChecker가 인식함
+            cube.name = cubeName; 
             cube.transform.position = pos;
             cube.transform.rotation = Quaternion.Euler(0, cubeRotationY, 0);
             cube.transform.localScale = cubeScale;
 
-            // ★ [수정] 충돌 감지를 위해 Collider를 유지하되, Trigger로 설정
             Collider col = cube.GetComponent<Collider>();
             if (col != null)
             {
-                // 물리적 충돌(밀림)은 방지하고, Trigger 이벤트만 발생시킴
                 col.isTrigger = true; 
             }
 
-            // 레이어 설정
             int layerIndex = LayerMask.NameToLayer(targetLayer);
             if (layerIndex != -1) cube.layer = layerIndex;
             
-            var cubeRenderer = cube.GetComponent<Renderer>();
+            Renderer cubeRenderer = cube.GetComponent<Renderer>();
             if (cubeRenderer != null)
             {
-                // isSpawnCube가 false여도 투명한 상태로 충돌 판정은 유지됨
                 cubeRenderer.enabled = isSpawnCube; 
                 
                 if (isSpawnCube)
@@ -96,9 +92,12 @@ namespace My.Scripts.Environment
             if (virtualDistStartToEnd <= 0) return;
 
             Vector3 segmentVector = pathEnd - pathStart;
-            Vector3 centerPos = pathStart + (segmentVector / virtualDistStartToEnd * targetDistance);
+            Vector3 vectorPerMeter = segmentVector / virtualDistStartToEnd;
+            Vector3 centerPos = pathStart + (vectorPerMeter * targetDistance);
+
             Vector3 forwardDir = segmentVector.normalized;
             Vector3 baseRightDir = Vector3.Cross(Vector3.up, forwardDir).normalized;
+            
             Quaternion layoutRot = Quaternion.Euler(0, layoutRotationY, 0);
             Vector3 rotatedRightDir = layoutRot * baseRightDir;
             
@@ -106,7 +105,6 @@ namespace My.Scripts.Environment
             Vector3 rightPos = centerPos + (rotatedRightDir * laneWidth);
             Quaternion meshRot = Quaternion.Euler(0, cubeRotationY, 0);
 
-            // 히트 여부 체크 (시각적 확인용)
             bool isHitLeft = false;
             bool isHitCenter = false;
             bool isHitRight = false;
