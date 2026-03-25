@@ -13,7 +13,7 @@ namespace My.Scripts._02_PlayTutorial.Components
         private readonly static int Hit = Animator.StringToHash("Hit");
 
         [Header("Settings")]
-        public float hitDuration = 2.0f;
+        public float hitDuration = 2.0f; 
 
         private int _ownerPlayerIdx; 
         private int _obstacleLaneIndex; 
@@ -23,18 +23,17 @@ namespace My.Scripts._02_PlayTutorial.Components
         
         public bool IsStopMove { get; private set; }
 
-        // 연속 충돌 검사(CCD)를 위한 이전 위치 저장
-        private Vector3 _prevPos;
-        private bool _hasPrevPos;
+        private Vector3 _prevPos; 
+        private bool _hasPrevPos; 
+        
         private readonly RaycastHit[] _ccdHits = new RaycastHit[8];
 
         private void Awake()
         {
             _animator = GetComponent<Animator>();
-            if (_animator == null) _animator = GetComponentInChildren<Animator>();
+            if (!_animator) _animator = GetComponentInChildren<Animator>();
         }
 
-        // 이유: 오브젝트 풀링 환경에서 재사용될 때 이전 궤적 데이터가 남아 엉뚱한 위치에서 충돌하는 것을 방지함
         private void OnEnable()
         {
             _hasPrevPos = false;
@@ -46,6 +45,8 @@ namespace My.Scripts._02_PlayTutorial.Components
         {
             _ownerPlayerIdx = playerIdx;
             _obstacleLaneIndex = laneIndex;
+            // 이유: 풀링 후 위치가 강제로 이동되었을 때 첫 프레임 레이캐스트가 길게 뻗어나가는 것을 방지함
+            _hasPrevPos = false; 
         }
 
         private void Update()
@@ -63,7 +64,6 @@ namespace My.Scripts._02_PlayTutorial.Components
             Vector3 dir = currentPos - _prevPos;
             float dist = dir.magnitude;
 
-            // 이유: 속도가 최고조일 때 장애물이 단 1프레임 만에 판정선을 건너뛰는 터널링을 막기 위해 궤적을 훑어 충돌을 검사함
             if (dist > 0.001f)
             {
                 int hitCount = Physics.RaycastNonAlloc(
@@ -73,11 +73,12 @@ namespace My.Scripts._02_PlayTutorial.Components
                     dist,
                     Physics.DefaultRaycastLayers,
                     QueryTriggerInteraction.Collide);
+                    
                 for (int i = 0; i < hitCount; i++)
                 {   
                     RaycastHit hit = _ccdHits[i];
-                    if (hit.collider.name.Contains("Left") || hit.collider.name.Contains("Center") ||
-                        hit.collider.name.Contains("Right") || hit.collider.CompareTag("Player"))
+                    
+                    if (IsValidTarget(hit.collider))
                     {
                         CheckHitLogic();
                         if (_isHitProcessed) break;
@@ -91,23 +92,40 @@ namespace My.Scripts._02_PlayTutorial.Components
         private void OnTriggerEnter(Collider other)
         {   
             if (_isHitProcessed) return;
-            
-            if (other.name.Contains("Left") || other.name.Contains("Center") ||
-                other.name.Contains("Right") || other.CompareTag("Player"))
-            {   
-                CheckHitLogic();
-            }
+            if (IsValidTarget(other)) CheckHitLogic();
         }
 
         private void OnTriggerStay(Collider other)
         {
             if (_isHitProcessed) return;
+            if (IsValidTarget(other)) CheckHitLogic();
+        }
 
-            if (other.name.Contains("Left") || other.name.Contains("Center") ||
-                other.name.Contains("Right") || other.CompareTag("Player"))
-            {   
-                CheckHitLogic();
-            }
+        private bool IsValidTarget(Collider col)
+        {
+            if (!col) return false;
+
+            // 1. 자기 자신의 부위(자식 콜라이더) 무조건 무시
+            if (col.transform.IsChildOf(this.transform)) return false;
+
+            // 2. 다른 장애물 무조건 무시
+            // 이유: 대각선 트랙에서 다중 스폰 시, 다른 레인의 장애물 콜라이더를 레이저가 뚫고 지나갈 때 판정선으로 오인(팀킬)하는 것을 완벽 차단함
+            if (col.name.Contains("Obstacle")) return false;
+
+            // 3. 물리적인 바닥 무시 (오직 트리거 판정선과 플레이어 바디만 감지)
+            if (!col.isTrigger && !col.CompareTag("Player")) return false;
+
+            // 4. 플레이어 직접 충돌 허용
+            if (col.CompareTag("Player")) return true;
+
+            // 5. 판정선(가이드 큐브) 검사
+            string layerName = LayerMask.LayerToName(col.gameObject.layer);
+            string objName = col.name;
+
+            if (layerName.Contains("Left") || layerName.Contains("Center") || layerName.Contains("Right")) return true;
+            if (objName.Contains("Left") || objName.Contains("Center") || objName.Contains("Right")) return true;
+
+            return false;
         }
 
         private void CheckHitLogic()
