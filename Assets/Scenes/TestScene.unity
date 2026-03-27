@@ -206,7 +206,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 57175342}
-  - component: {fileID: 57175341}
+  - component: {fileID: 57175343}
   m_Layer: 0
   m_Name: test
   m_TagString: Untagged
@@ -214,20 +214,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &57175341
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 57175340}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00b9e09ec34bd1f4b87f6924ef66b907, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  portName: COM9
-  baudRate: 9600
 --- !u!4 &57175342
 Transform:
   m_ObjectHideFlags: 0
@@ -243,6 +229,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &57175343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 57175340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2501e8b00c54c1e489bc1514096518f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &72625742
 GameObject:
   m_ObjectHideFlags: 0
@@ -391,6 +389,10 @@ MonoBehaviour:
   descriptionText: {fileID: 0}
   checkImageA: {fileID: 1498821696}
   checkImageB: {fileID: 1288603767}
+  playerAText: {fileID: 0}
+  playerBText: {fileID: 0}
+  ballImageA: {fileID: 0}
+  ballImageB: {fileID: 0}
   jumpLandingTolerance: 0.25
 --- !u!1 &258749459
 GameObject:
@@ -2240,6 +2242,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   descriptionText: {fileID: 1243167487}
+  apiManager: {fileID: 0}
+  pollInterval: 3
 --- !u!1 &1871677251
 GameObject:
   m_ObjectHideFlags: 0

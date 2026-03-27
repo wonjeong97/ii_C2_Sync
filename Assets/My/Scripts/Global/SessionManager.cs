@@ -33,18 +33,71 @@ namespace My.Scripts.Global
         public UserType CurrentUserType { get; set; } = UserType.A1;
         public string CurrentModuleCode { get; set; } = GameConstants.Module.Code; // "C2"
         public string Cartridge { get; set; } = string.Empty;
+        public string BlockCode { get; set; } = string.Empty;
         
         public bool IsOtherCartridgeContentsCleared { get; set; } = false;
+        public int ClearedEndCount { get; set; } = 0; 
 
-        public int PieceA1 { get; set; } public int PieceA2 { get; set; } public int PieceA3 { get; set; }
-        public int PieceB1 { get; set; } public int PieceB2 { get; set; } public int PieceB3 { get; set; }
-        public int PieceC1 { get; set; } public int PieceC2 { get; set; } public int PieceC3 { get; set; }
-        public int PieceD1 { get; set; } public int PieceD2 { get; set; } public int PieceD3 { get; set; }
+        public int PieceA1 { get; set; } 
+        public int PieceA2 { get; set; }
+        public int PieceA3 { get; set; }
+        public int PieceB1 { get; set; }
+        public int PieceB2 { get; set; }
+        public int PieceB3 { get; set; }
+        public int PieceC1 { get; set; }
+        public int PieceC2 { get; set; }
+        public int PieceC3 { get; set; }
+        public int PieceD1 { get; set; }
+        public int PieceD2 { get; set; }
+        public int PieceD3 { get; set; }
         
-        public int TotalPieces => PieceA1 + PieceA2 + PieceA3 + 
-                                  PieceB1 + PieceB2 + PieceB3 + 
-                                  PieceC1 + PieceC3 + 
-                                  PieceD1 + PieceD2 + PieceD3; 
+        public int TotalPieces
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(BlockCode) ||
+                    string.Equals(BlockCode.Trim(), "null", System.StringComparison.OrdinalIgnoreCase)) 
+                {
+                    return PieceA1 + PieceA2 + PieceA3 +
+                           PieceB1 + PieceB2 + PieceB3 +
+                           PieceC1 + PieceC3 +
+                           PieceD1 + PieceD2 + PieceD3;
+                }
+
+                
+                int sum = 0;
+                string[] blocks = BlockCode.Split(',');
+                string currentCode = CurrentModuleCode.ToUpper();
+
+                foreach (string b in blocks)
+                {
+                    string block = b.Trim().ToUpper();
+                    
+                    // 이유: 현재 콘텐츠(C2)의 조각은 게임 종료 시점에 별도로 합산되므로 기존 누적치에서는 제외함.
+                    if (block == currentCode)
+                    {
+                        continue;
+                    }
+
+                    switch (block)
+                    {
+                        case "A1": sum += PieceA1; break;
+                        case "A2": sum += PieceA2; break;
+                        case "A3": sum += PieceA3; break;
+                        case "B1": sum += PieceB1; break;
+                        case "B2": sum += PieceB2; break;
+                        case "B3": sum += PieceB3; break;
+                        case "C1": sum += PieceC1; break;
+                        case "C2": sum += PieceC2; break;
+                        case "C3": sum += PieceC3; break;
+                        case "D1": sum += PieceD1; break;
+                        case "D2": sum += PieceD2; break;
+                        case "D3": sum += PieceD3; break;
+                    }
+                }
+                return sum;
+            }
+        }
 
         private void Awake()
         {
@@ -64,6 +117,7 @@ namespace My.Scripts.Global
             CurrentUserId = 0;
             PlayerAUid = string.Empty;
             PlayerBUid = string.Empty;
+            BlockCode = string.Empty;
             CurrentLanguage = "ko";
             
             PlayerAFirstName = "Player A";
@@ -77,6 +131,7 @@ namespace My.Scripts.Global
             Cartridge = string.Empty;
             
             IsOtherCartridgeContentsCleared = false;
+            ClearedEndCount = 0; 
 
             PieceA1 = 0; PieceA2 = 0; PieceA3 = 0;
             PieceB1 = 0; PieceB2 = 0; PieceB3 = 0;
