@@ -45,9 +45,9 @@ namespace My.Scripts._04_PlayLong
         private float _worldPerVirtualMeter; 
         private Camera _targetCamera; 
 
-        private float _virtualScrolledDistance = 0f;
+        private float _virtualScrolledDistance;
         private float _nextSpawnTargetDist = 20f;
-        private bool _isSpawningActive = false;
+        private bool _isSpawningActive;
 
         public void Init(Camera cam, bool spawnRandom = true)
         {
@@ -215,10 +215,22 @@ namespace My.Scripts._04_PlayLong
                 SpawnForMilestone(_nextSpawnTargetDist);
                 
                 float interval;
-                // 이유: PlayLong의 초반 진행이 다소 지루하다는 피드백을 반영하여 전체 구간의 스폰 간격을 단축시킴
-                if (_nextSpawnTargetDist < 150f) interval = Random.Range(10f, 15f);
-                else if (_nextSpawnTargetDist < 350f) interval = Random.Range(7f, 10f);
-                else interval = Random.Range(5f, 7f);
+                
+                // 이유: 중후반부 장애물이 너무 자주 등장한다는 피드백을 반영하여 150m 이후의 스폰 주기를 늘려 난이도를 완화함
+                if (_nextSpawnTargetDist < 150f) 
+                {
+                    interval = Random.Range(10f, 15f);
+                }
+                else if (_nextSpawnTargetDist < 350f) 
+                {
+                    // 기존 7~10m -> 12~16m 간격으로 대폭 완화
+                    interval = Random.Range(12f, 16f);
+                }
+                else 
+                {
+                    // 기존 5~7m -> 10~14m 간격으로 대폭 완화
+                    interval = Random.Range(10f, 14f);
+                }
 
                 _nextSpawnTargetDist += interval;
             }
@@ -227,6 +239,7 @@ namespace My.Scripts._04_PlayLong
         private void SpawnForMilestone(float targetDist)
         {
             int obstacleCount = 1;
+            
             // 이유: 초반 난이도 상승 기획에 맞춰 다중(2개) 스폰이 발생할 확률을 각 구간별로 상향 조정함
             if (targetDist >= 150f && targetDist < 350f) obstacleCount = (Random.value > 0.6f) ? 2 : 1;
             else if (targetDist >= 350f) obstacleCount = (Random.value > 0.4f) ? 2 : 1;
