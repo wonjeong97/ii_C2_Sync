@@ -16,6 +16,7 @@ namespace My.Scripts.Core
     public struct UserData
     {
         public string CARTRIDGE;
+        public string BLOCK_CODE;
         public int IDX_USER; 
         public string UID_LEFT;
         public string UID_RIGHT;
@@ -60,6 +61,7 @@ namespace My.Scripts.Core
                 SessionManager.Instance.PlayerAFirstName = "에디터";
                 SessionManager.Instance.PlayerBFirstName = "테스터";
                 SessionManager.Instance.Cartridge = "A";
+                SessionManager.Instance.BlockCode = "A1, B2, C2, D3";
 
                 if (GameManager.Instance && GameManager.Instance.forceUserType)
                 {
@@ -140,6 +142,7 @@ namespace My.Scripts.Core
                     UserData userData = new UserData();
                     userData.IDX_USER = ParseIntSafe(colMap, firstRow, "IDX_USER");
                     userData.CARTRIDGE = ParseStringSafe(colMap, firstRow, "CARTRIDGE"); 
+                    userData.BLOCK_CODE = ParseStringSafe(colMap, firstRow, "BLOCK_CODE");
                     userData.UID_LEFT = ParseStringSafe(colMap, firstRow, "UID_LEFT");
                     userData.UID_RIGHT = ParseStringSafe(colMap, firstRow, "UID_RIGHT");
                     userData.LANG = ParseStringSafe(colMap, firstRow, "LANG");
@@ -153,6 +156,7 @@ namespace My.Scripts.Core
                     {   
                         SessionManager.Instance.CurrentUserId = userData.IDX_USER;
                         SessionManager.Instance.Cartridge = userData.CARTRIDGE; 
+                        SessionManager.Instance.BlockCode = userData.BLOCK_CODE; 
                         SessionManager.Instance.PlayerAUid = userData.UID_LEFT;
                         SessionManager.Instance.PlayerBUid = userData.UID_RIGHT;
 
@@ -185,6 +189,7 @@ namespace My.Scripts.Core
                                   $"- 유저 인덱스(IDX_USER): {userData.IDX_USER}\n" +
                                   $"- 이름 (L/R): {userData.RESERVATION_FIRST_NAME_LEFT} / {userData.RESERVATION_FIRST_NAME_RIGHT}\n" +
                                   $"- 유저 타입 (카트리지+관계): {typeStr}\n" +
+                                  $"- 블록 코드: {userData.BLOCK_CODE}\n" +
                                   $"- 컬러 (L/R): {userData.COLOR_LEFT} / {userData.COLOR_RIGHT}");
                         
                         userData.PIECE_A1 = ParseIntSafe(colMap, firstRow, "PIECE_A1");
@@ -257,32 +262,48 @@ namespace My.Scripts.Core
             return ColorData.NotSet; 
         }
 
-        private bool ParseOtherCartridgeClearState(ApiTableResponse resp, List<object> row)
+       private bool ParseOtherCartridgeClearState(ApiTableResponse resp, List<object> row)
         {   
             Dictionary<string, int> map = new Dictionary<string, int>();
             for (int i = 0; i < resp.COLUMNS.Count; i++) map[resp.COLUMNS[i]] = i;
             
-            int clearCount = 0;
-            string currentCode = SessionManager.Instance ? SessionManager.Instance.CurrentModuleCode.ToUpper() : "C2";
+            string currentCode = SessionManager.Instance ? SessionManager.Instance.CurrentModuleCode.ToUpper() : "A1";
+            
+            string blockCodeStr = ParseStringSafe(map, row, "BLOCK_CODE");
 
-            foreach (string colName in resp.COLUMNS)
+            if (string.IsNullOrWhiteSpace(blockCodeStr) || blockCodeStr.Equals("null", StringComparison.OrdinalIgnoreCase))
             {
-                if (colName.StartsWith("END_", StringComparison.OrdinalIgnoreCase))
+                return false; 
+            }
+
+            string[] assignedBlocks = blockCodeStr.Split(',');
+            int otherContentCount = 0;
+
+            foreach (string blockId in assignedBlocks)
+            {
+                string cleanBlockId = blockId.Trim().ToUpper();
+
+                if (cleanBlockId == currentCode) continue;
+
+                if (cleanBlockId.StartsWith("Z")) continue;
+
+                otherContentCount++;
+
+                string targetEndColumn = $"END_{cleanBlockId}";
+                string endValue = ParseStringSafe(map, row, targetEndColumn);
+
+                if (string.IsNullOrWhiteSpace(endValue) || endValue.Equals("null", StringComparison.OrdinalIgnoreCase))
                 {
-                    string code = colName.Substring(4).ToUpper(); 
-                    
-                    if (code == currentCode || code.StartsWith("Z")) 
-                        continue;
-                    
-                    string val = ParseStringSafe(map, row, colName);
-                    if (!string.IsNullOrWhiteSpace(val) && !val.Equals("null", StringComparison.OrdinalIgnoreCase)) 
-                    {
-                        clearCount++;
-                    }
+                    Debug.Log($"[APIManager] 특별 엔딩 불가: {cleanBlockId} 미클리어 상태");
+                    return false; 
                 }
             }
             
-            return clearCount >= 3;
+            bool isSpecial = otherContentCount > 0;
+            
+            Debug.Log($"[APIManager] 특별 엔딩 판정 완료 (검사한 타 컨텐츠 수: {otherContentCount}개) -> 특별 엔딩 진입: {isSpecial}");
+            
+            return isSpecial;
         }
     }
 }
