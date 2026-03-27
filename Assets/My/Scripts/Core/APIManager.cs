@@ -276,12 +276,13 @@ namespace My.Scripts.Core
                 return false; 
             }
 
-            string[] assignedBlocks = blockCodeStr.Split(',');
+            string[] assignedBlocks = blockCodeStr.Split(',', StringSplitOptions.RemoveEmptyEntries);
             int otherContentCount = 0;
 
             foreach (string blockId in assignedBlocks)
             {
                 string cleanBlockId = blockId.Trim().ToUpper();
+                if (string.IsNullOrEmpty(cleanBlockId)) continue;
 
                 if (cleanBlockId == currentCode) continue;
 

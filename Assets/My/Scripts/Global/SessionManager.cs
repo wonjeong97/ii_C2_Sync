@@ -55,7 +55,8 @@ namespace My.Scripts.Global
         {
             get
             {
-                if (string.IsNullOrWhiteSpace(BlockCode)) 
+                if (string.IsNullOrWhiteSpace(BlockCode) ||
+                    string.Equals(BlockCode.Trim(), "null", System.StringComparison.OrdinalIgnoreCase)) 
                 {
                     return PieceA1 + PieceA2 + PieceA3 +
                            PieceB1 + PieceB2 + PieceB3 +
