@@ -20,13 +20,22 @@ namespace My.Scripts._00_Title
         private Coroutine _soundCoroutine;
         private Coroutine _pollCoroutine;
 
+        /// <summary>
+        /// 하드웨어 연결 초기화 및 상태 체크 진입.
+        /// </summary>
         private void Start()
         {
+            // 통신 불량 대비 하드웨어 재연결 시도.
             if (ArduinoManager.Instance)
             {
                 ArduinoManager.Instance.Reconnect();
             }
+            else
+            {
+                Debug.LogWarning("[TitleManager] ArduinoManager가 존재하지 않습니다.");
+            }
 
+            // 사운드 중복 재생 방지.
             if (_soundCoroutine == null)
             {
                 _soundCoroutine = StartCoroutine(StartMainBGM());
@@ -35,15 +44,19 @@ namespace My.Scripts._00_Title
             _pollCoroutine = StartCoroutine(PollRoomStateRoutine());
         }
 
+        /// <summary>
+        /// 주기적으로 서버에 룸 상태를 질의하여 진입 시점을 결정함.
+        /// </summary>
         private IEnumerator PollRoomStateRoutine()
         {
 #if UNITY_EDITOR
-            // 이유: 에디터 모드에서는 방 상태를 기다리지 않고 바로 튜토리얼 씬으로 진입시켜 빠른 테스트를 돕기 위함.
+            // 에디터 테스트 속도 향상을 위해 API 호출 생략 후 즉시 이동.
             Debug.Log("[TitleManager] 에디터 모드: API 폴링을 생략하고 튜토리얼로 이동합니다.");
             yield return CoroutineData.GetWaitForSeconds(1.0f);
             GoToTutorial();
             yield break;
 #endif
+            // # TODO: 매 루프마다 발생하는 문자열 보간($) 가비지 생성 방지를 위해 URL 캐싱 필요.
             while (!_isTransitioning)
             {
                 if (!GameManager.Instance || GameManager.Instance.ApiConfig == null)
@@ -64,9 +77,10 @@ namespace My.Scripts._00_Title
                     {
                         string responseText = webRequest.downloadHandler.text;
                         
+                        // 서버 응답으로 정상 활성화(USING) 상태 검증.
                         if (!string.IsNullOrEmpty(responseText) && responseText.IndexOf("USING", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
-                            Debug.Log($"[TitleManager] RoomState 'USING' 감지. 튜토리얼로 이동.");
+                            Debug.Log("[TitleManager] RoomState USING 감지. 튜토리얼로 이동.");
                             GoToTutorial();
                             yield break;
                         }
@@ -81,33 +95,48 @@ namespace My.Scripts._00_Title
             }
         }
 
+        /// <summary>
+        /// 키보드 입력을 통한 강제 진행 감지.
+        /// </summary>
         private void Update()
         {
             if (_isTransitioning) return; 
 
+            // 하드웨어 오류 시 키보드로 우회 진행 허용.
             if (Input.GetKeyDown(KeyCode.Return))
             {
                 GoToTutorial();
             }
         }
 
+        /// <summary>
+        /// 튜토리얼 씬으로 전환함.
+        /// </summary>
         private void GoToTutorial()
         {
+            // 중복 씬 로드 방지.
             if (_isTransitioning) return;
             _isTransitioning = true; 
 
             SceneManager.LoadScene(GameConstants.Scene.Tutorial);
         }
         
+        /// <summary>
+        /// 타이틀 화면 진입 시 메인 BGM을 재생함.
+        /// </summary>
         private IEnumerator StartMainBGM()
         {
             if (!SoundManager.Instance) yield break;
 
+            // 기존 BGM 중단 후 지연 재생으로 사운드 겹침 방지.
             SoundManager.Instance.StopBGM();
             yield return CoroutineData.GetWaitForSeconds(1.0f);
             SoundManager.Instance.PlayBGM("MainBGM");
         }
 
+        /// <summary>
+        /// 씬 전환 시 실행 중인 코루틴 메모리 정리.
+        /// </summary>
         private void OnDestroy()
         {   
             StopAllCoroutines();
