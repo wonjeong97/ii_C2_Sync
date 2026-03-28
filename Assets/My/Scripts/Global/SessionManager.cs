@@ -12,8 +12,8 @@ namespace My.Scripts.Global
     }
 
     /// <summary>
-    /// 현재 플레이 중인 사용자의 세션 데이터(이름, UID, 점수 등)를 전담하여 보관하는 매니저입니다.
-    /// GameManager에서 분리되어 단일 책임 원칙(SRP)을 준수합니다.
+    /// 현재 플레이 중인 사용자의 세션 데이터(이름, UID, 점수 등)를 전담하여 보관하는 매니저 클래스.
+    /// GameManager에서 분리되어 단일 책임 원칙(SRP)을 준수함.
     /// </summary>
     public class SessionManager : MonoBehaviour
     {
@@ -31,7 +31,7 @@ namespace My.Scripts.Global
         public ColorData PlayerBColor { get; set; } = ColorData.NotSet;
 
         public UserType CurrentUserType { get; set; } = UserType.A1;
-        public string CurrentModuleCode { get; set; } = GameConstants.Module.Code; // "C2"
+        public string CurrentModuleCode { get; set; } = GameConstants.Module.Code; 
         public string Cartridge { get; set; } = string.Empty;
         public string BlockCode { get; set; } = string.Empty;
         
@@ -51,10 +51,14 @@ namespace My.Scripts.Global
         public int PieceD2 { get; set; }
         public int PieceD3 { get; set; }
         
+        /// <summary>
+        /// 할당된 블록 코드 리스트를 분석하여 현재 모듈을 제외한 나머지 모듈의 마음 조각 총합을 계산함.
+        /// </summary>
         public int TotalPieces
         {
             get
             {
+                // 이유: 할당된 블록 정보가 없는 신규 유저의 경우 모든 조각의 단순 합계를 반환함.
                 if (string.IsNullOrWhiteSpace(BlockCode) ||
                     string.Equals(BlockCode.Trim(), "null", System.StringComparison.OrdinalIgnoreCase)) 
                 {
@@ -64,16 +68,17 @@ namespace My.Scripts.Global
                            PieceD1 + PieceD2 + PieceD3;
                 }
 
-                
                 int sum = 0;
                 string[] blocks = BlockCode.Split(',');
                 string currentCode = CurrentModuleCode.ToUpper();
 
+                // # TODO: 반복적인 문자열 비교 및 Switch 연산 비용 절감을 위해 Dictionary 기반 점수 매핑 구조로 개선 필요.
+                // 예시 입력: BlockCode="A1,B2,C2", CurrentModuleCode="C2", PieceA1=5, PieceB2=10, PieceC2=3 -> 결과값 = 15 (C2 제외)
                 foreach (string b in blocks)
                 {
                     string block = b.Trim().ToUpper();
                     
-                    // 이유: 현재 콘텐츠(C2)의 조각은 게임 종료 시점에 별도로 합산되므로 기존 누적치에서는 제외함.
+                    // 이유: 현재 플레이 중인 모듈의 조각은 게임 결과 정산 시점에 합산되므로 기존 누적치 계산에서는 제외함.
                     if (block == currentCode)
                     {
                         continue;
@@ -99,6 +104,9 @@ namespace My.Scripts.Global
             }
         }
 
+        /// <summary>
+        /// 객체 생성 시 싱글톤 인스턴스를 할당하고 씬 전환 시 파괴되지 않도록 설정함.
+        /// </summary>
         private void Awake()
         {
             if (!Instance)
@@ -108,12 +116,17 @@ namespace My.Scripts.Global
             }
             else
             {
+                // 이유: 중복 생성된 세션 매니저를 제거하여 데이터 무결성을 유지함.
                 Destroy(gameObject);
             }
         }
 
+        /// <summary>
+        /// 현재 세션의 모든 유저 관련 데이터를 초기화함.
+        /// </summary>
         public void ClearSession()
         {
+            // 이유: 새로운 사용자가 진입할 때 이전 사용자의 데이터가 잔존하여 발생하는 오류를 방지함.
             CurrentUserId = 0;
             PlayerAUid = string.Empty;
             PlayerBUid = string.Empty;

@@ -153,8 +153,7 @@ namespace My.Scripts._02_PlayTutorial.Controllers
 
             foreach (var obj in _spawnedObstacles)
             {
-                if (obj != null)
-                    obj.transform.position += displacement;
+                if (obj) obj.transform.position += displacement;
             }
         }
 

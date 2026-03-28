@@ -5,6 +5,9 @@ using UnityEngine;
 
 namespace My.Scripts._03_PlayShort
 {
+    /// <summary>
+    /// PlayShort 씬에서 개별 플레이어의 장애물 생성, 이동, 풀링 및 소멸을 관리하는 클래스.
+    /// </summary>
     public class PlayShortObstacleManager : MonoBehaviour
     {
         [Header("Obstacle Settings")]
@@ -55,8 +58,14 @@ namespace My.Scripts._03_PlayShort
         private float _nextSpawnTargetDist = 10f;
         private bool _isSpawningActive = false;
 
+        /// <summary>
+        /// 장애물 매니저 초기화 및 생성 루틴을 시작함.
+        /// </summary>
+        /// <param name="cam">타겟 카메라</param>
         public void Init(Camera cam)
         {
+            if (!cam) Debug.LogWarning("Init 대상 카메라 컴포넌트 누락됨.");
+            
             _targetCamera = cam;
 
             if (InitializePathVectors())
@@ -68,6 +77,10 @@ namespace My.Scripts._03_PlayShort
             }
         }
 
+        /// <summary>
+        /// 생성 및 이동 연산에 필요한 벡터와 비율을 사전 계산함.
+        /// </summary>
+        /// <returns>초기화 성공 여부</returns>
         private bool InitializePathVectors()
         {
             if (virtualDistStartToEnd <= 0f) return false;
@@ -96,6 +109,9 @@ namespace My.Scripts._03_PlayShort
             return true;
         }
 
+        /// <summary>
+        /// 매 프레임 플레이어 상태 확인 및 장애물 자체 이동/생성/삭제를 처리함.
+        /// </summary>
         private void Update()
         {
             if (!_isSpawningActive) return;
@@ -104,11 +120,14 @@ namespace My.Scripts._03_PlayShort
             {
                 if (!PlayShortManager.Instance.IsGameStarted) return;
                 
+                // 이유: 플레이어가 정지하거나 스턴 상태일 때는 장애물도 함께 멈춤.
                 if (PlayShortManager.Instance.IsPlayerPaused(playerIndex) || 
                     PlayShortManager.Instance.IsPlayerStunned(playerIndex)) 
                     return;
             }
 
+            // # TODO: 반복적인 Clamp01, Lerp 연산 최적화를 위해 구간별 상태값 캐싱 고려.
+            // 예시 입력: _virtualScrolledDistance(85) / 170 = 0.5 -> 결과 속도 = (2.0 + 6.0) / 2 = 4.0
             float progressRatio = Mathf.Clamp01(_virtualScrolledDistance / 170f);
             float currentApproachSpeed = Mathf.Lerp(minApproachSpeed, maxApproachSpeed, progressRatio);
 
@@ -125,6 +144,10 @@ namespace My.Scripts._03_PlayShort
             CleanupObstacles();
         }
 
+        /// <summary>
+        /// 외부(바닥 스크롤 등) 속도에 맞춰 장애물 이동 위치를 동기화함.
+        /// </summary>
+        /// <param name="uvSpeed">스크롤 UV 속도</param>
         public void ScrollObstacles(float uvSpeed)
         {
             if (!_isSpawningActive) return;
@@ -153,6 +176,10 @@ namespace My.Scripts._03_PlayShort
             }
         }
 
+        /// <summary>
+        /// 활성화된 모든 장애물을 지정된 거리만큼 이동시킴.
+        /// </summary>
+        /// <param name="moveDistance">이동 거리</param>
         private void MoveActiveObstacles(float moveDistance)
         {
             Vector3 displacement = _moveDirection * moveDistance;
@@ -166,6 +193,9 @@ namespace My.Scripts._03_PlayShort
             }
         }
 
+        /// <summary>
+        /// 목표 거리에 도달 시 장애물을 스폰하고 다음 스폰 목표 거리를 갱신함.
+        /// </summary>
         private void CheckAndSpawnObstacles()
         {
             if (virtualDistStartToEnd <= 0f) return;
@@ -175,6 +205,8 @@ namespace My.Scripts._03_PlayShort
                 SpawnForMilestone(_nextSpawnTargetDist);
                 
                 float interval;
+                
+                // 이유: 거리에 따라 장애물 출현 빈도를 점진적으로 높여 난이도를 상승시킴.
                 if (_nextSpawnTargetDist < 50f) 
                     interval = Random.Range(10f, 15f);
                 else if (_nextSpawnTargetDist < 100f) 
@@ -186,9 +218,15 @@ namespace My.Scripts._03_PlayShort
             }
         }
 
+        /// <summary>
+        /// 특정 목표 거리에서 배치할 장애물 개수와 레인을 결정하고 생성함.
+        /// </summary>
+        /// <param name="targetDist">생성 목표 거리</param>
         private void SpawnForMilestone(float targetDist)
         {
             int count = 1;
+            
+            // 이유: 거리가 멀어질수록 다중(2개) 장애물 스폰 확률을 높임.
             if (targetDist >= 50f && targetDist < 100f) count = (Random.value > 0.8f) ? 2 : 1;
             else if (targetDist >= 100f) count = (Random.value > 0.6f) ? 2 : 1;
 
@@ -213,9 +251,18 @@ namespace My.Scripts._03_PlayShort
             }
         }
 
+        /// <summary>
+        /// 지정된 위치와 레인에 단일 장애물을 생성 및 초기화함.
+        /// </summary>
+        /// <param name="centerPos">중앙 레인 기준 월드 좌표</param>
+        /// <param name="laneIdx">배치할 레인 인덱스</param>
         private void SpawnSingleObstacle(Vector3 centerPos, int laneIdx)
         {
-            if (!obstaclePrefab) return;
+            if (!obstaclePrefab)
+            {
+                Debug.LogWarning("장애물 프리팹 누락됨.");
+                return;
+            }
 
             Vector3 finalPos = centerPos + (_laneOffsetVector * laneIdx);
 
@@ -246,6 +293,9 @@ namespace My.Scripts._03_PlayShort
             _activeObstacles.Add(obj);
         }
 
+        /// <summary>
+        /// 플레이어 뒤로 지나간 장애물을 비활성화하고 풀로 반환함.
+        /// </summary>
         private void CleanupObstacles()
         {
             Vector3 forwardDir = _segmentVector.normalized;
@@ -268,6 +318,10 @@ namespace My.Scripts._03_PlayShort
             }
         }
 
+        /// <summary>
+        /// 비활성화된 장애물을 풀에서 가져오거나 부족할 경우 새로 생성함.
+        /// </summary>
+        /// <returns>장애물 게임 오브젝트</returns>
         private GameObject GetFromPool()
         {
             if (_obstaclePool.Count > 0)
@@ -282,8 +336,9 @@ namespace My.Scripts._03_PlayShort
         }
 
         /// <summary>
-        /// 해당 플레이어의 장애물 생성을 멈추고 남은 장애물들을 서서히 페이드아웃 시켜 비활성화합니다.
+        /// 장애물 생성을 멈추고 남은 장애물들을 서서히 페이드아웃 시켜 비활성화함.
         /// </summary>
+        /// <param name="duration">페이드아웃 소요 시간</param>
         public void StopAndFadeOutObstacles(float duration)
         {
             if (!_isSpawningActive) return;
@@ -292,11 +347,16 @@ namespace My.Scripts._03_PlayShort
             StartCoroutine(FadeOutRoutine(duration));
         }
 
+        /// <summary>
+        /// 활성화된 모든 장애물을 부드럽게 지우고 풀로 반환함.
+        /// </summary>
+        /// <param name="duration">진행 시간</param>
+        /// <returns>IEnumerator 루틴</returns>
         private IEnumerator FadeOutRoutine(float duration)
         {
             List<GameObject> targets = new List<GameObject>(_activeObstacles);
 
-            // 이유: 기존 Fader 컴포넌트가 Update 루프에서 알파값을 덮어쓰지 못하도록 사전에 비활성화함
+            // 이유: 기존 Fader 컴포넌트가 Update 루프에서 알파값을 덮어쓰지 못하도록 사전에 비활성화함.
             foreach (GameObject obj in targets)
             {
                 if (obj)
@@ -340,6 +400,11 @@ namespace My.Scripts._03_PlayShort
             }
         }
 
+        /// <summary>
+        /// 렌더러의 머티리얼 알파값을 일괄 조정함.
+        /// </summary>
+        /// <param name="r">대상 렌더러</param>
+        /// <param name="alpha">적용할 알파값</param>
         private void SetAlpha(Renderer r, float alpha)
         {
             if (!r) return;

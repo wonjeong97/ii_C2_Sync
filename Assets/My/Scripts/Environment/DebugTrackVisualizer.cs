@@ -3,6 +3,9 @@ using My.Scripts._04_PlayLong;
 
 namespace My.Scripts.Environment
 {
+    /// <summary>
+    /// 개발 단계에서 트랙의 레인 위치와 충돌 판정 영역을 시각적으로 확인하기 위한 디버그 도구 클래스.
+    /// </summary>
     public class DebugTrackVisualizer : MonoBehaviour
     {
         [Header("Debug Settings")]
@@ -30,16 +33,23 @@ namespace My.Scripts.Environment
         [Header("Spawn Cube")] 
         public bool isSpawnCube;
 
+        /// <summary>
+        /// 게임 시작 시 설정된 위치에 디버그용 프리미티브 큐브들을 생성함.
+        /// </summary>
         private void Start()
         {
             SpawnDebugCubes();
         }
 
+        /// <summary>
+        /// 트랙 경로와 레인 간격을 계산하여 좌, 중, 우 위치에 큐브를 배치함.
+        /// </summary>
         private void SpawnDebugCubes()
         {
             if (virtualDistStartToEnd <= 0) return;
 
             Vector3 segmentVector = pathEnd - pathStart;
+            // 예시 입력: segmentVector(10,0,0) / virtualDistStartToEnd(10) -> 결과값 = (1,0,0) (1미터당 월드 벡터)
             Vector3 vectorPerMeter = segmentVector / virtualDistStartToEnd;
             Vector3 centerPos = pathStart + (vectorPerMeter * targetDistance);
 
@@ -49,13 +59,21 @@ namespace My.Scripts.Environment
             Quaternion layoutRot = Quaternion.Euler(0, layoutRotationY, 0);
             Vector3 rotatedRightDir = layoutRot * baseRightDir;
 
+            // 이유: 각 레인의 정확한 물리 판정 위치를 시각화하여 장애물 배치 정밀도를 검증함.
             SpawnCube("Left_Red", centerPos - (rotatedRightDir * laneWidth), Color.red);
             SpawnCube("Center_Green", centerPos, Color.green);
             SpawnCube("Right_Blue", centerPos + (rotatedRightDir * laneWidth), Color.blue);    
         }
 
+        /// <summary>
+        /// 단일 디버그 큐브를 생성하고 속성(이름, 위치, 색상, 레이어)을 설정함.
+        /// </summary>
+        /// <param name="cubeName">오브젝트 이름</param>
+        /// <param name="pos">배치 좌표</param>
+        /// <param name="color">표시 색상</param>
         private void SpawnCube(string cubeName, Vector3 pos, Color color)
         {
+            // # TODO: 빈번한 생성/삭제가 필요한 도구라면 런타임 성능을 위해 풀링 또는 가상 시각화(Gizmos) 위주로 변경 검토 필요.
             GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cube.name = cubeName; 
             cube.transform.position = pos;
@@ -63,8 +81,9 @@ namespace My.Scripts.Environment
             cube.transform.localScale = cubeScale;
 
             Collider col = cube.GetComponent<Collider>();
-            if (col != null)
+            if (col)
             {
+                // 이유: 물리 연산에는 영향을 주지 않으면서 레이캐스트 등의 트리거 체크만 가능하게 함.
                 col.isTrigger = true; 
             }
 
@@ -72,13 +91,14 @@ namespace My.Scripts.Environment
             if (layerIndex != -1) cube.layer = layerIndex;
             
             Renderer cubeRenderer = cube.GetComponent<Renderer>();
-            if (cubeRenderer != null)
+            if (cubeRenderer)
             {
                 cubeRenderer.enabled = isSpawnCube; 
                 
                 if (isSpawnCube)
                 {
                     cubeRenderer.material.color = color;
+                    // 이유: 셰이더 프로퍼티 이름이 환경에 따라 다를 수 있으므로 순차적 확인 후 적용.
                     if (cubeRenderer.material.HasProperty("_Color"))
                         cubeRenderer.material.SetColor("_Color", color);
                     else if (cubeRenderer.material.HasProperty("_BaseColor"))
@@ -87,6 +107,9 @@ namespace My.Scripts.Environment
             }
         }
 
+        /// <summary>
+        /// 에디터 뷰에서 트랙 경로와 실시간 플레이어 위치 상태를 기즈모로 표시함.
+        /// </summary>
         private void OnDrawGizmos()
         {
             if (virtualDistStartToEnd <= 0) return;
@@ -109,7 +132,8 @@ namespace My.Scripts.Environment
             bool isHitCenter = false;
             bool isHitRight = false;
 
-            if (Application.isPlaying && PlayLongManager.Instance != null)
+            // 이유: 플레이 중일 때 실제 플레이어의 레인 점유 상태를 색상 변화(검정색)로 피드백함.
+            if (Application.isPlaying && PlayLongManager.Instance)
             {
                 int p1Lane = PlayLongManager.Instance.GetCurrentLane(0);
                 int p2Lane = PlayLongManager.Instance.GetCurrentLane(1);
@@ -118,6 +142,7 @@ namespace My.Scripts.Environment
                 if (p1Lane == 2 || p2Lane == 2) isHitRight = true;
 
                 bool isCenterOccupied = (p1Lane == 1 || p2Lane == 1);
+                // 이유: 양 끝 레인 사이를 가로지르는 붉은 실의 판정 영역 포함 여부 체크.
                 bool isRedStringActive = (p1Lane == 0 && p2Lane == 2) || (p1Lane == 2 && p2Lane == 0);
                 
                 if (isCenterOccupied || isRedStringActive) isHitCenter = true;
