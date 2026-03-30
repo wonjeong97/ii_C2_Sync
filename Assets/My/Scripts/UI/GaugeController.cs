@@ -27,12 +27,12 @@ public class GaugeController : MonoBehaviour
 
         float ratio = Mathf.Clamp01(currentDistance / maxDistance);
 
-        if (fillImage != null)
+        if (fillImage)
         {
             fillImage.fillAmount = ratio;
         }
 
-        if (pictogram != null && gaugeArea != null)
+        if (pictogram && gaugeArea)
         {
             float totalWidth = gaugeArea.rect.width;
             float targetX = (totalWidth * ratio) + xOffset;
@@ -44,7 +44,7 @@ public class GaugeController : MonoBehaviour
     // 게이지 이미지 변경 메서드
     public void SetFillSprite(Sprite newSprite)
     {
-        if (fillImage != null && newSprite != null)
+        if (fillImage && newSprite)
         {
             fillImage.sprite = newSprite;
         }

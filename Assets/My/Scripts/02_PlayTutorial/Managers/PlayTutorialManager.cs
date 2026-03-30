@@ -30,10 +30,6 @@ namespace My.Scripts._02_PlayTutorial.Managers
         public TextSetting[] finalTexts;
     }
 
-    /// <summary>
-    /// 플레이 튜토리얼(실제 조작 연습)의 전체 흐름을 제어하는 매니저 클래스.
-    /// 페이즈별 연출 및 방치 타이머 상태를 관리함.
-    /// </summary>
     public class PlayTutorialManager : MonoBehaviour
     {
         public static PlayTutorialManager Instance;
@@ -66,19 +62,25 @@ namespace My.Scripts._02_PlayTutorial.Managers
         private bool _waitingForFinalHit;
         private float _lastHitSoundTime = -1f;
 
+        /// <summary>
+        /// 인스턴스 초기화.
+        /// </summary>
         private void Awake()
         {
             if (!Instance) Instance = this;
-            else if (Instance != this) Destroy(gameObject);
+            else if (Instance && Instance.GetInstanceID() != this.GetInstanceID()) Destroy(gameObject);
         }
 
+        /// <summary>
+        /// 게임 시작 시 필수 데이터 및 컴포넌트 세팅.
+        /// </summary>
         private void Start()
         {
             _data = JsonLoader.Load<PlayTutorialData>(GameConstants.Path.PlayTutorial);
 
             if (!settings)
             {
-                Debug.LogError("[PlayTutorialManager] Settings(TutorialSettingsSO)가 연결되지 않았습니다.");
+                Debug.LogError("[PlayTutorialManager] TutorialSettingsSO 누락됨.");
                 return;
             }
 
@@ -86,7 +88,6 @@ namespace My.Scripts._02_PlayTutorial.Managers
             {
                 ui.InitUI(settings.physicsConfig.maxDistance);
                 
-                // API 연동 데이터(이름, 컬러)와 JSON 스타일 데이터를 UI에 전달함.
                 if (GameManager.Instance)
                 {
                     string nameA = string.IsNullOrEmpty(GameManager.Instance.PlayerAName) ? "Player A" : GameManager.Instance.PlayerAName;
@@ -97,14 +98,26 @@ namespace My.Scripts._02_PlayTutorial.Managers
 
                     ui.SetPlayerNames(nameA, nameB, settingA, settingB);
 
-                    // 컬러 데이터를 기반으로 UI 공 이미지의 스프라이트를 변경함.
                     Sprite spriteA = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerAColor);
+                    if (!spriteA) Debug.LogWarning("Player A 컬러 스프라이트 누락됨.");
+                    
                     Sprite spriteB = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerBColor);
+                    if (!spriteB) Debug.LogWarning("Player B 컬러 스프라이트 누락됨.");
+                    
                     ui.SetPlayerBalls(spriteA, spriteB);
                 }
+                else
+                {
+                    Debug.LogWarning("GameManager 인스턴스 누락됨.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("PlayTutorialUIManager 누락됨.");
             }
             
             if (env) env.InitEnvironment();
+            else Debug.LogWarning("PlayTutorialEnvironment 누락됨.");
 
             if (players != null)
             {
@@ -123,13 +136,13 @@ namespace My.Scripts._02_PlayTutorial.Managers
                             ColorData colorData = (i == 0) ? GameManager.Instance.PlayerAColor : GameManager.Instance.PlayerBColor;
                             Sprite targetSprite = GameManager.Instance.GetColorSprite(colorData);
     
-                            // API에 등록된 스프라이트가 존재하면 덮어씌우고, 없다면 기존의 색상 틴트 방식을 Fallback으로 사용함
                             if (targetSprite)
                             {
                                 players[i].SetCharacterSprite(targetSprite);
                             }
                             else
                             {
+                                Debug.LogWarning($"Player {i} 스프라이트 누락. 틴트 색상 적용.");
                                 Color targetColor = GameManager.Instance.GetColorFromData(colorData);
                                 players[i].SetCharacterColor(targetColor);
                             }
@@ -140,21 +153,25 @@ namespace My.Scripts._02_PlayTutorial.Managers
 
             if (players == null || players.Length < 2 || !players[0] || !players[1])
             {
-                Debug.LogError("[PlayTutorialManager] 플레이어가 2명 할당되지 않았습니다.");
+                Debug.LogError("[PlayTutorialManager] 플레이어가 2명 할당되지 않음.");
                 enabled = false;
                 return;
             }
 
             if (InputManager.Instance) InputManager.Instance.OnPadDown += HandlePadDown;
+            else Debug.LogWarning("InputManager 인스턴스 누락됨.");
 
             SetAutoProgressing(true);
             StartCoroutine(IntroScenario());
         }
 
+        /// <summary>
+        /// 객체 파괴 시 이벤트 구독 해제.
+        /// </summary>
         private void OnDestroy()
         {
             if (InputManager.Instance) InputManager.Instance.OnPadDown -= HandlePadDown;
-            if (Instance == this) Instance = null;
+            if (Instance && Instance.GetInstanceID() == this.GetInstanceID()) Instance = null;
 
             if (players != null)
             {
@@ -173,11 +190,16 @@ namespace My.Scripts._02_PlayTutorial.Managers
             }
         }
 
+        /// <summary>
+        /// 매 프레임 플레이어 및 배경 스크롤 상태 업데이트.
+        /// </summary>
         private void Update()
         {
             if (!_gameStarted) return;
 
+            // # TODO: Update 내부의 반복 연산을 최적화하기 위해 캐싱 구조 고려 필요.
             bool isAutoRun = (_currentPhase == TutorialPhase.FinalAutoRun);
+            // 예: maxScrollSpeed(10) * autoRunSpeedRatio(0.5) = 5
             float autoTarget = isAutoRun ? settings.physicsConfig.maxScrollSpeed * settings.autoRunSpeedRatio : 0f;
 
             if (players != null)
@@ -193,12 +215,17 @@ namespace My.Scripts._02_PlayTutorial.Managers
             if (env) env.ScrollEnvironment(s1, s2);
         }
 
+        /// <summary>
+        /// 자동 진행 상태 토글.
+        /// </summary>
+        /// <param name="isAuto">자동 진행 여부</param>
         private void SetAutoProgressing(bool isAuto)
         {
             if (GameManager.Instance)
             {
                 GameManager.Instance.IsAutoProgressing = isAuto;
                 
+                // 이유: 수동 조작으로 전환 시 방치 타이머를 리셋하여 팝업 오작동 방지.
                 if (!isAuto)
                 {
                     GameManager.Instance.ResetInactivityTimer();
@@ -206,10 +233,16 @@ namespace My.Scripts._02_PlayTutorial.Managers
             }
             else
             {
-                Debug.LogWarning("[PlayTutorialManager] GameManager.Instance를 찾을 수 없습니다.");
+                Debug.LogWarning("[PlayTutorialManager] GameManager 인스턴스 누락됨.");
             }
         }
 
+        /// <summary>
+        /// 플레이어 이동 거리 갱신 시 UI 업데이트.
+        /// </summary>
+        /// <param name="playerIdx">플레이어 인덱스</param>
+        /// <param name="currentDist">현재 거리</param>
+        /// <param name="maxDist">목표 거리</param>
         private void HandlePlayerDistanceChanged(int playerIdx, float currentDist, float maxDist)
         {
             if (ui)
@@ -218,8 +251,15 @@ namespace My.Scripts._02_PlayTutorial.Managers
             }
         }
 
+        /// <summary>
+        /// 발판 입력 감지 및 페이즈별 이동 분기 처리.
+        /// </summary>
+        /// <param name="playerIdx">플레이어 인덱스</param>
+        /// <param name="laneIdx">입력된 레인 인덱스</param>
+        /// <param name="padIdx">패드 인덱스</param>
         private void HandlePadDown(int playerIdx, int laneIdx, int padIdx)
         {
+            // 이유: 튜토리얼 종료 또는 연출 중 조작 무시.
             if (!_gameStarted || _currentPhase == TutorialPhase.FinalAutoRun || _currentPhase == TutorialPhase.Complete) return;
             if (players == null || playerIdx < 0 || playerIdx >= players.Length) return;
             if (laneIdx < 0 || laneIdx > 2) return;
@@ -233,6 +273,11 @@ namespace My.Scripts._02_PlayTutorial.Managers
             }
         }
 
+        /// <summary>
+        /// 현재 페이즈에 맞는 이동 로직 분배.
+        /// </summary>
+        /// <param name="player">조작 중인 플레이어 객체</param>
+        /// <param name="laneIdx">타겟 레인 인덱스</param>
         private void ProcessMoveLogic(PlayerController player, int laneIdx)
         {
             switch (_currentPhase)
@@ -251,8 +296,14 @@ namespace My.Scripts._02_PlayTutorial.Managers
             }
         }
 
+        /// <summary>
+        /// 중앙 달리기 페이즈 처리.
+        /// </summary>
+        /// <param name="player">조작 중인 플레이어 객체</param>
+        /// <param name="laneIdx">타겟 레인 인덱스</param>
         private void HandlePhase1(PlayerController player, int laneIdx)
         {
+            // 이유: 페이즈 1은 중앙 이동만 허용함.
             if (laneIdx != 1) return;
 
             if (player.currentDistance >= settings.targetDistancePhase1) return;
@@ -262,6 +313,7 @@ namespace My.Scripts._02_PlayTutorial.Managers
 
             if (!_phase1GlobalComplete && players != null && players.Length > 1 && players[0] && players[1])
             {
+                // 이유: 두 플레이어 모두 목표 거리에 도달해야 페이즈 통과.
                 if (players[0].currentDistance >= settings.targetDistancePhase1 &&
                     players[1].currentDistance >= settings.targetDistancePhase1)
                 {
@@ -275,8 +327,15 @@ namespace My.Scripts._02_PlayTutorial.Managers
             }
         }
 
-        private void HandleRunningPhase(PlayerController player, int laneIdx, int targetLane, float targetDist,
-            Func<IEnumerator> nextRoutine)
+        /// <summary>
+        /// 방향 전환 페이즈 처리.
+        /// </summary>
+        /// <param name="player">조작 중인 플레이어 객체</param>
+        /// <param name="laneIdx">입력 레인 인덱스</param>
+        /// <param name="targetLane">목표 레인 인덱스</param>
+        /// <param name="targetDist">목표 이동 횟수</param>
+        /// <param name="nextRoutine">성공 시 실행할 다음 코루틴</param>
+        private void HandleRunningPhase(PlayerController player, int laneIdx, int targetLane, float targetDist, Func<IEnumerator> nextRoutine)
         {
             int pIdx = player.playerIndex;
 
@@ -313,6 +372,9 @@ namespace My.Scripts._02_PlayTutorial.Managers
             }
         }
 
+        /// <summary>
+        /// 대기 상태 팝업 강제 닫기.
+        /// </summary>
         private void CheckPopupClose()
         {
             if (_isWaitingForRun)
@@ -322,6 +384,9 @@ namespace My.Scripts._02_PlayTutorial.Managers
             }
         }
 
+        /// <summary>
+        /// 페이즈 전환 전 진행 상태 초기화.
+        /// </summary>
         private void ResetPhaseState()
         {
             _phaseDistances[0] = 0f;
@@ -331,6 +396,10 @@ namespace My.Scripts._02_PlayTutorial.Managers
             _routineStarted = false;
         }
 
+        /// <summary>
+        /// 시작 튜토리얼 팝업 연출.
+        /// </summary>
+        /// <returns>IEnumerator 루틴</returns>
         private IEnumerator IntroScenario()
         {
             string t1 = (_data != null && _data.guideTexts != null && _data.guideTexts.Length > 0) ? _data.guideTexts[0].text : "Start";
@@ -350,6 +419,11 @@ namespace My.Scripts._02_PlayTutorial.Managers
             SetAutoProgressing(false);
         }
 
+        /// <summary>
+        /// 특정 페이즈 성공 메시지 연출 및 다음 단계 진입 준비.
+        /// </summary>
+        /// <param name="message">출력할 메시지</param>
+        /// <returns>IEnumerator 루틴</returns>
         private IEnumerator SuccessSequenceRoutine(string message)
         {
             _currentPhase = TutorialPhase.Intro; 
@@ -391,6 +465,10 @@ namespace My.Scripts._02_PlayTutorial.Managers
             }
         }
 
+        /// <summary>
+        /// 우측 이동 미션 완료 처리.
+        /// </summary>
+        /// <returns>IEnumerator 루틴</returns>
         private IEnumerator Phase2CompletionRoutine()
         {   
             yield return CoroutineData.GetWaitForSeconds(1.0f);
@@ -412,6 +490,10 @@ namespace My.Scripts._02_PlayTutorial.Managers
             SetAutoProgressing(false);
         }
 
+        /// <summary>
+        /// 좌측 이동 미션 완료 후 최종 자동 달리기 연출 돌입.
+        /// </summary>
+        /// <returns>IEnumerator 루틴</returns>
         private IEnumerator Phase3CompletionRoutine()
         {
             yield return CoroutineData.GetWaitForSeconds(1.0f);
@@ -452,6 +534,11 @@ namespace My.Scripts._02_PlayTutorial.Managers
             }
         }
 
+        /// <summary>
+        /// 특정 플레이어의 현재 레인 인덱스 반환.
+        /// </summary>
+        /// <param name="playerIdx">조회할 플레이어 인덱스</param>
+        /// <returns>현재 레인 인덱스</returns>
         public int GetCurrentLane(int playerIdx)
         {
             if (players != null && playerIdx >= 0 && playerIdx < players.Length && players[playerIdx])
@@ -459,10 +546,15 @@ namespace My.Scripts._02_PlayTutorial.Managers
             return 1;
         }
 
+        /// <summary>
+        /// 장애물 피격 처리.
+        /// </summary>
+        /// <param name="playerIdx">피격 대상 플레이어 인덱스</param>
         public void OnPlayerHit(int playerIdx)
         {
             if (players != null && playerIdx >= 0 && playerIdx < players.Length && players[playerIdx])
             {
+                // 이유: 단기간 내 연속 피격음 재생 방지.
                 if (Time.time - _lastHitSoundTime > 0.1f)
                 {
                     if (SoundManager.Instance) SoundManager.Instance.PlaySFX("달리기_2");
@@ -479,6 +571,10 @@ namespace My.Scripts._02_PlayTutorial.Managers
             }
         }
 
+        /// <summary>
+        /// 튜토리얼 완료 후 다음 씬 전환 연출.
+        /// </summary>
+        /// <returns>IEnumerator 루틴</returns>
         private IEnumerator FinalTextChangeSequence()
         {
             yield return CoroutineData.GetWaitForSeconds(2.0f);
