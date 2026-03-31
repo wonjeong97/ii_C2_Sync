@@ -161,6 +161,12 @@ namespace My.Scripts._02_PlayTutorial.Components
         /// </summary>
         private void CheckHitLogic()
         {
+            // PlayShort 모드에서 질문 팝업이 떠 있는 동안에는 레인 이동 시 장애물 충돌을 무시해야 함.
+            if (PlayShortManager.Instance && PlayShortManager.Instance.IsPlayerPaused(_ownerPlayerIdx))
+            {
+                return;
+            }
+
             // 예: _obstacleLaneIndex(-1) + 1 = 0 (Left Lane)
             int obstacleLaneConverted = _obstacleLaneIndex + 1; 
             bool isHit = false;
@@ -173,7 +179,6 @@ namespace My.Scripts._02_PlayTutorial.Components
                 bool p1DirectHit = (p1Lane == obstacleLaneConverted);
                 bool p2DirectHit = (p2Lane == obstacleLaneConverted);
 
-                // 이유: 양 끝 레인에 위치한 두 플레이어를 잇는 붉은 실이 중앙 장애물과 닿았는지 판별.
                 bool redStringHit = false;
                 if (obstacleLaneConverted == 1)
                 {
@@ -215,7 +220,6 @@ namespace My.Scripts._02_PlayTutorial.Components
             if (isHit)
             {       
                 if (_animator) _animator.SetTrigger(Hit);
-                // 이유: 다중 충돌 시 피격음이 겹쳐서 비정상적으로 크게 들리는 현상 방지.
                 if (Time.time - _lastSoundPlayTime > 0.1f)
                 {
                     _lastSoundPlayTime = Time.time;
