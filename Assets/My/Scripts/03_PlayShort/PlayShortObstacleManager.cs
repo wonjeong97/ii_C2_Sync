@@ -429,5 +429,34 @@ namespace My.Scripts._03_PlayShort
                 }
             }
         }
+        
+        /// <summary>
+        /// 플레이어 주변(0m 부근)에 위치한 활성 장애물들을 검사하여 즉시 제거함.
+        /// 질문 답변을 위해 레인을 이동할 때 장애물에 걸리는 현상을 물리적으로 방지하기 위함.
+        /// </summary>
+        public void ClearObstaclesNearPlayer()
+        {
+            Vector3 forwardDir = _segmentVector.normalized;
+            float worldUnitsPerMeter = _segmentVector.magnitude / virtualDistStartToEnd;
+            
+            // 플레이어 위치(0m)를 기준으로 앞뒤 일정 범위 내의 장애물을 제거함.
+            float minWorldDist = -2f * worldUnitsPerMeter;
+            float maxWorldDist = 2f * worldUnitsPerMeter;
+
+            for (int i = _activeObstacles.Count - 1; i >= 0; i--)
+            {
+                GameObject obj = _activeObstacles[i];
+                if (!obj) continue;
+
+                float distFromStart = Vector3.Dot(obj.transform.position - pathStart, forwardDir);
+                
+                if (distFromStart >= minWorldDist && distFromStart <= maxWorldDist)
+                {
+                    obj.SetActive(false);
+                    _obstaclePool.Enqueue(obj);
+                    _activeObstacles.RemoveAt(i);
+                }
+            }
+        }
     }
 }

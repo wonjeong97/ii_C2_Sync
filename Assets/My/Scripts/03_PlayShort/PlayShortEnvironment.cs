@@ -156,19 +156,21 @@ namespace My.Scripts._03_PlayShort
         }
 
         /// <summary>
-        /// 카메라 시야를 가리지 않도록 가장 가까운 프레임을 트랙 뒤쪽으로 재배치함.
+        /// 카메라 시야를 가리지 않도록 가장 가까운 프레임과 주변 장애물을 트랙 뒤쪽으로 재배치하거나 제거함.
         /// </summary>
         /// <param name="playerIdx">대상 플레이어 인덱스</param>
         public void RecycleFrameClosestToCamera(int playerIdx)
         {
-            // 이유: 플레이어가 멈췄을 때 카메라 바로 앞 프레임이 시야를 막는 현상 방지.
-            if (playerIdx == 0 && p1Frames && leftCamera)
+            // 플레이어가 멈췄을 때 카메라 바로 앞 구조물뿐만 아니라 장애물도 함께 치워 답변 조작을 방해하지 않게 함.
+            if (playerIdx == 0)
             {
-                p1Frames.ForceRecycleFrameClosestToCamera(leftCamera.transform);
+                if (p1Frames && leftCamera) p1Frames.ForceRecycleFrameClosestToCamera(leftCamera.transform);
+                if (p1Obstacles) p1Obstacles.ClearObstaclesNearPlayer();
             }
-            else if (playerIdx == 1 && p2Frames && rightCamera)
+            else if (playerIdx == 1)
             {
-                p2Frames.ForceRecycleFrameClosestToCamera(rightCamera.transform);
+                if (p2Frames && rightCamera) p2Frames.ForceRecycleFrameClosestToCamera(rightCamera.transform);
+                if (p2Obstacles) p2Obstacles.ClearObstaclesNearPlayer();
             }
         }
 
