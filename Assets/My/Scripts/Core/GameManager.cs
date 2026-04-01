@@ -133,6 +133,10 @@ namespace My.Scripts.Core
         private void Start()
         {
             Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+            Application.runInBackground = true;
+            Screen.fullScreenMode = FullScreenMode.ExclusiveFullScreen;
+            
             LoadSettings();
 
             if (reporter && reporter.show) reporter.show = false;
