@@ -217,7 +217,11 @@ namespace My.Scripts.Core
                 reporter.showGameManagerControl = !reporter.showGameManagerControl;
                 if (reporter.show) reporter.show = false;
             }
-            else if (Input.GetKeyDown(KeyCode.M)) Cursor.visible = !Cursor.visible;
+            else if (Input.GetKeyDown(KeyCode.M)) 
+            {
+                Cursor.visible = !Cursor.visible;
+                Cursor.lockState = Cursor.visible ? CursorLockMode.None : CursorLockMode.Locked;
+            }
 
             if (_isTransitioning) return;
             HandleInactivity();
