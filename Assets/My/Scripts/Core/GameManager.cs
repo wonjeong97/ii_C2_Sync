@@ -135,7 +135,6 @@ namespace My.Scripts.Core
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
             Application.runInBackground = true;
-            Screen.fullScreenMode = FullScreenMode.ExclusiveFullScreen;
             
             LoadSettings();
 
