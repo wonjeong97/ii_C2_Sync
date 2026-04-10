@@ -109,6 +109,8 @@ namespace My.Scripts.Core
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
                 
+                TimestampLogHandler.Attach();
+                
                 if (!SessionManager.Instance)
                 {
                     GameObject sessionObj = new GameObject("SessionManager");
