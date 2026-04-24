@@ -3083,7 +3083,8 @@ PrefabInstance:
     - target: {fileID: 7269095533582961264, guid: 1fb3c5c4585b6b04899de4bcc4730837,
         type: 3}
       propertyPath: m_Text
-      value: text
+      value: "Q.\uAC08\uB4F1\uC774 \uC0DD\uACA8\uB3C4\n\uB0B4 \uC758\uACAC\uC744
+        \uB0B4\uAE30\uBCF4\uB2E4 \uC77C\uB2E8 \uCC38\uB294 \uD3B8\uC774\uB2E4."
       objectReference: {fileID: 0}
     - target: {fileID: 7269095533582961264, guid: 1fb3c5c4585b6b04899de4bcc4730837,
         type: 3}
@@ -7228,7 +7229,8 @@ PrefabInstance:
     - target: {fileID: 3124538023247375177, guid: 1fb3c5c4585b6b04899de4bcc4730837,
         type: 3}
       propertyPath: m_Text
-      value: text
+      value: "Q.\uAC08\uB4F1\uC774 \uC0DD\uACA8\uB3C4\n\uB0B4 \uC758\uACAC\uC744
+        \uB0B4\uAE30\uBCF4\uB2E4 \uC77C\uB2E8 \uCC38\uB294 \uD3B8\uC774\uB2E4."
       objectReference: {fileID: 0}
     - target: {fileID: 3142715156407850483, guid: 1fb3c5c4585b6b04899de4bcc4730837,
         type: 3}
