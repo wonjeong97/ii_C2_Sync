@@ -1,204 +1,444 @@
 {
   "questions": [
     {
-      "name": "Text_Question1",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.분위기가 어색해질 때,\n먼저 말을 꺼내는 편이다.||Q.분위기가 어색해질 때,\n먼저 말을 꺼내는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question1",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방이 약속이나 규칙을\n소홀히 하면 이를 바로잡아주고 싶다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question1",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방이 약속이나 규칙을\n소홀히 하면 이를 바로잡아주고 싶다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question2",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.작은 반응은 깊이 고민하지 않고\n넘어가는 편이다.||Q.작은 반응은 깊이 고민하지 않고\n넘어가는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question2",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방의 힘든 일이나 고민에\n깊이 공감하고 마음을 써준다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question2",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방의 힘든 일이나 고민에\n깊이 공감하고 마음을 써준다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question3",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.상대가 나에게 무엇인가를\n기대하면 부담감을 느낀다.||Q.상대가 나에게 무엇인가를\n기대하면 부담감을 느낀다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question3",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "서운한 감정이 들어도 먼저\n사실 관계나 논리부터\n차분히 따져보는 편이다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question3",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "서운한 감정이 들어도 먼저\n사실 관계나 논리부터\n차분히 따져보는 편이다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question4",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.상대방의 컨디션을 보고\n말을 할지 말지 결정하는 편이다.||Q.상대방의 컨디션을 보고\n말을 할지 말지 결정하는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question4",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "분위기가 가라앉아 있을 때\n유머나 농담으로\n활력을 불어넣으려 한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question4",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "분위기가 가라앉아 있을 때\n유머나 농담으로\n활력을 불어넣으려 한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question5",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.상대가 어딘가 어색해 보이면,\n그냥 넘기지 못하는 편이다.||Q.상대가 어딘가 어색해 보이면,\n그냥 넘기지 못하는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question5",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방의 기분을 살피느라\n내가 하고 싶은 말을 참을 때가 많다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question5",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방의 기분을 살피느라\n내가 하고 싶은 말을 참을 때가 많다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question6",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.경험적으로 특정 상황에서는\n반응하지 않는 편이\n낫다고 느껴질 때가 있다.||Q.경험적으로 특정 상황에서는 반응하지\n않는 편이 낫다고 느껴질 때가 있다. ",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question6",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "함께하는 일은 가급적\n내 주도하에 계획대로 진행되어야\n마음이 놓인다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question6",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "함께하는 일은 가급적\n내 주도하에 계획대로 진행되어야\n마음이 놓인다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question7",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.한번 정한 행동은,\n상대의 반응이 달라도\n유지하는 편이다.||Q.한번 정한 행동은, 상대의 반응이\n달라도 유지하는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question7",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방을 살뜰히 챙겨주거나\n도움을 줄 때 큰 보람과\n행복을 느낀다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question7",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방을 살뜰히 챙겨주거나\n도움을 줄 때 큰 보람과 행복을 느낀다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question8",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.가족이라서 더 가감없이\n감정을 표현할 때가 있다.||Q.가족이라서 더 가감없이\n감정을 표현할 때가 있다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question8",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "함께 무언가를 계획할 때\n효율성과 현실적인 조건을\n꼼꼼히 따지는 편이다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question8",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "함께 무언가를 계획할 때\n효율성과 현실적인 조건을\n꼼꼼히 따지는 편이다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question9",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.감정적인 반응이\n계속 될것 같으면,\n대화를 멈추는 편이다.||Q.감정적인 반응이 계속 될것 같으면,\n대화를 멈추는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question9",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "반복되는 일상보다\n상대방과 새로운 경험이나\n즐거움을 찾는 것이 좋다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question9",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "반복되는 일상보다 상대방과 새로운\n경험이나 즐거움을 찾는 것이 좋다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question10",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.바로 반응하기보다는,\n일단 지켜보는 편이다.||Q.바로 반응하기보다는,\n일단 지켜보는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question10",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "의견 충돌이 생기면\n내 주장보다는 일단 상대방의\n뜻에 맞춰주는 편이다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question10",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "의견 충돌이 생기면 내 주장보다는\n일단 상대방의 뜻에 맞춰주는 편이다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question11",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.대화할 때 내 반응이\n과하지 않은지 살피는 편이다.||Q.대화할 때 내 반응이\n과하지 않은지 살피는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question11",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "관계 속에서 나의 가치관과\n기준을 흔들림 없이\n지키는 것이 중요하다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question11",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "관계 속에서 나의 가치관과\n기준을 흔들림 없이\n지키는 것이 중요하다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question12",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.관계에서 감정 대응이\n잦아지면 급격히 피곤해진다.||Q.관계에서 감정 대응이 잦아지면\n급격히 피곤해진다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question12",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방에게 칭찬과 격려,\n응원의 말을 아끼지 않고\n표현하곤 한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question12",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방에게 칭찬과 격려, 응원의 말을\n아끼지 않고 표현하곤 한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question13",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.상대의 기분 변화가 느껴지면\n내가 맞춰주는 편이다.||Q.상대의 기분 변화가 느껴지면\n내가 맞춰주는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question13",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "갈등 상황에서도 감정에\n치우치기보다 상황을\n객관적으로 분석하려 한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question13",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "갈등 상황에서도 감정에 치우치기보다\n상황을 객관적으로 분석하려 한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question14",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.상대가 먼저\n말하지 않는 분위기라면,\n나도 먼저 말을 꺼내지 않는 편이다.||Q.상대가 먼저 말하지 않는 분위기라면,\n나도 먼저 말을 꺼내지 않는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question14",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "기쁘거나 즐거운 감정이 생기면\n솔직하고 크게 드러내는 편이다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question14",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "기쁘거나 즐거운 감정이 생기면\n솔직하고 크게 드러내는 편이다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question15",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.상대에게 어떻게 반응해야\n할지 막막하게 느낄 때가 있다.||Q.상대에게 어떻게 반응해야 할지\n막막하게 느낄 때가 있다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question15",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방의 작은 반응에도\n내 말투나 태도를 세심하게\n조절하며 반응한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question15",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방의 작은 반응에도 내 말투나\n태도를 세심하게 조절하며 반응한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question16",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.상대의 반응이 바로\n보이지 않아도,\n믿고 기다리는 편이다.||Q.상대의 반응이 바로 보이지 않아도,\n믿고 기다리는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question16",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방이 더 나아질 수 있도록\n잘못된 부분은 분명하게\n알려주려 한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question16",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방이 더 나아질 수 있도록\n잘못된 부분은 분명하게 알려주려 한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question17",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.반응이 어떻게 돌아올지 보여서,\n굳이 반응하지 않을 때가 있다.||Q.반응이 어떻게 돌아올지 보여서,\n굳이 반응하지 않을 때가 있다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question17",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "내가 조금 힘들더라도 상대방이\n상처받을까 봐 거절을 잘 못한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question17",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "내가 조금 힘들더라도 상대방이\n상처받을까 봐 거절을 잘 못한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question18",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.갈등 상황에서는 감정을\n가라앉힌 뒤 반응하는 편이다.||Q.갈등 상황에서는 감정을\n가라앉힌 뒤 반응하는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question18",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "감정 섞인 긴 대화보다는\n핵심적인 결론부터\n명확히 말하는 것이 편하다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question18",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "감정 섞인 긴 대화보다는 핵심적인\n결론부터 명확히 말하는 것이 편하다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question19",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.상대의 달라진 점이 느껴지면\n말이나 행동이 조심스러워진다.||Q.상대의 달라진 점이 느껴지면\n말이나 행동이 조심스러워진다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question19",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "우리 가족만의 익숙한 틀을\n벗어나 새로운 즐거움을\n제안하곤 한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question19",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "우리 가족만의 익숙한 틀을 벗어나\n새로운 즐거움을 제안하곤 한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question20",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.감정적으로 여유가 없을 때,\n스스로 그 상태를\n잘 알아차리는 편이다.||Q.감정적으로 여유가 없을 때,\n스스로 그 상태를 잘 알아차리는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question20",
+        "position": { "x": 0, "y": 68 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "배려심 깊다는 말을 자주 듣지만,\n속으로는 답답함을 느낄 때가 있다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question20",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "배려심 깊다는 말을 자주 듣지만,\n속으로는 답답함을 느낄 때가 있다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     }
   ]
 }

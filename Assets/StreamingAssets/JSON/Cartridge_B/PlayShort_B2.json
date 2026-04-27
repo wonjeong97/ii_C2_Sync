@@ -1,204 +1,444 @@
 {
   "questions": [
     {
-      "name": "Text_Question1",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.약속 시간이나 규칙을\n어기는 사람을 보면 화가 난다.||Q.약속 시간이나 규칙을\n어기는 사람을 보면 화가 난다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question1",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "약속 시간이나 규칙을\n어기는 사람을 보면 화가 난다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question1",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "약속 시간이나 규칙을\n어기는 사람을 보면 화가 난다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question2",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.고민 상담을 해오는\n사람의 이야기에 깊이 공감한다.||Q.고민 상담을 해오는\n사람의 이야기에 깊이 공감한다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question2",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "고민 상담을 해오는 사람의\n이야기에 깊이 공감한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question2",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "고민 상담을 해오는 사람의\n이야기에 깊이 공감한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question3",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.감정보다는\n사실과 논리에 근거해서 판단한다.||Q.감정보다는\n사실과 논리에 근거해서 판단한다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question3",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "감정보다는 사실과\n논리에 근거해서 판단한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question3",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "감정보다는 사실과\n논리에 근거해서 판단한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question4",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.분위기가 가라앉아 있으면\n유머로 띄우고 싶어진다.||Q.분위기가 가라앉아 있으면\n유머로 띄우고 싶어진다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question4",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "분위기가 가라앉아 있으면\n유머로 띄우고 싶어진다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question4",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "분위기가 가라앉아 있으면\n유머로 띄우고 싶어진다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question5",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.주변 사람들의 눈치나\n분위기를 살피는 편이다.||Q.주변 사람들의 눈치나\n분위기를 살피는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question5",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "주변 사람들의 눈치나\n분위기를 살피는 편이다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question5",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "주변 사람들의 눈치나\n분위기를 살피는 편이다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question6",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.해야 할 일은\n완벽하게 끝내야 직성이 풀린다.||Q.해야 할 일은\n완벽하게 끝내야 직성이 풀린다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question6",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "해야 할 일은 완벽하게\n끝내야 직성이 풀린다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question6",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "해야 할 일은 완벽하게\n끝내야 직성이 풀린다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question7",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.누군가를 도와주고\n챙겨줄 때 큰 보람을 느낀다.||Q.누군가를 도와주고\n챙겨줄 때 큰 보람을 느낀다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question7",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "남을 도와주고\n챙겨줄 때 큰 보람을 느낀다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question7",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "남을 도와주고\n챙겨줄 때 큰 보람을 느낀다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question8",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.어떤 일이든 계획을 세우고\n효율적으로 움직인다.||Q.어떤 일이든 계획을 세우고\n효율적으로 움직인다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question8",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "어떤 일이든 계획을\n세우고 효율적으로 움직인다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question8",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "어떤 일이든 계획을\n세우고 효율적으로 움직인다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question9",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.새로운 경험이나\n재미있는 놀거리 찾기를 좋아한다.||Q.새로운 경험이나\n재미있는 놀거리 찾기를 좋아한다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question9",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "새로운 경험이나 재미있는\n놀거리 찾기를 좋아한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question9",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "새로운 경험이나 재미있는\n놀거리 찾기를 좋아한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question10",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.갈등이 생기면\n내 주장을 하기보다 일단 참는 편이다.||Q.갈등이 생기면\n내 주장을 하기보다 일단 참는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question10",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "갈등이 생기면 내 주장을\n하기보다 일단 참는 편이다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question10",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "갈등이 생기면 내 주장을\n하기보다 일단 참는 편이다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question11",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.“이건 당연히 해야지!”\n라는 말을 자주 하는 편이다.||Q.“이건 당연히 해야지!”\n라는 말을 자주 하는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question11",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "“이건 당연히 해야지!” 라는\n말을 자주 하는 편이다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question11",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "“이건 당연히 해야지!” 라는\n말을 자주 하는 편이다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question12",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.평소에 “고생했어”, “잘했어”라는\n칭찬을 아끼지 않는다.||Q.평소에 “고생했어”, “잘했어”라는\n칭찬을 아끼지 않는다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question12",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "평소에 “고생했어”, “잘했어”라는\n칭찬을 아끼지 않는다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question12",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "평소에 “고생했어”, “잘했어”라는\n칭찬을 아끼지 않는다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question13",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.흥분하기보다는 차분하게\n상황을 분석하는 편이다.||Q.흥분하기보다는 차분하게\n상황을 분석하는 편이다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question13",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "흥분하기보다는 차분하게\n상황을 분석하는 편이다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question13",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "흥분하기보다는 차분하게\n상황을 분석하는 편이다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question14",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.기분이 좋으면 나도 모르게\n감정이 밖으로 크게 드러난다.||Q.기분이 좋으면 나도 모르게\n감정이 밖으로 크게 드러난다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question14",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "기분이 좋으면 나도 모르게\n감정이 밖으로 크게 드러난다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question14",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "기분이 좋으면 나도 모르게\n감정이 밖으로 크게 드러난다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question15",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.상대방의 기분에 따라\n내 행동이나 말이 달라진다.||Q.상대방의 기분에 따라\n내 행동이나 말이 달라진다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question15",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방의 기분에 따라\n내 행동이나 말이 달라진다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question15",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방의 기분에 따라\n내 행동이나 말이 달라진다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question16",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.잘못된 점이 있으면\n확실하게 지적하고 넘어가야 한다.||Q.잘못된 점이 있으면\n확실하게 지적하고 넘어가야 한다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question16",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "잘못된 점이 있으면 확실하게\n지적하고 넘어가야 한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question16",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "잘못된 점이 있으면 확실하게\n지적하고 넘어가야 한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question17",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.거절하면 상대가\n상처받을까 봐 부탁을 잘 들어준다.||Q.거절하면 상대가\n상처받을까 봐 부탁을 잘 들어준다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question17",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "거절하면 상대가\n상처받을까 봐\n부탁을 잘 들어준다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question17",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "거절하면 상대가 상처받을까 봐\n부탁을 잘 들어준다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question18",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.결론부터 말하거나\n핵심을 짚는 대화를 선호한다.||Q.결론부터 말하거나\n핵심을 짚는 대화를 선호한다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question18",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "결론부터 말하거나\n핵심을 짚는 대화를 선호한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question18",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "결론부터 말하거나\n핵심을 짚는 대화를 선호한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question19",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.“일단 해보자!”라며\n즉흥적으로 행동할 때가 많다.||Q.“일단 해보자!”라며\n즉흥적으로 행동할 때가 많다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question19",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "“일단 해보자!”라며\n즉흥적으로 행동할 때가 많다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question19",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "“일단 해보자!”라며\n즉흥적으로 행동할 때가 많다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     },
     {
-      "name": "Text_Question20",
-      "position": { "x": 0, "y": 135 },
-      "scale": { "x": 1, "y": 1, "z": 1 },
-      "text": "Q.착하다는 소리를 자주 듣지만\n가끔 속으론 답답하다.||Q.착하다는 소리를 자주 듣지만\n가끔 속으론 답답하다.",
-      "fontName": "font7",
-      "fontSize": 43,
-      "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
-      "alignment": 1
+      "page1": {
+        "name": "Text_Question20",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "착하다는 소리를 자주 듣지만\n가끔 속으론 답답하다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question20",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "착하다는 소리를 자주 듣지만\n가끔 속으론 답답하다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
     }
   ]
 }

@@ -276,11 +276,11 @@ namespace My.Scripts._03_PlayShort
         /// <param name="distance">현재 거리 지점</param>
         /// <param name="questionData">질문 텍스트 설정</param>
         /// <param name="infoData">안내 텍스트 설정</param>
-        public void ShowQuestionPopup(int playerIdx, int distance, TextSetting questionData, TextSetting infoData)
+        public void ShowQuestionPopup(int playerIdx, int distance, TextSetting questionDataPage1, TextSetting questionDataPage2, TextSetting infoData)
         {
             CanvasGroup targetPopup = (playerIdx == 0) ? popupQuestionLeft : popupQuestionRight;
             Text targetDistText = (playerIdx == 0) ? textLeftDistance : textRightDistance;
-            
+
             Text targetQueP1 = (playerIdx == 0) ? textLeftQuestionP1 : textRightQuestionP1;
             Text targetQueP2 = (playerIdx == 0) ? textLeftQuestionP2 : textRightQuestionP2;
             Text targetInfo = (playerIdx == 0) ? textLeftInfo : textRightInfo;
@@ -289,7 +289,7 @@ namespace My.Scripts._03_PlayShort
             CanvasGroup targetPage2 = (playerIdx == 0) ? cgLeftPage2 : cgRightPage2;
             CanvasGroup targetYesNo = (playerIdx == 0) ? cgLeftYesNo : cgRightYesNo;
 
-            if (!targetPopup) 
+            if (!targetPopup)
             {
                 Debug.LogWarning("질문 팝업 대상 CanvasGroup 누락됨.");
                 return;
@@ -298,47 +298,29 @@ namespace My.Scripts._03_PlayShort
             ResetAnswerFeedback(playerIdx);
             ResetGaugeImages(playerIdx);
 
-            if (targetPage1) 
+            if (targetPage1)
             {
                 targetPage1.alpha = 1f;
                 targetPage1.gameObject.SetActive(true);
             }
-            if (targetPage2) 
+            if (targetPage2)
             {
                 targetPage2.alpha = 0f;
                 targetPage2.gameObject.SetActive(false);
             }
-            if (targetYesNo) 
-            { 
-                targetYesNo.alpha = 0f; 
-                targetYesNo.gameObject.SetActive(false); 
+            if (targetYesNo)
+            {
+                targetYesNo.alpha = 0f;
+                targetYesNo.gameObject.SetActive(false);
             }
 
             if (targetDistText) targetDistText.text = $"{distance}M";
-            
-            ApplyTextSetting(targetQueP1, questionData);
-            
-            if (questionData != null && !string.IsNullOrEmpty(questionData.text))
-            {
-                string[] texts = questionData.text.Split(new string[] { "||" }, System.StringSplitOptions.None);
-                
-                if (targetQueP1) 
-                {
-                    targetQueP1.text = texts[0];
-                }
-                
-                // 이유: Page2 출력 시 구분자가 없어도 줄바꿈을 유지하도록 원본 문자열을 그대로 사용함.
-                if (targetQueP2) 
-                {
-                    targetQueP2.text = texts.Length > 1 ? texts[1] : texts[0];
-                }
-            }
-            else
-            {
-                if (targetQueP1) targetQueP1.text = "";
-                if (targetQueP2) targetQueP2.text = "";
-                Debug.LogWarning("questionData가 유효하지 않음.");
-            }
+
+            ApplyTextSetting(targetQueP1, questionDataPage1);
+            if (targetQueP1) targetQueP1.text = "Q." + targetQueP1.text;
+
+            ApplyTextSetting(targetQueP2, questionDataPage2);
+            if (targetQueP2) targetQueP2.text = "Q." + targetQueP2.text;
 
             ApplyTextSetting(targetInfo, infoData);
 

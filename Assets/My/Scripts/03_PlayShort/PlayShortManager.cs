@@ -13,23 +13,30 @@ using Random = UnityEngine.Random;
 namespace My.Scripts._03_PlayShort
 {
     [Serializable]
+    public class QuestionSetting
+    {
+        public TextSetting page1;
+        public TextSetting page2;
+    }
+
+    [Serializable]
     public class PlayShortData
     {
-        public TextSetting playerAName; 
-        public TextSetting playerBName; 
+        public TextSetting playerAName;
+        public TextSetting playerBName;
 
         public TextSetting startText;
         public TextSetting popupInfoText;
         public TextSetting waitingText;
         public TextSetting centerFinishText;
-        
-        public TextSetting[] questions;
+
+        public QuestionSetting[] questions;
     }
 
     [Serializable]
     public class PlayShortQuestionData
     {
-        public TextSetting[] questions;
+        public QuestionSetting[] questions;
     }
 
     /// <summary>
@@ -93,6 +100,22 @@ namespace My.Scripts._03_PlayShort
         /// 데이터 로드 및 초기 컴포넌트 세팅.
         /// </summary>
         private void Start()
+        {
+            if (!PlayShortDebugStarter.IsReady)
+            {
+                StartCoroutine(WaitForDebugReady());
+                return;
+            }
+            InitGame();
+        }
+
+        private IEnumerator WaitForDebugReady()
+        {
+            yield return new WaitUntil(() => PlayShortDebugStarter.IsReady);
+            InitGame();
+        }
+
+        private void InitGame()
         {
             _data = JsonLoader.Load<PlayShortData>(GameConstants.Path.PlayShort);
             
@@ -546,11 +569,11 @@ namespace My.Scripts._03_PlayShort
                 _playerStepCounts[playerIdx] = 0;
                 _lastActiveLane[playerIdx] = -1;
 
-                TextSetting questionData = null;
+                QuestionSetting questionData = null;
                 if (_questionQueues[playerIdx] != null && _questionQueues[playerIdx].Count > 0)
                 {
                     int qIdx = _questionQueues[playerIdx].Dequeue();
-                    
+
                     _currentQuestionNumbers[playerIdx] = qIdx + 1;
 
                     if (_data?.questions != null && qIdx < _data.questions.Length)
@@ -561,7 +584,7 @@ namespace My.Scripts._03_PlayShort
 
                 TextSetting infoData = _data != null ? _data.popupInfoText : null;
                 if (SoundManager.Instance) SoundManager.Instance.PlaySFX("달리기_3");
-                
+
                 StartCoroutine(QuestionSequenceRoutine(playerIdx, milestone, questionData, infoData));
 
                 if (env) env.RecycleFrameClosestToCamera(playerIdx); 
@@ -576,9 +599,9 @@ namespace My.Scripts._03_PlayShort
         /// <param name="qData">질문 텍스트 데이터</param>
         /// <param name="infoData">추가 안내 텍스트 데이터</param>
         /// <returns>IEnumerator 루틴</returns>
-        private IEnumerator QuestionSequenceRoutine(int playerIdx, int milestone, TextSetting qData, TextSetting infoData)
+        private IEnumerator QuestionSequenceRoutine(int playerIdx, int milestone, QuestionSetting qData, TextSetting infoData)
         {
-            if (ui) ui.ShowQuestionPopup(playerIdx, milestone, qData, infoData);
+            if (ui) ui.ShowQuestionPopup(playerIdx, milestone, qData?.page1, qData?.page2, infoData);
 
             yield return CoroutineData.GetWaitForSeconds(2.0f);
 
