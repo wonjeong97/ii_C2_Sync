@@ -73,10 +73,13 @@ namespace My.Scripts._02_PlayTutorial.Managers
 
         /// <summary>
         /// 게임 시작 시 필수 데이터 및 컴포넌트 세팅.
+        /// 다국어 처리를 위해 로컬라이즈된 경로를 사용함.
         /// </summary>
         private void Start()
         {
-            _data = JsonLoader.Load<PlayTutorialData>(GameConstants.Path.PlayTutorial);
+            // 이유: 다국어 폴더 구조에 맞춰 로컬라이즈된 경로로 JSON 데이터를 로드함.
+            string localizedPath = GameConstants.Path.GetLocalizedPath(GameConstants.Path.PlayTutorial);
+            _data = JsonLoader.Load<PlayTutorialData>(localizedPath);
 
             if (!settings)
             {

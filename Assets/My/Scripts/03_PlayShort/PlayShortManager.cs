@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using My.Scripts._02_PlayTutorial.Data;
 using My.Scripts.Core;
+using My.Scripts.Global;
 using UnityEngine;
 using UnityEngine.UI;
 using Wonjeong.Data;
@@ -115,9 +116,20 @@ namespace My.Scripts._03_PlayShort
             InitGame();
         }
 
+        /// <summary>
+        /// 게임 초기화 및 언어 설정이 반영된 질문 데이터를 로드함.
+        /// </summary>
         private void InitGame()
         {
-            _data = JsonLoader.Load<PlayShortData>(GameConstants.Path.PlayShort);
+            // 이유: 현재 세션의 언어 설정을 가져와 로컬라이징된 리소스 경로를 구성함.
+            string lang = "ko";
+            if (SessionManager.Instance)
+            {
+                lang = SessionManager.Instance.CurrentLanguage;
+            }
+
+            // 기본 UI 텍스트 데이터 로드 (언어 폴더 적용)
+            _data = JsonLoader.Load<PlayShortData>($"JSON/{lang}/{GameConstants.Path.PlayShort}");
             
             if (GameManager.Instance)
             {
@@ -127,20 +139,20 @@ namespace My.Scripts._03_PlayShort
                 
                 bool isLoaded = false;
                 
-                string primaryPath = $"JSON/Cartridge_{cartridgeChar}/PlayShort_{typeStr}";
+                // 1순위: 유저 타입에 정확히 일치하는 해당 언어의 질문 데이터 로드 시도
+                string primaryPath = $"JSON/{lang}/Cartridge_{cartridgeChar}/PlayShort_{typeStr}";
                 PlayShortQuestionData qData = JsonLoader.Load<PlayShortQuestionData>(primaryPath);
                 
-                // 일반 C# 객체는 명시적 null 검사 허용
                 if (qData != null && qData.questions != null)
                 {
                     _data.questions = qData.questions;
                     isLoaded = true;
                 }
                 
-                // 이유: B, C, D 카트리지에서 파일 누락 시 1차적으로 동일한 관계의 A 카트리지 질문으로 대응함.
+                // 2순위: B, C, D 카트리지에서 파일 누락 시 1차적으로 동일한 관계의 A 카트리지 질문으로 대응함.
                 if (!isLoaded && cartridgeChar != 'A')
                 {
-                    string fallbackAPath = $"JSON/Cartridge_A/PlayShort_A{relationStr}";
+                    string fallbackAPath = $"JSON/{lang}/Cartridge_A/PlayShort_A{relationStr}";
                     PlayShortQuestionData fallbackAData = JsonLoader.Load<PlayShortQuestionData>(fallbackAPath);
                     
                     if (fallbackAData != null && fallbackAData.questions != null)
@@ -151,10 +163,10 @@ namespace My.Scripts._03_PlayShort
                     }
                 }
                 
-                // 이유: 모든 폴백 실패 시 최종적으로 가장 기본 형태인 A1 데이터를 강제 적용함.
+                // 3순위: 모든 폴백 실패 시 최종적으로 가장 기본 형태인 A1 데이터를 강제 적용함.
                 if (!isLoaded && typeStr != "A1")
                 {
-                    string fallbackA1Path = "JSON/Cartridge_A/PlayShort_A1";
+                    string fallbackA1Path = $"JSON/{lang}/Cartridge_A/PlayShort_A1";
                     PlayShortQuestionData fallbackA1Data = JsonLoader.Load<PlayShortQuestionData>(fallbackA1Path);
                     
                     if (fallbackA1Data != null && fallbackA1Data.questions != null)

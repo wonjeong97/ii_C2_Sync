@@ -27,11 +27,13 @@ namespace My.Scripts._05_Ending
     {
         /// <summary>
         /// 초기화 시 JSON 데이터를 로드하여 각 페이지에 분배.
-        /// 외부 설정 파일을 통해 빌드 후에도 텍스트를 수정할 수 있도록 지원.
+        /// 다국어 경로를 적용하여 현재 언어에 맞는 엔딩 텍스트를 불러옴.
         /// </summary>
         protected override void LoadSettings()
         {
-            EndingSetting setting = JsonLoader.Load<EndingSetting>(GameConstants.Path.Ending);
+            // 이유: 언어 설정이 반영된 로컬라이즈 경로를 통해 데이터를 불러옴.
+            string localizedPath = GameConstants.Path.GetLocalizedPath(GameConstants.Path.Ending);
+            EndingSetting setting = JsonLoader.Load<EndingSetting>(localizedPath);
 
             if (setting == null)
             {
@@ -39,7 +41,6 @@ namespace My.Scripts._05_Ending
                 return;
             }
 
-            // 인스펙터에 등록된 페이지 배열에 순차적으로 데이터 주입
             if (pages != null && pages.Length > 0)
             {
                 if (pages[0] is EndingPage1Controller page1) 

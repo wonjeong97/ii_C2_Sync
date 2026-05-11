@@ -19,9 +19,14 @@ namespace My.Scripts._01_Tutorial
 
     public class TutorialManager : BaseFlowManager
     {
+        /// <summary>
+        /// 초기화 시 다국어 경로를 적용하여 JSON 데이터를 로드하고 각 페이지에 분배함.
+        /// </summary>
         protected override void LoadSettings()
         {
-            TutorialSetting setting = JsonLoader.Load<TutorialSetting>(GameConstants.Path.Tutorial);
+            // 현재 세션의 언어 설정(ko, en, jp 등)이 반영된 경로를 통해 데이터를 불러옴.
+            string localizedPath = GameConstants.Path.GetLocalizedPath(GameConstants.Path.Tutorial);
+            TutorialSetting setting = JsonLoader.Load<TutorialSetting>(localizedPath);
 
             if (setting == null)
             {
