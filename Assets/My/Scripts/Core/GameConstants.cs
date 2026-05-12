@@ -36,7 +36,11 @@ namespace My.Scripts.Core
                 string lang = "ko";
                 if (Global.SessionManager.Instance)
                 {
-                    lang = Global.SessionManager.Instance.CurrentLanguage;
+                    string currentLanguage = Global.SessionManager.Instance.CurrentLanguage;
+                    if (!string.IsNullOrWhiteSpace(currentLanguage))
+                    {
+                        lang = currentLanguage;
+                    }
                 }
                 return $"JSON/{lang}/{subPath}";
             }

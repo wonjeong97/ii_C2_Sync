@@ -51,16 +51,17 @@ namespace My.Scripts._03_PlayShort
 
         [Header("Settings")]
         [SerializeField] private TutorialSettingsSO settings;
-        
+
         [Header("Distance Sync")]
-        [SerializeField] private float metricMultiplier = 200f; 
+        [SerializeField] private float metricMultiplier = 200f;
 
         [Header("Sub Systems")]
-        [SerializeField] private PlayShortUIManager ui; 
+        [SerializeField] private PlayShortUIManager ui;
+
         [SerializeField] private PlayShortEnvironment env;
-        
+
         [SerializeField] private Text countdownText;
-        
+
         [Header("Dot Controller")]
         [SerializeField] private PadDotController padDotController;
 
@@ -75,13 +76,13 @@ namespace My.Scripts._03_PlayShort
         private readonly bool[] _playerFinished = new bool[2];
         private readonly bool[] _isPlayerPaused = new bool[2];
         private readonly bool[] _isInputBlocked = new bool[2];
-        private readonly int[] _nextMilestones = { 10, 10 }; 
+        private readonly int[] _nextMilestones = { 10, 10 };
         private readonly Queue<int>[] _questionQueues = new Queue<int>[2];
 
-        private readonly int[] _playerStepCounts = new int[2]; 
-        private readonly int[] _lastActiveLane = new int[2] { -1, -1 }; 
-        
-        private readonly int[] _currentQuestionNumbers = new int[2]; 
+        private readonly int[] _playerStepCounts = new int[2];
+        private readonly int[] _lastActiveLane = new int[2] { -1, -1 };
+
+        private readonly int[] _currentQuestionNumbers = new int[2];
         private readonly float[] _prevDistances = new float[2];
 
         private float _lastHitSoundTime = -1f;
@@ -107,12 +108,14 @@ namespace My.Scripts._03_PlayShort
                 StartCoroutine(WaitForDebugReady());
                 return;
             }
+
             InitGame();
         }
 
         private IEnumerator WaitForDebugReady()
         {
             yield return new WaitUntil(() => PlayShortDebugStarter.IsReady);
+
             InitGame();
         }
 
@@ -130,31 +133,36 @@ namespace My.Scripts._03_PlayShort
 
             // 기본 UI 텍스트 데이터 로드 (언어 폴더 적용)
             _data = JsonLoader.Load<PlayShortData>($"JSON/{lang}/{GameConstants.Path.PlayShort}");
-            
+            if (_data == null)
+            {
+                Debug.LogError("[PlayShortManager]PlayShort 데이터 로드 실패.");
+                return;
+            }
+
             if (GameManager.Instance)
             {
-                string typeStr = GameManager.Instance.currentUserType.ToString(); 
+                string typeStr = GameManager.Instance.currentUserType.ToString();
                 char cartridgeChar = typeStr.Length > 0 ? typeStr[0] : 'A';
                 string relationStr = typeStr.Length > 1 ? typeStr.Substring(1) : "1";
-                
+
                 bool isLoaded = false;
-                
+
                 // 1순위: 유저 타입에 정확히 일치하는 해당 언어의 질문 데이터 로드 시도
                 string primaryPath = $"JSON/{lang}/Cartridge_{cartridgeChar}/PlayShort_{typeStr}";
                 PlayShortQuestionData qData = JsonLoader.Load<PlayShortQuestionData>(primaryPath);
-                
+
                 if (qData != null && qData.questions != null)
                 {
                     _data.questions = qData.questions;
                     isLoaded = true;
                 }
-                
+
                 // 2순위: B, C, D 카트리지에서 파일 누락 시 1차적으로 동일한 관계의 A 카트리지 질문으로 대응함.
                 if (!isLoaded && cartridgeChar != 'A')
                 {
                     string fallbackAPath = $"JSON/{lang}/Cartridge_A/PlayShort_A{relationStr}";
                     PlayShortQuestionData fallbackAData = JsonLoader.Load<PlayShortQuestionData>(fallbackAPath);
-                    
+
                     if (fallbackAData != null && fallbackAData.questions != null)
                     {
                         _data.questions = fallbackAData.questions;
@@ -162,13 +170,13 @@ namespace My.Scripts._03_PlayShort
                         isLoaded = true;
                     }
                 }
-                
+
                 // 3순위: 모든 폴백 실패 시 최종적으로 가장 기본 형태인 A1 데이터를 강제 적용함.
                 if (!isLoaded && typeStr != "A1")
                 {
                     string fallbackA1Path = $"JSON/{lang}/Cartridge_A/PlayShort_A1";
                     PlayShortQuestionData fallbackA1Data = JsonLoader.Load<PlayShortQuestionData>(fallbackA1Path);
-                    
+
                     if (fallbackA1Data != null && fallbackA1Data.questions != null)
                     {
                         _data.questions = fallbackA1Data.questions;
@@ -176,7 +184,7 @@ namespace My.Scripts._03_PlayShort
                         isLoaded = true;
                     }
                 }
-                
+
                 if (!isLoaded)
                 {
                     Debug.LogWarning("모든 카트리지 폴백 실패. 기본 질문 유지됨.");
@@ -187,33 +195,33 @@ namespace My.Scripts._03_PlayShort
                 Debug.LogWarning("GameManager 인스턴스 누락됨.");
             }
 
-            if (!settings) 
-            { 
-                Debug.LogError("TutorialSettingsSO 누락됨."); 
-                return; 
+            if (!settings)
+            {
+                Debug.LogError("TutorialSettingsSO 누락됨.");
+                return;
             }
-            
-            if (players == null || players.Length < 2) 
+
+            if (players == null || players.Length < 2)
             {
                 Debug.LogWarning("플레이어 배열 데이터 누락됨.");
                 return;
             }
 
             InitializeQuestionQueues();
-            
-            if (ui) 
+
+            if (ui)
             {
                 ui.InitUI(targetDistance);
-                
+
                 if (GameManager.Instance)
                 {
                     string nameA = GameManager.Instance.PlayerAName;
                     string nameB = GameManager.Instance.PlayerBName;
-                    
+
                     // 이유: 기획 의도와 달리 빈 문자열이 표시되는 것을 막기 위해 경고 로그 출력 후 진행.
                     if (string.IsNullOrEmpty(nameA)) Debug.LogWarning("Player A 이름 데이터 누락됨.");
                     if (string.IsNullOrEmpty(nameB)) Debug.LogWarning("Player B 이름 데이터 누락됨.");
-                    
+
                     TextSetting settingA = _data != null ? _data.playerAName : null;
                     TextSetting settingB = _data != null ? _data.playerBName : null;
 
@@ -221,10 +229,10 @@ namespace My.Scripts._03_PlayShort
 
                     Sprite spriteA = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerAColor);
                     Sprite spriteB = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerBColor);
-                    
+
                     if (!spriteA) Debug.LogWarning("Player A 컬러 스프라이트 누락됨.");
                     if (!spriteB) Debug.LogWarning("Player B 컬러 스프라이트 누락됨.");
-                    
+
                     ui.SetPlayerBalls(spriteA, spriteB);
                 }
             }
@@ -265,15 +273,16 @@ namespace My.Scripts._03_PlayShort
                     PlayerPhysicsConfig physicsConfig = settings.physicsConfig;
                     physicsConfig.maxDistance = targetDistance;
                     physicsConfig.useMetricDistance = true;
-                    physicsConfig.metricMultiplier = metricMultiplier; 
-                    
+                    physicsConfig.metricMultiplier = metricMultiplier;
+
                     players[i].Setup(i, lanes, physicsConfig);
                     players[i].OnDistanceChanged -= HandlePlayerDistanceChanged;
                     players[i].OnDistanceChanged += HandlePlayerDistanceChanged;
 
                     if (GameManager.Instance)
                     {
-                        ColorData colorData = (i == 0) ? GameManager.Instance.PlayerAColor : GameManager.Instance.PlayerBColor;
+                        ColorData colorData =
+                            (i == 0) ? GameManager.Instance.PlayerAColor : GameManager.Instance.PlayerBColor;
                         Sprite targetSprite = GameManager.Instance.GetColorSprite(colorData);
 
                         if (targetSprite)
@@ -304,12 +313,12 @@ namespace My.Scripts._03_PlayShort
         {
             // 이유: 플레이어가 마주하는 질문의 순서를 무작위로 섞어 단조로움을 방지함.
             int questionCount = (_data != null && _data.questions != null) ? _data.questions.Length : 0;
-            
+
             for (int p = 0; p < 2; p++)
             {
                 List<int> indices = new List<int>();
                 for (int i = 0; i < questionCount; i++) indices.Add(i);
-                
+
                 for (int i = 0; i < indices.Count; i++)
                 {
                     int rnd = Random.Range(i, indices.Count);
@@ -317,6 +326,7 @@ namespace My.Scripts._03_PlayShort
                     indices[i] = indices[rnd];
                     indices[rnd] = temp;
                 }
+
                 _questionQueues[p] = new Queue<int>(indices);
             }
         }
@@ -325,13 +335,14 @@ namespace My.Scripts._03_PlayShort
         /// 이벤트 구독 해제 및 상태 초기화.
         /// </summary>
         private void OnDestroy()
-        {   
+        {
             if (Instance && Instance.GetInstanceID() == this.GetInstanceID()) Instance = null;
             if (InputManager.Instance) InputManager.Instance.OnPadDown -= HandlePadDown;
             if (players != null)
             {
                 foreach (PlayerController player in players)
-                    if (player) player.OnDistanceChanged -= HandlePlayerDistanceChanged;
+                    if (player)
+                        player.OnDistanceChanged -= HandlePlayerDistanceChanged;
             }
 
             if (GameManager.Instance)
@@ -353,17 +364,17 @@ namespace My.Scripts._03_PlayShort
                 if (_isPlayerPaused[i])
                 {
                     if (players[i]) players[i].ForceStop();
-                    continue; 
+                    continue;
                 }
 
                 if (players[i]) players[i].OnUpdate(false, 0f, 0f);
             }
 
-            float stopLimit = targetDistance + 1.0f; 
-            
+            float stopLimit = targetDistance + 1.0f;
+
             float s1 = 0f;
             float s2 = 0f;
-            
+
             if (Time.deltaTime > 0f)
             {
                 if (players[0])
@@ -375,6 +386,7 @@ namespace My.Scripts._03_PlayShort
                         // 예시 입력값: delta(10) / metricMultiplier(200) / Time.deltaTime(0.016) -> 결과값 = 3.125 (배경 스크롤 속도)
                         s1 = (delta / metricMultiplier) / Time.deltaTime;
                     }
+
                     _prevDistances[0] = currentDist;
                 }
 
@@ -386,6 +398,7 @@ namespace My.Scripts._03_PlayShort
                         float delta = currentDist - _prevDistances[1];
                         s2 = (delta / metricMultiplier) / Time.deltaTime;
                     }
+
                     _prevDistances[1] = currentDist;
                 }
             }
@@ -402,7 +415,7 @@ namespace My.Scripts._03_PlayShort
             if (GameManager.Instance)
             {
                 GameManager.Instance.IsAutoProgressing = isAuto;
-                
+
                 // 이유: 유저 조작 구간으로 변경될 때 방치 타이머를 리셋하여 원치 않는 팝업을 방지함.
                 if (!isAuto)
                 {
@@ -445,13 +458,13 @@ namespace My.Scripts._03_PlayShort
                         if (_lastActiveLane[playerIdx] == 2)
                         {
                             _playerStepCounts[playerIdx] = 0;
-                            if (ui) ui.UpdateStepGauge(playerIdx, false, 0); 
+                            if (ui) ui.UpdateStepGauge(playerIdx, false, 0);
                         }
-                        
-                        _lastActiveLane[playerIdx] = 0; 
+
+                        _lastActiveLane[playerIdx] = 0;
                         if (ui) ui.SetAnswerFeedback(playerIdx, true);
                         _playerStepCounts[playerIdx]++;
-                        
+
                         if (ui && ui.UpdateStepGauge(playerIdx, true, _playerStepCounts[playerIdx]))
                         {
                             if (GameManager.Instance)
@@ -459,6 +472,7 @@ namespace My.Scripts._03_PlayShort
                                 string side = (playerIdx == 0) ? "left" : "right";
                                 GameManager.Instance.SendValueUpdateAPI(_currentQuestionNumbers[playerIdx], side, 1);
                             }
+
                             StartCoroutine(AnswerCompleteRoutine(playerIdx));
                         }
                     }
@@ -468,13 +482,13 @@ namespace My.Scripts._03_PlayShort
                         if (_lastActiveLane[playerIdx] == 0)
                         {
                             _playerStepCounts[playerIdx] = 0;
-                            if (ui) ui.UpdateStepGauge(playerIdx, true, 0); 
+                            if (ui) ui.UpdateStepGauge(playerIdx, true, 0);
                         }
 
-                        _lastActiveLane[playerIdx] = 2; 
+                        _lastActiveLane[playerIdx] = 2;
                         if (ui) ui.SetAnswerFeedback(playerIdx, false);
                         _playerStepCounts[playerIdx]++;
-                        
+
                         if (ui && ui.UpdateStepGauge(playerIdx, false, _playerStepCounts[playerIdx]))
                         {
                             if (GameManager.Instance)
@@ -482,6 +496,7 @@ namespace My.Scripts._03_PlayShort
                                 string side = (playerIdx == 0) ? "left" : "right";
                                 GameManager.Instance.SendValueUpdateAPI(_currentQuestionNumbers[playerIdx], side, 0);
                             }
+
                             StartCoroutine(AnswerCompleteRoutine(playerIdx));
                         }
                     }
@@ -490,9 +505,10 @@ namespace My.Scripts._03_PlayShort
                         if (ui) ui.ResetAnswerFeedback(playerIdx);
                     }
                 }
-                return; 
+
+                return;
             }
-            
+
             // 이유: 질문 상태가 아닌 일반 달리기 상태일 경우 전진 가속 처리.
             if (player.HandleInput(laneIdx, padIdx))
             {
@@ -508,10 +524,10 @@ namespace My.Scripts._03_PlayShort
         private IEnumerator AnswerCompleteRoutine(int playerIdx)
         {
             _isInputBlocked[playerIdx] = true;
-            
+
             // 이유: 답변 완료 연출을 1초간 보여주기 위함.
             yield return CoroutineData.GetWaitForSeconds(1.0f);
-            
+
             if (_nextMilestones[playerIdx] > targetDistance)
             {
                 _playerFinished[playerIdx] = true;
@@ -521,15 +537,16 @@ namespace My.Scripts._03_PlayShort
 
                 if (players[playerIdx])
                 {
-                    players[playerIdx].MoveToLane(1);           
+                    players[playerIdx].MoveToLane(1);
                     StartCoroutine(players[playerIdx].SetFinishRoutine());
                 }
-                if (ui) 
+
+                if (ui)
                 {
                     ui.HideQuestionPopup(playerIdx, 0.5f);
-                    ui.SetGaugeFinish(playerIdx); 
+                    ui.SetGaugeFinish(playerIdx);
                 }
-                
+
                 int otherPlayerIdx = (playerIdx == 0) ? 1 : 0;
 
                 if (!_playerFinished[otherPlayerIdx])
@@ -561,16 +578,16 @@ namespace My.Scripts._03_PlayShort
             if (playerIdx < 0 || playerIdx >= 2) return;
 
             if (ui) ui.UpdateGauge(playerIdx, currentDist, targetDistance);
-            
+
             // 이유: 10M 단위의 마일스톤에 도달할 때마다 질문을 노출함.
             if (currentDist >= _nextMilestones[playerIdx] && _nextMilestones[playerIdx] <= targetDistance)
             {
                 int milestone = _nextMilestones[playerIdx];
-                _nextMilestones[playerIdx] += 10; 
+                _nextMilestones[playerIdx] += 10;
 
                 _isPlayerPaused[playerIdx] = true;
-                
-                if (players[playerIdx]) 
+
+                if (players[playerIdx])
                 {
                     players[playerIdx].ForceStop();
                 }
@@ -599,7 +616,7 @@ namespace My.Scripts._03_PlayShort
 
                 StartCoroutine(QuestionSequenceRoutine(playerIdx, milestone, questionData, infoData));
 
-                if (env) env.RecycleFrameClosestToCamera(playerIdx); 
+                if (env) env.RecycleFrameClosestToCamera(playerIdx);
             }
         }
 
@@ -611,7 +628,8 @@ namespace My.Scripts._03_PlayShort
         /// <param name="qData">질문 텍스트 데이터</param>
         /// <param name="infoData">추가 안내 텍스트 데이터</param>
         /// <returns>IEnumerator 루틴</returns>
-        private IEnumerator QuestionSequenceRoutine(int playerIdx, int milestone, QuestionSetting qData, TextSetting infoData)
+        private IEnumerator QuestionSequenceRoutine(int playerIdx, int milestone, QuestionSetting qData,
+            TextSetting infoData)
         {
             if (ui) ui.ShowQuestionPopup(playerIdx, milestone, qData?.page1, qData?.page2, infoData);
 
@@ -629,12 +647,12 @@ namespace My.Scripts._03_PlayShort
         private void ResumePlayer(int playerIdx)
         {
             if (playerIdx < 0 || playerIdx >= 2) return;
-            
+
             _isPlayerPaused[playerIdx] = false;
             _isInputBlocked[playerIdx] = false;
-            
+
             if (ui) ui.HideQuestionPopup(playerIdx, 0.5f);
-            
+
             if (padDotController) padDotController.SetCenterDotsAlpha(playerIdx, 1f);
         }
 
@@ -647,6 +665,7 @@ namespace My.Scripts._03_PlayShort
         {
             if (playerIdx >= 0 && playerIdx < 2 && players[playerIdx])
                 return players[playerIdx].currentLane;
+
             return 1;
         }
 
@@ -664,6 +683,7 @@ namespace My.Scripts._03_PlayShort
                     if (SoundManager.Instance) SoundManager.Instance.PlaySFX("달리기_2");
                     _lastHitSoundTime = Time.time;
                 }
+
                 players[playerIdx].OnHit(2.0f);
             }
         }
@@ -679,6 +699,7 @@ namespace My.Scripts._03_PlayShort
             {
                 return _isPlayerPaused[playerIdx];
             }
+
             return false;
         }
 
@@ -693,6 +714,7 @@ namespace My.Scripts._03_PlayShort
             {
                 return players[playerIdx].IsStunned;
             }
+
             return false;
         }
 
@@ -709,7 +731,7 @@ namespace My.Scripts._03_PlayShort
             }
 
             if (countdownText)
-            {   
+            {
                 if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_10_3초");
                 countdownText.gameObject.SetActive(true);
                 for (int i = 3; i > 0; i--)
@@ -721,8 +743,9 @@ namespace My.Scripts._03_PlayShort
                 if (_data != null && _data.startText != null)
                 {
                     if (UIManager.Instance)
-                    {   
+                    {
                         yield return CoroutineData.GetWaitForSeconds(0.3f);
+
                         if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_14");
                         UIManager.Instance.SetText(countdownText.gameObject, _data.startText);
                     }
@@ -736,11 +759,12 @@ namespace My.Scripts._03_PlayShort
                     countdownText.text = "Start!";
                 }
             }
-            
+
             _gameStarted = true;
             SetAutoProgressing(false);
-            
+
             yield return CoroutineData.GetWaitForSeconds(1.0f);
+
             if (countdownText) countdownText.gameObject.SetActive(false);
         }
 
@@ -751,10 +775,10 @@ namespace My.Scripts._03_PlayShort
         private IEnumerator FinishSequence()
         {
             if (_isGameFinished) yield break;
-    
+
             _isGameFinished = true;
             SetAutoProgressing(true);
-    
+
             if (ui)
             {
                 ui.HideQuestionPopup(0, 0.5f);
@@ -765,28 +789,30 @@ namespace My.Scripts._03_PlayShort
             if (ui)
             {
                 TextSetting centerData = _data != null ? _data.centerFinishText : null;
-                
+
                 if (SoundManager.Instance) SoundManager.Instance.PlaySFX("달리기_4");
                 ui.ShowCenterFinishPopup(centerData);
             }
-            
+
             foreach (PlayerController player in players)
             {
                 if (player) player.CharacterAnimator.SetTrigger(Idle);
             }
+
             yield return CoroutineData.GetWaitForSeconds(0.5f);
+
             foreach (PlayerController player in players)
             {
                 if (player) player.CharacterAnimator.SetTrigger(FinishJump);
             }
 
             yield return CoroutineData.GetWaitForSeconds(5.0f);
-            
-            if (GameManager.Instance) 
+
+            if (GameManager.Instance)
             {
                 GameManager.Instance.ChangeScene(GameConstants.Scene.PlayLong);
             }
-            else 
+            else
             {
                 UnityEngine.SceneManagement.SceneManager.LoadScene(GameConstants.Scene.PlayLong);
             }
