@@ -195,19 +195,30 @@ namespace My.Scripts.Core
 
         /// <summary>
         /// JSON 파일로부터 시스템 및 API 설정 데이터를 로드함.
+        /// 전역 공통 설정과 언어별 로컬라이즈 설정을 구분하여 처리함.
         /// </summary>
         private void LoadSettings()
         {
+            // 이유: Settings.json은 다국어 폴더에 포함되지 않는 최상위 전역 설정이므로 기존 경로를 유지함.
             Settings settings = JsonLoader.Load<Settings>(GameConstants.Path.JsonSetting); 
-            if (settings != null) _fadeTime = settings.fadeTime;
-            else _fadeTime = 1.0f;
-
-            _systemData = JsonLoader.Load<SystemData>(GameConstants.Path.System);
-            ApiConfig = JsonLoader.Load<ApiSettings>(GameConstants.Path.ApiSetting);
+            if (settings != null) 
+            {
+                _fadeTime = settings.fadeTime;
+            }
+            else 
+            {
+                _fadeTime = 1.0f;
+            }
             
-            if (ApiConfig == null) Debug.LogWarning("API 설정 파일 로드 실패.");
+            _systemData = JsonLoader.Load<SystemData>(GameConstants.Path.GetLocalizedPath(GameConstants.Path.System));
+            ApiConfig = JsonLoader.Load<ApiSettings>("JSON/" + GameConstants.Path.ApiSetting);
+            
+            if (ApiConfig == null) 
+            {
+                Debug.LogWarning("API 설정 파일 로드 실패.");
+            }
         }
-
+        
         /// <summary>
         /// 매 프레임 디버그 단축키 처리 및 무입력 방치 타이머 갱신.
         /// </summary>
