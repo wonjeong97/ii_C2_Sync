@@ -3,7 +3,7 @@
     {
       "page1": {
         "name": "Text_Question1",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "상대방이 약속이나 규칙을\n소홀히 하면 이를 바로잡아주고 싶다.",
         "fontName": "font7",
@@ -25,7 +25,7 @@
     {
       "page1": {
         "name": "Text_Question2",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "상대방의 힘든 일이나 고민에\n깊이 공감하고 마음을 써준다.",
         "fontName": "font7",
@@ -47,7 +47,7 @@
     {
       "page1": {
         "name": "Text_Question3",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "서운한 감정이 들어도 먼저\n사실 관계나 논리부터\n차분히 따져보는 편이다.",
         "fontName": "font7",
@@ -69,7 +69,7 @@
     {
       "page1": {
         "name": "Text_Question4",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "분위기가 가라앉아 있을 때\n유머나 농담으로\n활력을 불어넣으려 한다.",
         "fontName": "font7",
@@ -91,7 +91,7 @@
     {
       "page1": {
         "name": "Text_Question5",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "상대방의 기분을 살피느라\n내가 하고 싶은 말을 참을 때가 많다.",
         "fontName": "font7",
@@ -113,7 +113,7 @@
     {
       "page1": {
         "name": "Text_Question6",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "함께하는 일은 가급적\n내 주도하에 계획대로 진행되어야\n마음이 놓인다.",
         "fontName": "font7",
@@ -135,7 +135,7 @@
     {
       "page1": {
         "name": "Text_Question7",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "상대방을 살뜰히 챙겨주거나\n도움을 줄 때 큰 보람과\n행복을 느낀다.",
         "fontName": "font7",
@@ -157,7 +157,7 @@
     {
       "page1": {
         "name": "Text_Question8",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "함께 무언가를 계획할 때\n효율성과 현실적인 조건을\n꼼꼼히 따지는 편이다.",
         "fontName": "font7",
@@ -179,7 +179,7 @@
     {
       "page1": {
         "name": "Text_Question9",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "반복되는 일상보다\n상대방과 새로운 경험이나\n즐거움을 찾는 것이 좋다.",
         "fontName": "font7",
@@ -201,7 +201,7 @@
     {
       "page1": {
         "name": "Text_Question10",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "의견 충돌이 생기면\n내 주장보다는 일단 상대방의\n뜻에 맞춰주는 편이다.",
         "fontName": "font7",
@@ -223,7 +223,7 @@
     {
       "page1": {
         "name": "Text_Question11",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "관계 속에서 나의 가치관과\n기준을 흔들림 없이\n지키는 것이 중요하다.",
         "fontName": "font7",
@@ -245,7 +245,7 @@
     {
       "page1": {
         "name": "Text_Question12",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "상대방에게 칭찬과 격려,\n응원의 말을 아끼지 않고\n표현하곤 한다.",
         "fontName": "font7",
@@ -267,7 +267,7 @@
     {
       "page1": {
         "name": "Text_Question13",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "갈등 상황에서도 감정에\n치우치기보다 상황을\n객관적으로 분석하려 한다.",
         "fontName": "font7",
@@ -289,7 +289,7 @@
     {
       "page1": {
         "name": "Text_Question14",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "기쁘거나 즐거운 감정이 생기면\n솔직하고 크게 드러내는 편이다.",
         "fontName": "font7",
@@ -311,7 +311,7 @@
     {
       "page1": {
         "name": "Text_Question15",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "상대방의 작은 반응에도\n내 말투나 태도를 세심하게\n조절하며 반응한다.",
         "fontName": "font7",
@@ -333,7 +333,7 @@
     {
       "page1": {
         "name": "Text_Question16",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "상대방이 더 나아질 수 있도록\n잘못된 부분은 분명하게\n알려주려 한다.",
         "fontName": "font7",
@@ -355,7 +355,7 @@
     {
       "page1": {
         "name": "Text_Question17",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "내가 조금 힘들더라도 상대방이\n상처받을까 봐 거절을 잘 못한다.",
         "fontName": "font7",
@@ -377,7 +377,7 @@
     {
       "page1": {
         "name": "Text_Question18",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "감정 섞인 긴 대화보다는\n핵심적인 결론부터\n명확히 말하는 것이 편하다.",
         "fontName": "font7",
@@ -399,7 +399,7 @@
     {
       "page1": {
         "name": "Text_Question19",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "우리 가족만의 익숙한 틀을\n벗어나 새로운 즐거움을\n제안하곤 한다.",
         "fontName": "font7",
@@ -421,7 +421,7 @@
     {
       "page1": {
         "name": "Text_Question20",
-        "position": { "x": 0, "y": 68 },
+        "position": { "x": 0, "y": 144 },
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "배려심 깊다는 말을 자주 듣지만,\n속으로는 답답함을 느낄 때가 있다.",
         "fontName": "font7",
