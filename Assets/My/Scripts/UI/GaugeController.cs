@@ -12,7 +12,6 @@ public class GaugeController : MonoBehaviour
     [SerializeField] private float xOffset = 0f;
     [SerializeField] private float maxPictogramX = 685F; 
 
-    // ★ [추가] 원본 스프라이트 저장용 변수
     private Sprite _originSprite;
 
     private void Awake()
@@ -53,7 +52,7 @@ public class GaugeController : MonoBehaviour
     // 게이지 이미지 초기화 메서드
     public void ResetSprite()
     {
-        if (fillImage != null && _originSprite != null)
+        if (fillImage && _originSprite)
         {
             fillImage.sprite = _originSprite;
         }

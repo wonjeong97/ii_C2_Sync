@@ -1,44 +1,68 @@
+using System;
 using My.Scripts.Core;
+using Microsoft.Extensions.Logging;
 using UnityEngine;
+using ZLogger;                     
+using VContainer;                  
 
 namespace My.Scripts.Global
 {
+    // 카트리지(A~D)와 관계(1~5)의 조합으로 20가지 경우의 수 생성
     public enum UserType
     {
-        A1, A2, A3, A4, A5, A6,
-        B1, B2, B3, B4, B5, B6,
-        C1, C2, C3, C4, C5, C6,
-        D1, D2, D3, D4, D5, D6
+        A1, A2, A3, A4, A5, 
+        B1, B2, B3, B4, B5,
+        C1, C2, C3, C4, C5,
+        D1, D2, D3, D4, D5
     }
 
     /// <summary>
-    /// 현재 플레이 중인 사용자의 세션 데이터(이름, UID, 점수 등)를 전담하여 보관하는 매니저 클래스.
-    /// GameManager에서 분리되어 단일 책임 원칙(SRP)을 준수함.
+    /// 게임 세션 전역 데이터를 유지 및 관리하는 클래스.
+    /// VContainer DI 기반으로 작동하며, 세션 초기화 시 UI 언어 복귀 버그를 완벽히 해결함.
     /// </summary>
     public class SessionManager : MonoBehaviour
     {
-        public static SessionManager Instance { get; private set; }
+        public event Action<string> OnLanguageChanged;
 
         public int CurrentUserId { get; set; } 
         public string PlayerAUid { get; set; } = string.Empty;
         public string PlayerBUid { get; set; } = string.Empty;
-        public string CurrentLanguage { get; set; } = "ko";
         
-        public string PlayerAFirstName { get; set; } = "Player A";
-        public string PlayerBFirstName { get; set; } = "Player B";
+        private string _currentLanguage = "ko";
+        public string CurrentLanguage 
+        { 
+            get => _currentLanguage; 
+            set 
+            {
+                if (_currentLanguage != value)
+                {
+                    _currentLanguage = value;
+                    
+                    if (_logger != null)
+                    {
+                        _logger.ZLogInformation($"세션 언어 변경됨: {_currentLanguage}");
+                    }
+
+                    OnLanguageChanged?.Invoke(_currentLanguage);
+                }
+            } 
+        }
+        public string BlockCode { get; set; } = string.Empty;
+        
+        public string PlayerAFirstName { get; set; } = "NoNameA";
+        public string PlayerBFirstName { get; set; } = "NoNameB";
         
         public ColorData PlayerAColor { get; set; } = ColorData.NotSet;
         public ColorData PlayerBColor { get; set; } = ColorData.NotSet;
-
-        public UserType CurrentUserType { get; set; } = UserType.A1;
-        public string CurrentModuleCode { get; set; } = GameConstants.Module.Code; 
-        public string Cartridge { get; set; } = string.Empty;
-        public string BlockCode { get; set; } = string.Empty;
         
-        public bool IsOtherCartridgeContentsCleared { get; set; } = false;
-        public int ClearedEndCount { get; set; } = 0; 
+        public UserType CurrentUserType { get; set; } = UserType.A1;
+        public string CurrentModuleCode { get; set; } = GameConstants.Module.Code;
+        public string Cartridge { get; set; } = string.Empty;
+        
+        public bool IsOtherCartridgeContentsCleared { get; set; }
+        public int ClearedEndCount { get; set; } 
 
-        public int PieceA1 { get; set; } 
+        public int PieceA1 { get; set; }
         public int PieceA2 { get; set; }
         public int PieceA3 { get; set; }
         public int PieceB1 { get; set; }
@@ -51,90 +75,221 @@ namespace My.Scripts.Global
         public int PieceD2 { get; set; }
         public int PieceD3 { get; set; }
         
+        // --- 의존성 주입 (DI) 변수 ---
+        private ILogger<SessionManager> _logger;
+
         /// <summary>
-        /// 할당된 블록 코드 리스트를 분석하여 현재 모듈을 제외한 나머지 모듈의 마음 조각 총합을 계산함.
+        /// VContainer를 통해 최상위 컨테이너로부터 고성능 로거 주입
         /// </summary>
+        [Inject]
+        public void Construct(ILogger<SessionManager> logger)
+        {
+            _logger = logger;
+        }
+
         public int TotalPieces
         {
             get
             {
-                // 이유: 할당된 블록 정보가 없는 신규 유저의 경우 모든 조각의 단순 합계를 반환함.
-                if (string.IsNullOrWhiteSpace(BlockCode) ||
-                    string.Equals(BlockCode.Trim(), "null", System.StringComparison.OrdinalIgnoreCase)) 
+                if (string.IsNullOrWhiteSpace(BlockCode)) 
                 {
-                    return PieceA1 + PieceA2 + PieceA3 +
-                           PieceB1 + PieceB2 + PieceB3 +
-                           PieceC1 + PieceC3 +
-                           PieceD1 + PieceD2 + PieceD3;
+                    return GetDefaultTotalPieces();
                 }
 
-                int sum = 0;
-                string[] blocks = BlockCode.Split(',');
-                string currentCode = CurrentModuleCode.ToUpper();
-
-                // # TODO: 반복적인 문자열 비교 및 Switch 연산 비용 절감을 위해 Dictionary 기반 점수 매핑 구조로 개선 필요.
-                // 예시 입력: BlockCode="A1,B2,C2", CurrentModuleCode="C2", PieceA1=5, PieceB2=10, PieceC2=3 -> 결과값 = 15 (C2 제외)
-                foreach (string b in blocks)
-                {
-                    string block = b.Trim().ToUpper();
-                    
-                    // 이유: 현재 플레이 중인 모듈의 조각은 게임 결과 정산 시점에 합산되므로 기존 누적치 계산에서는 제외함.
-                    if (block == currentCode)
-                    {
-                        continue;
-                    }
-
-                    switch (block)
-                    {
-                        case "A1": sum += PieceA1; break;
-                        case "A2": sum += PieceA2; break;
-                        case "A3": sum += PieceA3; break;
-                        case "B1": sum += PieceB1; break;
-                        case "B2": sum += PieceB2; break;
-                        case "B3": sum += PieceB3; break;
-                        case "C1": sum += PieceC1; break;
-                        case "C2": sum += PieceC2; break;
-                        case "C3": sum += PieceC3; break;
-                        case "D1": sum += PieceD1; break;
-                        case "D2": sum += PieceD2; break;
-                        case "D3": sum += PieceD3; break;
-                    }
-                }
-                return sum;
+                return CalculatePiecesFromBlockCode();
             }
         }
-
+        
         /// <summary>
-        /// 객체 생성 시 싱글톤 인스턴스를 할당하고 씬 전환 시 파괴되지 않도록 설정함.
+        /// 세션 데이터 누락 시 안전망(Fallback)으로 동작함.
+        /// A1은 현재 진행 컨텐츠이므로 합산에서 제외함.
         /// </summary>
-        private void Awake()
+        private int GetDefaultTotalPieces()
         {
-            if (!Instance)
+            return PieceA1 + PieceA2 + PieceA3 +
+                   PieceB1 + PieceB2 + PieceB3 +
+                   PieceC1 + PieceC3 +
+                   PieceD1 + PieceD2 + PieceD3;
+        }
+        
+        /// <summary>
+        /// 획득한 블록 코드를 문자열 할당(GC) 없이 인덱스 기반으로 순회하며 조각 개수를 합산함.
+        /// </summary>
+        private int CalculatePiecesFromBlockCode()
+        {
+            if (string.IsNullOrEmpty(BlockCode))
             {
-                Instance = this;
-                DontDestroyOnLoad(gameObject);
+                return 0;
             }
-            else
+
+            (char currentMod1, char currentMod2) = GetCurrentModuleChars();
+
+            return SumParsedBlocks(BlockCode, currentMod1, currentMod2);
+        }
+        
+        /// <summary>
+        /// 기준이 되는 현재 모듈 코드를 두 개의 문자로 분리하여 캐싱 반환함.
+        /// </summary>
+        private (char, char) GetCurrentModuleChars()
+        {
+            if (string.IsNullOrEmpty(CurrentModuleCode) || CurrentModuleCode.Length < 2)
             {
-                // 이유: 중복 생성된 세션 매니저를 제거하여 데이터 무결성을 유지함.
-                Destroy(gameObject);
+                return ('\0', '\0');
+            }
+
+            return (char.ToUpperInvariant(CurrentModuleCode[0]), char.ToUpperInvariant(CurrentModuleCode[1]));
+        }
+        
+        /// <summary>
+        /// 전체 블록 코드 문자열을 순회하며 개별 문자를 처리 및 누적 합산함.
+        /// </summary>
+        private int SumParsedBlocks(string blocks, char currentMod1, char currentMod2)
+        {
+            int sum = 0;
+            char parsedMod1 = '\0';
+            char parsedMod2 = '\0';
+            int length = blocks.Length;
+
+            for (int i = 0; i < length; i++)
+            {
+                ProcessBlockChar(blocks[i], ref parsedMod1, ref parsedMod2, ref sum, currentMod1, currentMod2);
+            }
+
+            // 루프 종료 후 마지막에 남은 잔여 파싱 블록 처리
+            sum += EvaluateAndGetPieceCount(parsedMod1, parsedMod2, currentMod1, currentMod2);
+            return sum;
+        }
+        
+        /// <summary>
+        /// 단일 문자를 평가하여 임시 변수에 캐싱하거나, 구분자(,)를 만나면 합산 후 변수를 리셋함.
+        /// </summary>
+        private void ProcessBlockChar(char c, ref char parsedMod1, ref char parsedMod2, ref int sum, char currentMod1, char currentMod2)
+        {
+            if (char.IsWhiteSpace(c))
+            {
+                return;
+            }
+
+            if (c == ',')
+            {
+                sum += EvaluateAndGetPieceCount(parsedMod1, parsedMod2, currentMod1, currentMod2);
+                parsedMod1 = '\0';
+                parsedMod2 = '\0';
+                return;
+            }
+
+            // Split 없이 쉼표 이전의 유효 알파벳 및 숫자를 순차적으로 기록함
+            if (parsedMod1 == '\0')
+            {
+                parsedMod1 = char.ToUpperInvariant(c);
+            }
+            else if (parsedMod2 == '\0')
+            {
+                parsedMod2 = char.ToUpperInvariant(c);
             }
         }
 
         /// <summary>
-        /// 현재 세션의 모든 유저 관련 데이터를 초기화함.
+        /// 파싱된 콘텐츠 코드가 유효한지, 그리고 현재 진행 중인 모듈이 아닌지 검증한 후 조각 개수를 반환함.
+        /// </summary>
+        private int EvaluateAndGetPieceCount(char parsed1, char parsed2, char current1, char current2)
+        {
+            if (parsed1 == '\0' || parsed2 == '\0')
+            {
+                return 0;
+            }
+
+            if (parsed1 == current1 && parsed2 == current2)
+            {
+                return 0;
+            }
+
+            return GetPieceCount(parsed1, parsed2);
+        }
+
+        /// <summary>
+        /// 콘텐츠 식별 문자를 조합하여 실제 조각 개수를 반환함.
+        /// </summary>
+        private int GetPieceCount(char mod1, char mod2)
+        {
+            switch (mod1)
+            {
+                case 'A': return GetPieceGroupA(mod2);
+                case 'B': return GetPieceGroupB(mod2);
+                case 'C': return GetPieceGroupC(mod2);
+                case 'D': return GetPieceGroupD(mod2);
+                default: return 0;
+            }
+        }
+
+        private int GetPieceGroupA(char mod2)
+        {
+            if (mod2 == '1') return PieceA1;
+            if (mod2 == '2') return PieceA2;
+            if (mod2 == '3') return PieceA3;
+            return 0;
+        }
+
+        private int GetPieceGroupB(char mod2)
+        {
+            if (mod2 == '1') return PieceB1;
+            if (mod2 == '2') return PieceB2;
+            if (mod2 == '3') return PieceB3;
+            return 0;
+        }
+
+        private int GetPieceGroupC(char mod2)
+        {
+            if (mod2 == '1') return PieceC1;
+            if (mod2 == '2') return PieceC2;
+            if (mod2 == '3') return PieceC3;
+            return 0;
+        }
+
+        private int GetPieceGroupD(char mod2)
+        {
+            if (mod2 == '1') return PieceD1;
+            if (mod2 == '2') return PieceD2;
+            if (mod2 == '3') return PieceD3;
+            return 0;
+        }
+
+        /// <summary>
+        /// 개별 블록 코드 문자열에 매핑되는 실제 조각 개수를 반환함.
+        /// 타 클래스에서 문자열로 조회할 경우를 대비해 public 오버로딩 헬퍼로 개방함.
+        /// </summary>
+        public int GetPieceCount(string blockCode)
+        {
+            if (string.IsNullOrEmpty(blockCode) || blockCode.Length < 2)
+            {
+                return 0;
+            }
+            
+            char mod1 = char.ToUpperInvariant(blockCode[0]);
+            char mod2 = char.ToUpperInvariant(blockCode[1]);
+            
+            return GetPieceCount(mod1, mod2);
+        }
+
+        /// <summary>
+        /// 세션 내의 모든 전역 상태 데이터를 초기값으로 리셋함.
         /// </summary>
         public void ClearSession()
         {
-            // 이유: 새로운 사용자가 진입할 때 이전 사용자의 데이터가 잔존하여 발생하는 오류를 방지함.
+            if (_logger != null)
+            {
+                _logger.ZLogInformation($"전역 게임 세션 데이터 초기화됨.");
+            }
+
             CurrentUserId = 0;
             PlayerAUid = string.Empty;
             PlayerBUid = string.Empty;
             BlockCode = string.Empty;
+            
             CurrentLanguage = "ko";
             
-            PlayerAFirstName = "Player A";
-            PlayerBFirstName = "Player B";
+            PlayerAFirstName = "NoNameA";
+            PlayerBFirstName = "NoNameB";
             
             PlayerAColor = ColorData.NotSet;
             PlayerBColor = ColorData.NotSet;
