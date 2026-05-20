@@ -27,22 +27,22 @@ namespace My.Scripts.Core
             public const string ApiSetting = "API";
             
             /// <summary>
-            /// 현재 세션의 언어 설정을 반영하여 최종 리소스 경로를 반환함.
+            /// 파일 성격에 따라 전역 JSON 또는 언어별 JSON 경로를 반환합니다.
+            /// 싱글톤 제거에 따라 현재 세션의 언어 코드(lang)를 외부에서 주입받도록 개편되었습니다.
             /// </summary>
-            /// <param name="subPath">데이터 파일 이름 또는 하위 경로</param>
-            /// <returns>JSON/ko/파일이름 형태의 경로</returns>
-            public static string GetLocalizedPath(string subPath)
+            public static string GetLocalizedPath(string fileName, string lang = "ko")
             {
-                string lang = "ko";
-                if (Global.SessionManager.Instance)
+                // 1. 전역 설정 파일(API)은 언어 폴더를 거치지 않고 JSON 폴더에서 직접 참조
+                if (fileName == ApiSetting)
                 {
-                    string currentLanguage = Global.SessionManager.Instance.CurrentLanguage;
-                    if (!string.IsNullOrWhiteSpace(currentLanguage))
-                    {
-                        lang = currentLanguage;
-                    }
+                    return $"JSON/{fileName}.json";
                 }
-                return $"JSON/{lang}/{subPath}";
+
+                // 2. Settings.json은 루트 폴더에 있으므로 그대로 반환
+                if (fileName == JsonSetting) return $"{fileName}.json";
+
+                // 3. 그 외 나머지는 현재 주입된 언어 폴더(ko/en/jp) 경로 반환
+                return $"JSON/{lang}/{fileName}.json";
             }
         }
         
