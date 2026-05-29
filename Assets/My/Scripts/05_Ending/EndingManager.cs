@@ -1,17 +1,15 @@
-using System;
-using UnityEngine;
+using Microsoft.Extensions.Logging;
 using My.Scripts.Core;
 using My.Scripts.Core.FlowSystem;
 using My.Scripts._05_Ending.Pages;
+using UnityEngine.SceneManagement;
+using VContainer;
+using ZLogger;
 using Wonjeong.Utils;
 
 namespace My.Scripts._05_Ending
 {
-    /// <summary>
-    /// 엔딩 씬 전체 설정 데이터를 담는 루트 클래스.
-    /// JSON 파일(Ending.json)의 최상위 구조와 1:1로 매핑됨.
-    /// </summary>
-    [Serializable]
+    [System.Serializable]
     public class EndingSetting
     {
         public EndingPage1Data page1;
@@ -20,54 +18,94 @@ namespace My.Scripts._05_Ending
     }
 
     /// <summary>
-    /// 엔딩 씬의 전체 흐름(페이지 전환)을 관리하는 매니저.
-    /// BaseFlowManager를 상속받아 JSON 데이터를 로드하고 각 페이지에 주입함.
+    /// 엔딩 씬의 전체 흐름을 관리하는 매니저.
+    /// VContainer 의존성 주입 및 BaseFlowManager의 비동기 흐름 제어를 활용함.
     /// </summary>
     public class EndingManager : BaseFlowManager
     {
+        private GameManager _gameManager;
+        private IObjectResolver _resolver;
+
+        [Inject]
+        public void Construct(ILogger<EndingManager> logger, GameManager gameManager, IObjectResolver resolver)
+        {
+            _logger = logger;
+            _gameManager = gameManager;
+            _resolver = resolver;
+        }
+
         /// <summary>
-        /// 초기화 시 JSON 데이터를 로드하여 각 페이지에 분배.
-        /// 다국어 경로를 적용하여 현재 언어에 맞는 엔딩 텍스트를 불러옴.
+        /// 엔딩 설정 데이터를 로드하고 각 페이지를 초기화함
         /// </summary>
         protected override void LoadSettings()
         {
-            // 이유: 언어 설정이 반영된 로컬라이즈 경로를 통해 데이터를 불러옴.
+            InjectDependenciesToPages();
+
+            EndingSetting setting = LoadLocalizedSetting();
+            if (setting == null) return;
+
+            SetupPageData(setting);
+        }
+
+        /// <summary>
+        /// 등록된 모든 페이지에 의존성을 강제 주입함
+        /// </summary>
+        private void InjectDependenciesToPages()
+        {
+            if (_resolver == null || pages == null) return;
+
+            // 누락된 페이지의 널 참조 방지
+            foreach (GamePage page in pages)
+            {
+                if (page) _resolver.Inject(page);
+            }
+        }
+
+        /// <summary>
+        /// 다국어 경로를 확인하여 엔딩 설정 데이터를 반환함
+        /// </summary>
+        private EndingSetting LoadLocalizedSetting()
+        {
             string localizedPath = GameConstants.Path.GetLocalizedPath(GameConstants.Path.Ending);
             EndingSetting setting = JsonLoader.Load<EndingSetting>(localizedPath);
 
             if (setting == null)
             {
-                Debug.LogError("[EndingManager] JSON 데이터 로드 실패");
-                return;
+                _logger?.ZLogError($"EndingManager: JSON 데이터 로드 실패. 경로: {localizedPath}");
             }
 
-            if (pages != null && pages.Length > 0)
-            {
-                if (pages[0] is EndingPage1Controller page1) 
-                    page1.SetupData(setting.page1);
-                
-                if (pages.Length > 1 && pages[1] is EndingPage2Controller page2) 
-                    page2.SetupData(setting.page2);
-                
-                if (pages.Length > 2 && pages[2] is EndingPage3Controller page3) 
-                    page3.SetupData(setting.page3);
-            }
+            return setting;
         }
 
         /// <summary>
-        /// 등록된 3개의 엔딩 페이지가 모두 끝났을 때 호출.
-        /// 게임의 완전한 종료를 의미하므로 타이틀 씬으로 복귀함.
+        /// 로드된 설정 데이터를 각 페이지 컨트롤러에 할당함
         /// </summary>
+        private void SetupPageData(EndingSetting setting)
+        {
+            if (pages == null || pages.Length == 0) return;
+
+            // 각 페이지의 타입 캐스팅 안전성 보장
+            if (pages.Length > 0 && pages[0] is EndingPage1Controller page1) 
+                page1.SetupData(setting.page1);
+    
+            if (pages.Length > 1 && pages[1] is EndingPage2Controller page2) 
+                page2.SetupData(setting.page2);
+    
+            if (pages.Length > 2 && pages[2] is EndingPage3Controller page3) 
+                page3.SetupData(setting.page3);
+        }
+
         protected override void OnAllFinished()
         {
-            if (GameManager.Instance)
+            _logger?.ZLogInformation($"플레이 완료. 타이틀 씬으로 복귀합니다.");
+
+            if (_gameManager)
             {
-                // 모든 상태(inactivity 타이머 등)를 초기화하고 첫 화면으로 돌아감
-                GameManager.Instance.ReturnToTitle(); 
+                _gameManager.ReturnToTitle();
             }
             else
             {
-                UnityEngine.SceneManagement.SceneManager.LoadScene(GameConstants.Scene.Title);
+                SceneManager.LoadScene(GameConstants.Scene.Title);
             }
         }
     }

@@ -1,9 +1,8 @@
+using Microsoft.Extensions.Logging;
 using UnityEngine;
 using VContainer;
-using Microsoft.Extensions.Logging;
-using ZLogger;
 
-namespace My.Scripts.Core
+namespace My.Scripts.Environment
 {
     /// <summary>
     /// 메쉬의 UV 좌표를 실시간으로 수정하여 텍스처 스크롤, 회전, 스케일링을 처리하는 클래스.

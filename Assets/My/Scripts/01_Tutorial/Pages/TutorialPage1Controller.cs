@@ -1,297 +1,200 @@
 using System;
-using System.Collections;
-using Cysharp.Threading.Tasks; 
+using System.Threading;
+using Cysharp.Text;
+using Cysharp.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using My.Scripts.Core;
 using My.Scripts.Global;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
+using VContainer;
 using Wonjeong.Data;
 using Wonjeong.UI;
-using Wonjeong.Utils;
+using ZLogger;
 
 namespace My.Scripts._01_Tutorial.Pages
-{   
+{
     [Serializable]
     public class TutorialPage1Data
     {
-        public TextSetting descriptionText; 
+        public TextSetting descriptionText;
     }
-    
+
     public class TutorialPage1Controller : GamePage<TutorialPage1Data>
     {
         [Header("Page 1 UI")]
         [SerializeField] private Text descriptionText;
-        
-        [Header("API Manager")]
         [SerializeField] private APIManager apiManager;
-        
+
         [Header("Polling Settings")]
-        [SerializeField] private float pollInterval = 3.0f; 
+        [SerializeField] private float pollInterval = 3.0f;
 
-        private readonly float fadeTime = 0.5f; 
-        private Coroutine _pollCoroutine; 
+        private CancellationTokenSource _cts;
+        private ILogger<TutorialPage1Controller> _logger;
+        private GameManager _gameManager;
+        private SoundManager _soundManager;
+        private UIManager _uiManager;
+        private SessionManager _sessionManager;
 
-        /// <summary>
-        /// 객체 초기화 시 호출됨.
-        /// 텍스트 알파값을 0으로 설정하여 초기 투명 상태를 만듦.
-        /// </summary>
+        [Inject]
+        public void Construct(
+            ILogger<TutorialPage1Controller> logger,
+            GameManager gameManager,
+            SoundManager soundManager,
+            UIManager uiManager,
+            SessionManager sessionManager)
+        {
+            _logger = logger;
+            _gameManager = gameManager;
+            _soundManager = soundManager;
+            _uiManager = uiManager;
+            _sessionManager = sessionManager;
+        }
+
         protected override void Awake()
         {
             base.Awake();
-            if (descriptionText)
-            {
-                Color c = descriptionText.color;
-                c.a = 0f;
-                descriptionText.color = c;
-            }
-            else
-            {
-                Debug.LogWarning("[TutorialPage1] descriptionText 컴포넌트가 누락됨.");
-            }
+            SetTextAlpha(0f);
         }
 
-        /// <summary>
-        /// 외부 데이터를 받아 UI 텍스트를 세팅함.
-        /// </summary>
-        /// <param name="data">적용할 텍스트 설정 데이터</param>
         protected override void SetupData(TutorialPage1Data data)
-        {
-            if (descriptionText) 
+        {   
+            if (descriptionText && _uiManager)
             {
-                if (UIManager.Instance)
-                {
-                    UIManager.Instance.SetText(descriptionText.gameObject, data.descriptionText);
-                }
-                else
-                {
-                    Debug.LogWarning("[TutorialPage1] UIManager 인스턴스가 없음.");
-                }
+                _uiManager.SetText(descriptionText.gameObject, data.descriptionText);
             }
             else
             {
-                Debug.LogWarning("[TutorialPage1] descriptionText 컴포넌트가 누락됨.");
+                _logger?.ZLogWarning($"[TutorialPage1] UI 컴포넌트 또는 UIManager 누락.");
             }
         }
 
-        /// <summary>
-        /// 페이지 진입 시 호출됨.
-        /// 텍스트 페이드인 연출을 시작함.
-        /// </summary>
         public override void OnEnter()
         {
-            base.OnEnter(); 
-
-            // 튜토리얼 매칭 대기 화면이므로 유저가 조작하지 않아도 방치 타이머가 동작하지 않도록 강제함.
-            if (GameManager.Instance) GameManager.Instance.IsAutoProgressing = true;
-
-            if (descriptionText) 
-            {
-                StartCoroutine(FadeInTextRoutine());
-            }
+            base.OnEnter();
+            _cts = new CancellationTokenSource();
+            
+            if (_gameManager) _gameManager.IsAutoProgressing = true;
+            
+            FadeInAndPollAsync(_cts.Token).Forget();
         }
 
-        /// <summary>
-        /// 페이지 퇴장 시 호출됨.
-        /// 실행 중인 코루틴을 정리하고 메인 BGM으로 전환함.
-        /// </summary>
         public override void OnExit()
         {
-            if (SoundManager.Instance)
+            if (_soundManager)
             {
-                // 대기 화면 종료 후 본격적인 게임 진입이므로 BGM을 교체함.
-                SoundManager.Instance.StopBGM();
-                SoundManager.Instance.PlayBGM("MainBGM");
+                _soundManager.StopBGM();
+                _soundManager.PlayBGM("MainBGM");
             }
-
-            if (_pollCoroutine != null)
-            {
-                StopCoroutine(_pollCoroutine);
-                _pollCoroutine = null;
-            }
+            
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
             base.OnExit();
         }
 
-        /// <summary>
-        /// 매 프레임 호출됨.
-        /// 단축키 입력을 통한 스킵 처리.
-        /// </summary>
         private void Update()
         {
-            // 개발 및 디버그 환경에서 빠른 테스트를 위해 엔터키로 강제 진행을 허용함.
-            if (Input.GetKeyDown(KeyCode.Return)) CompleteStep(); 
+            if (Input.GetKeyDown(KeyCode.Return)) CompleteStep();
         }
 
-        /// <summary>
-        /// 주기적으로 서버에 룸 상태 및 유저 할당 여부를 확인하여 튜토리얼을 진행할지 판단함.
-        /// </summary>
-        /// <returns>IEnumerator 루틴</returns>
-        private IEnumerator PollRoomStateRoutine()
+        private async UniTaskVoid FadeInAndPollAsync(CancellationToken ct)
+        {
+            if (descriptionText)
+            {
+                float duration = 0.5f;
+                float elapsed = 0f;
+                while (elapsed < duration)
+                {
+                    elapsed += Time.deltaTime;
+                    SetTextAlpha(Mathf.Clamp01(elapsed / duration));
+                    await UniTask.Yield(PlayerLoopTiming.Update, ct);
+                }
+                SetTextAlpha(1f);
+            }
+
+            await PollRoomStateAsync(ct);
+        }
+
+        private async UniTask PollRoomStateAsync(CancellationToken ct)
         {
 #if UNITY_EDITOR
-            // 이유: 에디터에서는 실제 유저의 매칭을 기다리는 API 폴링을 생략하고, 즉시 가상 데이터 패치를 호출하여 진행함.
-            Debug.Log("[TutorialPage1] 에디터 모드: 유저 할당 대기를 생략합니다.");
-            yield return CoroutineData.GetWaitForSeconds(1.0f);
-            
-            if (apiManager)
-            {
-                bool fetchSuccess = false;
-                bool fetchFaulted = false;
-                yield return apiManager.FetchDataAsync("EDITOR_TEST").ToCoroutine(r => fetchSuccess = r, ex => { fetchFaulted = true; });
-            }
-            else
-            {
-                Debug.LogWarning("[TutorialPage1] apiManager 컴포넌트가 누락됨.");
-            }
-            
+            await UniTask.Delay(TimeSpan.FromSeconds(1.0f), cancellationToken: ct);
+            if (apiManager) apiManager.FillDebugSession();
             CompleteStep();
-            yield break;
+            return;
 #endif
-            float emptyUserStartTime = -1f; 
+            float emptyUserStartTime = -1f;
 
-            // # TODO: 루프 내부에서의 반복적인 문자열 생성으로 인한 가비지 발생을 막기 위해 URL 캐싱 최적화 필요.
-            while (true)
+            while (!ct.IsCancellationRequested)
             {
-                if (!GameManager.Instance || GameManager.Instance.ApiConfig == null)
+                if (_gameManager?.ApiConfig == null)
                 {
-                    yield return CoroutineData.GetWaitForSeconds(pollInterval);
+                    await UniTask.Delay(TimeSpan.FromSeconds(pollInterval), cancellationToken: ct);
                     continue;
                 }
 
-                string checkUrl = $"{GameManager.Instance.ApiConfig.CheckRoomStateUrl}?code={GameConstants.Module.Code.ToLower()}";
-                string userUrl = $"{GameManager.Instance.ApiConfig.GetCurrentRoomUserUrl}?code={GameConstants.Module.Code.ToLower()}";
+                string code = GameConstants.Module.Code.ToLower();
+                string checkUrl = ZString.Concat(_gameManager.ApiConfig.CheckRoomStateUrl, "?code=", code);
+                string userUrl = ZString.Concat(_gameManager.ApiConfig.GetCurrentRoomUserUrl, "?code=", code);
 
-                bool isRoomEmpty = false;
-
-                using (UnityWebRequest stateReq = UnityWebRequest.Get(checkUrl))
+                using (var req = UnityWebRequest.Get(checkUrl))
                 {
-                    stateReq.timeout = 10; 
-                    yield return stateReq.SendWebRequest();
-
-                    if (stateReq.result == UnityWebRequest.Result.Success)
+                    req.timeout = 10;
+                    var res = await req.SendWebRequest().ToUniTask(cancellationToken: ct);
+                    if (res.result == UnityWebRequest.Result.Success && res.downloadHandler.text.Contains(GameConstants.Api.StatusEmpty, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (stateReq.downloadHandler.text.IndexOf(GameConstants.Api.StatusEmpty, StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            isRoomEmpty = true;
-                        }
+                        await UniTask.Delay(TimeSpan.FromSeconds(1.0f), cancellationToken: ct);
+                        _gameManager.ReturnToTitle();
+                        return;
                     }
                 }
 
-                if (isRoomEmpty)
+                using (var req = UnityWebRequest.Get(userUrl))
                 {
-                    // 이유: 방이 비어있으면 튜토리얼을 중단하고 즉시 타이틀 화면으로 복귀함.
-                    yield return CoroutineData.GetWaitForSeconds(1.0f);
-                    if (GameManager.Instance) GameManager.Instance.ReturnToTitle();
-                    yield break;
-                }
-
-                bool isUserEmpty = false;
-
-                using (UnityWebRequest userReq = UnityWebRequest.Get(userUrl))
-                {
-                    userReq.timeout = 10; 
-                    yield return userReq.SendWebRequest();
-
-                    if (userReq.result == UnityWebRequest.Result.Success)
+                    req.timeout = 10;
+                    var res = await req.SendWebRequest().ToUniTask(cancellationToken: ct);
+                    if (res.result == UnityWebRequest.Result.Success)
                     {
-                        string rawText = userReq.downloadHandler.text;
-                        if (rawText.IndexOf(GameConstants.Api.StatusEmpty, StringComparison.OrdinalIgnoreCase) >= 0)
+                        string rawText = res.downloadHandler.text;
+                        if (rawText.Contains(GameConstants.Api.StatusEmpty, StringComparison.OrdinalIgnoreCase))
                         {
-                            isUserEmpty = true;
+                            emptyUserStartTime = (emptyUserStartTime < 0) ? Time.time : emptyUserStartTime;
+                            if (Time.time - emptyUserStartTime >= 15f) { _gameManager.ReturnToTitle(); return; }
                         }
                         else if (rawText.Contains(","))
                         {
                             emptyUserStartTime = -1f;
-
                             string[] parts = rawText.Split(new[] { '\r', '\n', ',' }, StringSplitOptions.RemoveEmptyEntries);
-                            if (parts.Length >= 1)
+                            
+                            if (parts.Length >= 2 && _sessionManager)
                             {
-                                string uidLeft = parts[0].Trim();
-                                if (parts.Length >= 2 && SessionManager.Instance)
+                                _sessionManager.PlayerAUid = parts[0].Trim();
+                                _sessionManager.PlayerBUid = parts[1].Trim();
+                                
+                                var fetchResult = await apiManager.FetchDataAsync(parts[0].Trim()).SuppressCancellationThrow();
+                                if (fetchResult.IsCanceled == false && fetchResult.Result == true && _sessionManager.CurrentUserId != 0)
                                 {
-                                    SessionManager.Instance.PlayerAUid = uidLeft;
-                                    SessionManager.Instance.PlayerBUid = parts[1].Trim();
+                                    CompleteStep();
+                                    return;
                                 }
-
-                                if (apiManager)
-                                {   
-                                    bool fetchSuccess = false;
-                                    bool fetchFaulted = false;
-
-                                    yield return apiManager.FetchDataAsync(uidLeft)
-                                                           .Timeout(TimeSpan.FromSeconds(25))
-                                                           .ToCoroutine(
-                                                                r => fetchSuccess = r, 
-                                                                ex => { fetchFaulted = true; }
-                                                            );
-
-                                    // 이유: 데이터 패치에 실패하거나 유저 인덱스가 유효하지 않을 경우 재시도함.
-                                    if (fetchFaulted || !fetchSuccess || !SessionManager.Instance || SessionManager.Instance.CurrentUserId == 0)
-                                    {
-                                        yield return CoroutineData.GetWaitForSeconds(pollInterval);
-                                        continue;
-                                    }
-                                }
-                                else
-                                {
-                                    Debug.LogWarning("[TutorialPage1] apiManager 컴포넌트가 누락됨.");
-                                }
-                                CompleteStep(); 
-                                yield break; 
                             }
                         }
                     }
                 }
-
-                if (isUserEmpty)
-                {
-                    // 이유: 방은 할당되었으나 유저 데이터가 계속 들어오지 않을 경우 15초 타임아웃 처리.
-                    if (emptyUserStartTime < 0f) emptyUserStartTime = Time.time;
-                    
-                    if (Time.time - emptyUserStartTime >= 15f)
-                    {
-                        if (GameManager.Instance) GameManager.Instance.ReturnToTitle();
-                        yield break;
-                    }
-                }
-                else
-                {
-                    emptyUserStartTime = -1f;
-                }
-
-                yield return CoroutineData.GetWaitForSeconds(pollInterval);
+                await UniTask.Delay(TimeSpan.FromSeconds(pollInterval), cancellationToken: ct);
             }
         }
 
-        /// <summary>
-        /// 설정된 시간 동안 텍스트의 투명도를 조절하여 페이드인 효과를 줌.
-        /// </summary>
-        /// <returns>IEnumerator 루틴</returns>
-        private IEnumerator FadeInTextRoutine()
+        private void SetTextAlpha(float alpha)
         {
-            float timer = 0f;
-            while (timer < fadeTime)
-            {
-                timer += Time.deltaTime;
-                if (descriptionText)
-                {
-                    Color c = descriptionText.color;
-                    // 예시 입력: timer = 0.25, fadeTime = 0.5 -> 결과값 = 0.5 (알파값 50%)
-                    c.a = Mathf.Clamp01(timer / fadeTime);
-                    descriptionText.color = c;
-                }
-                yield return null;
-            }
-            
             if (descriptionText)
             {
                 Color c = descriptionText.color;
-                c.a = 1f;
+                c.a = alpha;
                 descriptionText.color = c;
             }
-            
-            if (_pollCoroutine != null) StopCoroutine(_pollCoroutine);
-            _pollCoroutine = StartCoroutine(PollRoomStateRoutine());
         }
     }
 }

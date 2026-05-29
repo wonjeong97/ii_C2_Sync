@@ -1,10 +1,13 @@
 using System;
-using System.Collections;
-using UnityEngine;
-using My.Scripts.Core;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using My.Scripts._01_Tutorial.Pages;
+using My.Scripts.Core;
 using My.Scripts.Core.FlowSystem;
-using Wonjeong.Utils;     
+using VContainer;
+using Wonjeong.Utils;
+using ZLogger;
 
 namespace My.Scripts._01_Tutorial
 {
@@ -19,61 +22,85 @@ namespace My.Scripts._01_Tutorial
 
     public class TutorialManager : BaseFlowManager
     {
-        /// <summary>
-        /// 초기화 시 다국어 경로를 적용하여 JSON 데이터를 로드하고 각 페이지에 분배함.
-        /// </summary>
+        private IObjectResolver _resolver;
+        private GameManager _gameManager;
+
+        [Inject]
+        public void Construct(IObjectResolver resolver, ILogger<TutorialManager> logger, GameManager gameManager)
+        {
+            _resolver = resolver;
+            _logger = logger;
+            _gameManager = gameManager;
+        }
+
         protected override void LoadSettings()
         {
-            // 현재 세션의 언어 설정(ko, en, jp 등)이 반영된 경로를 통해 데이터를 불러옴.
+            if (_resolver != null)
+            {
+                foreach (GamePage page in pages)
+                {
+                    if (page) _resolver.Inject(page);
+                }
+            }
+
             string localizedPath = GameConstants.Path.GetLocalizedPath(GameConstants.Path.Tutorial);
             TutorialSetting setting = JsonLoader.Load<TutorialSetting>(localizedPath);
 
             if (setting == null)
             {
-                Debug.LogError("[TutorialManager] JSON 데이터 로드 실패");
+                _logger?.ZLogError($"[TutorialManager] JSON 데이터 로드 실패: {localizedPath}");
                 return;
             }
 
-            if (pages != null && pages.Length > 0)
-            {
-                if (pages.Length > 0 && pages[0] is TutorialPage1Controller page1) page1.SetupData(setting.page1);
-                if (pages.Length > 1 && pages[1] is TutorialPage2Controller page2) page2.SetupData(setting.page2);
-                if (pages.Length > 2 && pages[2] is TutorialPage3Controller page3) page3.SetupData(setting.page3);
-                if (pages.Length > 3 && pages[3] is TutorialPage4Controller page4) page4.SetupData(setting.page4);
+            SetupPageData(setting);
+        }
+
+        private void SetupPageData(TutorialSetting setting)
+        {
+            TrySetupPage(0, setting.page1);
+            TrySetupPage(1, setting.page2);
+            TrySetupPage(2, setting.page3);
+            TrySetupPage(3, setting.page4);
+        }
+        
+        private void TrySetupPage(int index, object pageData)
+        {
+            if (index < 0 || index >= pages.Length || pages[index] == null || pageData == null)
+            {   
+                _logger?.ZLogWarning($"[TutorialManager] 데이터 주입 실패(index: {index}, pageData: {pageData}).");
+                return;
             }
+            pages[index].SetupData(pageData);
         }
 
         protected override void OnAllFinished()
         {
-            if (GameManager.Instance)
+            if (_gameManager)
             {
-                GameManager.Instance.ChangeScene(GameConstants.Scene.PlayTutorial);
+                _gameManager.ChangeScene(GameConstants.Scene.PlayTutorial);
             }
         }
 
-        /// <summary>
-        /// 튜토리얼 씬 진입 시 첫 페이지의 페이드 연출을 생략하고 즉시 노출합니다.
-        /// 이유: 기획 상 캔버스 그룹은 즉시(Alpha 1) 보여주고 내부 텍스트만 별도로 0.5초간 페이드인하기 위함입니다.
-        /// </summary>
-        protected override IEnumerator TransitionRoutine(int targetIndex, int info)
+        protected override async UniTask TransitionAsync(int targetIndex, int info, CancellationToken ct)
         {
+            // 초기 씬 진입 시 첫 페이지 연출 생략 처리
             if (currentPageIndex == -1 && targetIndex == 0)
             {
                 currentPageIndex = 0;
                 GamePage next = pages[0];
-                
+
                 if (next)
                 {
                     next.OnEnter();
-                    next.SetAlpha(1f); // 부모의 FadePage 코루틴을 거치지 않고 즉시 투명도 1 적용
+                    next.SetAlpha(1f);
                 }
-                
+
                 isTransitioning = false;
-                yield break;
+                return;
             }
 
-            // 첫 페이지가 아닌 나머지 페이지들은 기존의 정상적인 페이드 전환 사용
-            yield return base.TransitionRoutine(targetIndex, info);
+            // 기본 전환 로직 호출
+            await base.TransitionAsync(targetIndex, info, ct);
         }
     }
 }

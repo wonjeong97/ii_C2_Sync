@@ -18,14 +18,17 @@ namespace My.Scripts.UI
         /// <summary>
         /// CanvasGroup의 알파값을 일정 시간 동안 보간하여 페이드 효과를 적용함.
         /// </summary>
-        public static async UniTask FadeCanvasGroupAsync(CanvasGroup cg, float start, float end, float duration, CancellationToken ct = default)
+        public static async UniTask FadeCanvasGroupAsync(CanvasGroup cg, float start, float end, float duration, CancellationToken ct = default, bool isFadeIn = true)
         {
             if (!cg) return;
+
+            // FadeIn 시작 전 활성화, FadeOut 시 나중에 비활성화
+            if (isFadeIn) cg.gameObject.SetActive(true);
 
             if (duration <= 0f)
             {
                 cg.alpha = end;
-                if (end <= 0f) cg.gameObject.SetActive(false);
+                if (!isFadeIn && end <= 0f) cg.gameObject.SetActive(false);
                 return;
             }
 
@@ -40,11 +43,11 @@ namespace My.Scripts.UI
             }
             
             cg.alpha = end;
-            if (end <= 0f) cg.gameObject.SetActive(false);
+            if (!isFadeIn && end <= 0f) cg.gameObject.SetActive(false);
         }
 
         /// <summary>
-        /// 여러 UI 화면에서 공통적으로 사용하는 플레이어 이름 텍스트를 치환하고 설정함.
+        /// 플레이어 이름 UI를 동적으로 치환하고 설정함.
         /// </summary>
         public static void ApplyPlayerNames(UIManager uiManager, Text p1Text, Text p2Text, string nameA, string nameB, TextSetting settingA, TextSetting settingB)
         {
@@ -67,19 +70,20 @@ namespace My.Scripts.UI
             }
             else
             {
-                textComponent.text = $"{playerName}님의 위치";
+                textComponent.text = playerName;
             }
         }
 
         /// <summary>
-        /// ZString StringBuilder를 사용하여 메모리 할당을 최소화한 Replace 메서드
+        /// ZString을 사용하여 메모리 할당을 최소화한 Replace 메서드.
         /// </summary>
         public static string ReplaceZ(this string str, string oldValue, string newValue)
         {
             if (string.IsNullOrEmpty(str) || string.IsNullOrEmpty(oldValue)) return str;
             if (newValue == null) newValue = string.Empty;
 
-            using (Utf16ValueStringBuilder sb = ZString.CreateStringBuilder())
+            // ZString을 통해 가비지 발생을 억제하며 문자열 생성
+            using (var sb = ZString.CreateStringBuilder())
             {
                 int lastIndex = 0;
                 int index = str.IndexOf(oldValue, StringComparison.Ordinal);

@@ -1,36 +1,55 @@
+using Microsoft.Extensions.Logging;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
+using ZLogger;
 
 namespace My.Scripts._04_PlayLong
 {
     /// <summary>
-    /// PlayLong 전용 게이지 바 컨트롤러. 픽토그램 없이 Bar_Fill의 fillAmount만 제어함.
+    /// PlayLong 전용 게이지 바 컨트롤러.
+    /// VContainer 의존성 주입과 ZLogger를 통한 구조화된 로깅을 지원합니다.
     /// </summary>
     public class PlayLongGaugeController : MonoBehaviour
     {
         [Header("UI Components")]
-        [SerializeField] private Image barFill; // Bar_Fill 오브젝트 할당
+        [SerializeField] private Image barFill;
 
-        /// <summary>
-        /// 게이지의 충전 상태를 업데이트합니다.
-        /// </summary>
-        /// <param name="current">현재 거리</param>
-        /// <param name="max">목표 거리</param>
-        public void UpdateGauge(float current, float max)
+        private ILogger<PlayLongGaugeController> _logger;
+
+        [Inject]
+        public void Construct(ILogger<PlayLongGaugeController> logger)
         {
-            if (!barFill || max <= 0) return;
-
-            // 진행 비율 계산 (0~1)
-            float ratio = Mathf.Clamp01(current / max);
-            barFill.fillAmount = ratio;
+            _logger = logger;
         }
 
-        /// <summary>
-        /// 게이지를 0으로 초기화합니다.
-        /// </summary>
+        public void UpdateGauge(float current, float max)
+        {
+            if (!barFill)
+            {
+                _logger?.ZLogWarning($"barFill 컴포넌트가 할당되지 않았습니다.");
+                return;
+            }
+
+            if (max <= 0)
+            {
+                _logger?.ZLogWarning($"목표 거리가 0 이하입니다. 게이지 업데이트를 건너뜁니다.");
+                return;
+            }
+
+            barFill.fillAmount = Mathf.Clamp01(current / max);
+        }
+
         public void ResetGauge()
         {
-            if (barFill) barFill.fillAmount = 0f;
+            if (barFill)
+            {
+                barFill.fillAmount = 0f;
+            }
+            else
+            {
+                _logger?.ZLogWarning($"ResetGauge 호출 시 barFill 컴포넌트가 누락되었습니다.");
+            }
         }
     }
 }
