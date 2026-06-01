@@ -13,7 +13,6 @@ namespace My.Scripts.App
             builder.RegisterComponentInHierarchy<PlayTutorialManager>();
             builder.RegisterComponentInHierarchy<PlayTutorialEnvironment>();
             builder.RegisterComponentInHierarchy<PlayTutorialUIManager>();
-            builder.RegisterComponentInHierarchy<InputManager>();
             builder.RegisterComponentInHierarchy<PadDotController>();
         }
     }    

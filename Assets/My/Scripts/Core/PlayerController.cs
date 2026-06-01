@@ -58,6 +58,7 @@ namespace My.Scripts.Core
         private Vector2[] _lanePositions;
         private int[] _lastPadIdxByLane;
         private CancellationTokenSource _cts;
+        private CancellationTokenSource _moveCts;
 
         private ILogger<PlayerController> _logger;
         private SoundManager _soundManager;
@@ -78,6 +79,8 @@ namespace My.Scripts.Core
         {
             _cts?.Cancel();
             _cts?.Dispose();
+            _moveCts?.Cancel();
+            _moveCts?.Dispose();
         }
 
         public void Setup(int index, Vector2[] lanePositions, PlayerPhysicsConfig config)
@@ -101,6 +104,9 @@ namespace My.Scripts.Core
 
             _cts?.Cancel();
             _cts = new CancellationTokenSource();
+            _moveCts?.Cancel();
+            _moveCts?.Dispose();
+            _moveCts = null;
 
             if (_lanePositions != null && _lanePositions.Length > 1)
             {
@@ -160,18 +166,23 @@ namespace My.Scripts.Core
             IsStunned = true;
             characterAnimator?.SetFloat(RunSpeedParam, 0f);
 
-            float elapsed = 0f;
-            while (elapsed < duration)
+            try
             {
-                elapsed += Time.deltaTime;
-                if (characterCanvasGroup)
-                    characterCanvasGroup.alpha = (Mathf.Sin(Time.time * 20f) > 0) ? 1.0f : 0.3f;
-                
-                await UniTask.Yield(PlayerLoopTiming.Update, ct);
-            }
+                float elapsed = 0f;
+                while (elapsed < duration)
+                {
+                    elapsed += Time.deltaTime;
+                    if (characterCanvasGroup)
+                        characterCanvasGroup.alpha = (Mathf.Sin(Time.time * 20f) > 0) ? 1.0f : 0.3f;
 
-            if (characterCanvasGroup) characterCanvasGroup.alpha = 1.0f;
-            IsStunned = false;
+                    await UniTask.Yield(PlayerLoopTiming.Update, ct);
+                }
+            }
+            finally
+            {
+                IsStunned = false;
+                if (characterCanvasGroup) characterCanvasGroup.alpha = 1f;
+            }
         }
 
         public void MoveToLane(int laneIdx)
@@ -182,23 +193,33 @@ namespace My.Scripts.Core
             currentLane = laneIdx;
             _soundManager?.PlaySFX("달리기_1");
 
-            MoveLaneTaskAsync(characterUI.anchoredPosition, _lanePositions[laneIdx], 
-                jumpDuration * (1f + 0.3f * (laneDiff - 1)), jumpArcHeight * laneDiff, _cts.Token).Forget();
+            _moveCts?.Cancel();
+            _moveCts?.Dispose();
+            _moveCts = new CancellationTokenSource();
+
+            MoveLaneTaskAsync(characterUI.anchoredPosition, _lanePositions[laneIdx],
+                jumpDuration * (1f + 0.3f * (laneDiff - 1)), jumpArcHeight * laneDiff, _moveCts.Token).Forget();
         }
 
         private async UniTaskVoid MoveLaneTaskAsync(Vector2 start, Vector2 target, float duration, float arcHeight, CancellationToken ct)
         {
-            float elapsed = 0f;
-            while (elapsed < duration)
+            try
             {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / duration);
-                Vector2 pos = Vector2.Lerp(start, target, t);
-                pos.y += Mathf.Sin(t * Mathf.PI) * arcHeight;
-                characterUI.anchoredPosition = pos;
-                await UniTask.Yield(PlayerLoopTiming.Update, ct);
+                float elapsed = 0f;
+                while (elapsed < duration)
+                {
+                    elapsed += Time.deltaTime;
+                    float t = Mathf.Clamp01(elapsed / duration);
+                    Vector2 pos = Vector2.Lerp(start, target, t);
+                    pos.y += Mathf.Sin(t * Mathf.PI) * arcHeight;
+                    characterUI.anchoredPosition = pos;
+                    await UniTask.Yield(PlayerLoopTiming.Update, ct);
+                }
             }
-            characterUI.anchoredPosition = target;
+            finally
+            {
+                if (characterUI) characterUI.anchoredPosition = target;
+            }
         }
 
         public void SetFinishAnimation()
@@ -210,8 +231,14 @@ namespace My.Scripts.Core
         public async UniTaskVoid SetFinishTaskAsync(CancellationToken ct)
         {
             SetFinishAnimation();
-            await UniTask.Delay(TimeSpan.FromSeconds(1.0f), cancellationToken: ct);
-            characterAnimator?.SetTrigger(Idle);
+            try
+            {
+                await UniTask.Delay(TimeSpan.FromSeconds(1.0f), cancellationToken: ct);
+            }
+            finally
+            {
+                characterAnimator?.SetTrigger(Idle);
+            }
         }
 
         private void NotifyDistanceChanged() => OnDistanceChanged?.Invoke(playerIndex, currentDistance, _config.maxDistance);

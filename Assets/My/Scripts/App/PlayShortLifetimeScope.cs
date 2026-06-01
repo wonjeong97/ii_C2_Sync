@@ -4,6 +4,8 @@ using My.Scripts.UI;
 using VContainer;
 using VContainer.Unity;
 
+namespace My.Scripts.App;
+
 public class PlayShortLifetimeScope : LifetimeScope
 {
     protected override void Configure(IContainerBuilder builder)
@@ -11,7 +13,6 @@ public class PlayShortLifetimeScope : LifetimeScope
         builder.RegisterComponentInHierarchy<PlayShortManager>();
         builder.RegisterComponentInHierarchy<PlayShortEnvironment>();
         builder.RegisterComponentInHierarchy<PlayShortUIManager>();
-        builder.RegisterComponentInHierarchy<InputManager>();
         builder.RegisterComponentInHierarchy<PadDotController>();
     }
 }

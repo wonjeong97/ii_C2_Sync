@@ -53,8 +53,23 @@ namespace My.Scripts._02_PlayTutorial.Components
             else if (TryGetComponent(out MeshRenderer meshRenderer))
             {
                 _meshRenderer = meshRenderer;
-                // Material 인스턴스 생성을 막기 위해 sharedMaterial 사용 권장 (프로젝트 환경에 따라 조정)
-                _originColor = _meshRenderer.sharedMaterial.color;
+                Material mat = _meshRenderer.sharedMaterial;
+                if (mat == null)
+                {
+                    foreach (Material m in _meshRenderer.sharedMaterials)
+                    {
+                        if (m != null) { mat = m; break; }
+                    }
+                }
+                if (mat != null)
+                {
+                    _originColor = mat.color;
+                }
+                else
+                {
+                    _originColor = Color.white;
+                    _logger?.ZLogWarning($"[FrameDistanceFader] {name}: MeshRenderer에 유효한 Material이 없어 기본 색상을 사용합니다.");
+                }
             }
         }
 

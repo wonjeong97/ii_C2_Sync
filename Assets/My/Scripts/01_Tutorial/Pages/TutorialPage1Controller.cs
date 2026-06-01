@@ -125,7 +125,8 @@ namespace My.Scripts._01_Tutorial.Pages
             CompleteStep();
             return;
 #endif
-            float emptyUserStartTime = -1f;
+            // 유저가 마지막으로 확인된 적 없는 상태가 시작된 시각 (-1 = 아직 빈 상태 아님)
+            float emptyStartTime = -1f;
 
             while (!ct.IsCancellationRequested)
             {
@@ -139,40 +140,76 @@ namespace My.Scripts._01_Tutorial.Pages
                 string checkUrl = ZString.Concat(_gameManager.ApiConfig.CheckRoomStateUrl, "?code=", code);
                 string userUrl = ZString.Concat(_gameManager.ApiConfig.GetCurrentRoomUserUrl, "?code=", code);
 
+                // ① 방 상태 확인
+                bool roomEmpty = false;
                 using (var req = UnityWebRequest.Get(checkUrl))
                 {
                     req.timeout = 10;
-                    var res = await req.SendWebRequest().ToUniTask(cancellationToken: ct);
-                    if (res.result == UnityWebRequest.Result.Success && res.downloadHandler.text.Contains(GameConstants.Api.StatusEmpty, StringComparison.OrdinalIgnoreCase))
+                    UnityWebRequest res = null;
+                    try
                     {
-                        await UniTask.Delay(TimeSpan.FromSeconds(1.0f), cancellationToken: ct);
-                        _gameManager.ReturnToTitle();
-                        return;
+                        res = await req.SendWebRequest().ToUniTask(cancellationToken: ct);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch (UnityWebRequestException ex)
+                    {
+                        _logger?.ZLogWarning($"checkUrl 통신 오류: {ex.Message}. 재시도합니다.");
+                        await UniTask.Delay(TimeSpan.FromSeconds(pollInterval), cancellationToken: ct);
+                        continue;
+                    }
+                    if (res.result == UnityWebRequest.Result.Success &&
+                        res.downloadHandler.text.Contains(GameConstants.Api.StatusEmpty, StringComparison.OrdinalIgnoreCase))
+                    {
+                        roomEmpty = true;
                     }
                 }
 
+                if (roomEmpty)
+                {
+                    emptyStartTime = (emptyStartTime < 0f) ? Time.time : emptyStartTime;
+                    if (Time.time - emptyStartTime >= 15f) { _gameManager.ReturnToTitle(); return; }
+                    await UniTask.Delay(TimeSpan.FromSeconds(pollInterval), cancellationToken: ct);
+                    continue;
+                }
+
+                // ② 유저 조회 (방이 USING일 때만)
                 using (var req = UnityWebRequest.Get(userUrl))
                 {
                     req.timeout = 10;
-                    var res = await req.SendWebRequest().ToUniTask(cancellationToken: ct);
+                    UnityWebRequest res = null;
+                    try
+                    {
+                        res = await req.SendWebRequest().ToUniTask(cancellationToken: ct);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch (UnityWebRequestException ex)
+                    {
+                        _logger?.ZLogWarning($"userUrl 통신 오류: {ex.Message}. 재시도합니다.");
+                        await UniTask.Delay(TimeSpan.FromSeconds(pollInterval), cancellationToken: ct);
+                        continue;
+                    }
                     if (res.result == UnityWebRequest.Result.Success)
                     {
                         string rawText = res.downloadHandler.text;
                         if (rawText.Contains(GameConstants.Api.StatusEmpty, StringComparison.OrdinalIgnoreCase))
                         {
-                            emptyUserStartTime = (emptyUserStartTime < 0) ? Time.time : emptyUserStartTime;
-                            if (Time.time - emptyUserStartTime >= 15f) { _gameManager.ReturnToTitle(); return; }
+                            emptyStartTime = (emptyStartTime < 0f) ? Time.time : emptyStartTime;
+                            if (Time.time - emptyStartTime >= 15f) { _gameManager.ReturnToTitle(); return; }
                         }
                         else if (rawText.Contains(","))
                         {
-                            emptyUserStartTime = -1f;
+                            emptyStartTime = -1f;
                             string[] parts = rawText.Split(new[] { '\r', '\n', ',' }, StringSplitOptions.RemoveEmptyEntries);
-                            
                             if (parts.Length >= 2 && _sessionManager)
                             {
                                 _sessionManager.PlayerAUid = parts[0].Trim();
                                 _sessionManager.PlayerBUid = parts[1].Trim();
-                                
                                 var fetchResult = await apiManager.FetchDataAsync(parts[0].Trim()).SuppressCancellationThrow();
                                 if (fetchResult.IsCanceled == false && fetchResult.Result == true && _sessionManager.CurrentUserId != 0)
                                 {

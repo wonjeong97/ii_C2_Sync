@@ -75,6 +75,7 @@ namespace My.Scripts._03_PlayShort
         {
             _fadeCts?.Cancel();
             _fadeCts?.Dispose();
+            _fadeCts = null;
         }
 
         public void Init(Camera cam, IPlayHitHandler handler)
@@ -263,7 +264,10 @@ namespace My.Scripts._03_PlayShort
         {
             if (!_isSpawningActive) return;
             _isSpawningActive = false;
-            FadeOutAsync(duration, _fadeCts?.Token ?? CancellationToken.None).Forget();
+            _fadeCts?.Cancel();
+            _fadeCts?.Dispose();
+            _fadeCts = new CancellationTokenSource();
+            FadeOutAsync(duration, _fadeCts.Token).Forget();
         }
 
         private async UniTaskVoid FadeOutAsync(float duration, CancellationToken ct)

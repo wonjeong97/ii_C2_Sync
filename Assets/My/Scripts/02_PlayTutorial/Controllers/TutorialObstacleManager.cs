@@ -153,6 +153,26 @@ namespace My.Scripts._02_PlayTutorial.Controllers
 
         private async UniTaskVoid FadeTaskAsync(List<Renderer> targets, float start, float end, float duration, CancellationToken ct)
         {
+            // 페이드 시작 전 MeshRenderer별 MaterialPropertyBlock을 한 번만 준비
+            var meshBlocks = new List<(MeshRenderer mr, MaterialPropertyBlock block, int propId, Color rgb, int matIdx)>();
+            foreach (var r in targets)
+            {
+                if (!(r is MeshRenderer mr)) continue;
+                Material[] sharedMats = mr.sharedMaterials;
+                for (int i = 0; i < sharedMats.Length; i++)
+                {
+                    Material m = sharedMats[i];
+                    if (!m) continue;
+                    int propId = m.HasProperty(ColorPropertyId) ? ColorPropertyId
+                               : m.HasProperty(BaseColorPropertyId) ? BaseColorPropertyId : -1;
+                    if (propId == -1) continue;
+                    var block = new MaterialPropertyBlock();
+                    mr.GetPropertyBlock(block, i);
+                    Color rgb = m.GetColor(propId);
+                    meshBlocks.Add((mr, block, propId, rgb, i));
+                }
+            }
+
             float elapsed = 0f;
             while (elapsed < duration)
             {
@@ -160,12 +180,34 @@ namespace My.Scripts._02_PlayTutorial.Controllers
 
                 elapsed += Time.deltaTime;
                 float alpha = Mathf.Lerp(start, end, elapsed / duration);
-                
-                foreach (var r in targets) SetAlpha(r, alpha);
+
+                foreach (var r in targets)
+                {
+                    if (r is SpriteRenderer sr)
+                        sr.color = new Color(sr.color.r, sr.color.g, sr.color.b, alpha);
+                }
+                foreach (var (mr, block, propId, rgb, matIdx) in meshBlocks)
+                {
+                    if (!mr) continue;
+                    block.SetColor(propId, new Color(rgb.r, rgb.g, rgb.b, alpha));
+                    mr.SetPropertyBlock(block, matIdx);
+                }
+
                 await UniTask.Yield(PlayerLoopTiming.Update, ct);
             }
-            
-            foreach (var r in targets) SetAlpha(r, end);
+
+            // 최종 알파 적용
+            foreach (var r in targets)
+            {
+                if (r is SpriteRenderer sr)
+                    sr.color = new Color(sr.color.r, sr.color.g, sr.color.b, end);
+            }
+            foreach (var (mr, block, propId, rgb, matIdx) in meshBlocks)
+            {
+                if (!mr) continue;
+                block.SetColor(propId, new Color(rgb.r, rgb.g, rgb.b, end));
+                mr.SetPropertyBlock(block, matIdx);
+            }
         }
 
         private void SetAlphaRecursive(GameObject obj, float alpha)

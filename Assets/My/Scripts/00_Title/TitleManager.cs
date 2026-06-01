@@ -81,15 +81,28 @@ namespace My.Scripts._00_Title
                     continue;
                 }
 
-                // ZString 최적화 적용: 문자열 보간 대신 Concat 사용
                 string requestUrl = ZString.Concat(_gameManager.ApiConfig.CheckRoomStateUrl, "?code=c2");
 
                 using (UnityWebRequest webRequest = UnityWebRequest.Get(requestUrl))
                 {
                     webRequest.timeout = 10;
-                    
-                    var result = await webRequest.SendWebRequest().ToUniTask(cancellationToken: ct);
-                    
+
+                    UnityWebRequest result = null;
+                    try
+                    {
+                        result = await webRequest.SendWebRequest().ToUniTask(cancellationToken: ct);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch (UnityWebRequestException ex)
+                    {
+                        _logger?.ZLogWarning($"상태 체크 통신 오류: {ex.Message}. 재시도합니다.");
+                        await UniTask.Delay(TimeSpan.FromSeconds(pollInterval), cancellationToken: ct);
+                        continue;
+                    }
+
                     if (result.result == UnityWebRequest.Result.Success)
                     {
                         if (result.downloadHandler.text.Contains("USING", StringComparison.OrdinalIgnoreCase))

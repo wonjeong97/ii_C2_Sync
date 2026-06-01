@@ -4,6 +4,8 @@ using My.Scripts.UI;
 using VContainer;
 using VContainer.Unity;
 
+namespace My.Scripts.App;
+
 public class PlayLongLifetimeScope : LifetimeScope
 {
     protected override void Configure(IContainerBuilder builder)
@@ -12,7 +14,6 @@ public class PlayLongLifetimeScope : LifetimeScope
         builder.RegisterComponentInHierarchy<PlayLongEnvironment>();
         builder.RegisterComponentInHierarchy<PlayLongObstacleManager>();
         builder.RegisterComponentInHierarchy<PlayLongFrameManager>();
-        builder.RegisterComponentInHierarchy<InputManager>();
         builder.RegisterComponentInHierarchy<PadDotController>();
     }
 }
