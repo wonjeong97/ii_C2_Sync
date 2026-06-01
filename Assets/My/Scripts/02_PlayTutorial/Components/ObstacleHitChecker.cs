@@ -1,45 +1,58 @@
-using System.Collections;
-using My.Scripts._02_PlayTutorial.Managers;
-using My.Scripts._03_PlayShort;
-using My.Scripts._04_PlayLong;
+using System;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using UnityEngine;
-using Wonjeong.Utils;
+using VContainer;
+using ZLogger;
 
 namespace My.Scripts._02_PlayTutorial.Components
 {
+    public interface IPlayHitHandler
+    {
+        void OnPlayerHit(int playerIdx);
+        bool IsPlayerPaused(int playerIdx);
+        int GetCurrentLane(int playerIdx);
+    }
+
     public class ObstacleHitChecker : MonoBehaviour
     {
-        private readonly static int Hit = Animator.StringToHash("Hit");
+        private readonly static int HitTrigger = Animator.StringToHash("Hit");
 
         [Header("Settings")]
-        public float hitDuration = 2.0f; 
+        [SerializeField] private float hitDuration = 2.0f;
+        [SerializeField] private float hitRadius = 0.1f;
 
-        private int _ownerPlayerIdx; 
-        private int _obstacleLaneIndex; 
-        private bool _isHitProcessed; 
+        private int _ownerPlayerIdx;
+        private int _obstacleLaneIndex;
+        private bool _isHitProcessed;
         private Animator _animator;
         private static float _lastSoundPlayTime = -1f;
-        
+
         public bool IsStopMove { get; private set; }
 
-        private Vector3 _prevPos; 
-        private bool _hasPrevPos; 
-        
+        private Vector3 _prevPos;
+        private bool _hasPrevPos;
         private readonly RaycastHit[] _ccdHits = new RaycastHit[8];
+        private CancellationTokenSource _destroyCts;
+        private IPlayHitHandler _hitHandler;
+        private ILogger<ObstacleHitChecker> _logger;
 
-        /// <summary>
-        /// 객체 생성 시 초기화.
-        /// 애니메이터 컴포넌트를 캐싱함.
-        /// </summary>
-        private void Awake()
+        [Inject]
+        public void Construct(ILogger<ObstacleHitChecker> logger)
         {
-            _animator = GetComponent<Animator>();
-            if (!_animator) _animator = GetComponentInChildren<Animator>();
+            _logger = logger;
         }
 
-        /// <summary>
-        /// 객체 활성화 시 상태 초기화.
-        /// </summary>
+        private void Awake()
+        {
+            _destroyCts = new CancellationTokenSource();
+            if (!TryGetComponent(out _animator))
+            {
+                _animator = GetComponentInChildren<Animator>();
+            }
+        }
+
         private void OnEnable()
         {
             _hasPrevPos = false;
@@ -47,22 +60,20 @@ namespace My.Scripts._02_PlayTutorial.Components
             IsStopMove = false;
         }
 
-        /// <summary>
-        /// 장애물 소유자 및 레인 정보 설정.
-        /// </summary>
-        /// <param name="playerIdx">플레이어 인덱스</param>
-        /// <param name="laneIndex">장애물 레인 인덱스</param>
-        public void Setup(int playerIdx, int laneIndex)
+        private void OnDestroy()
+        {
+            _destroyCts?.Cancel();
+            _destroyCts?.Dispose();
+        }
+
+        public void Setup(int playerIdx, int laneIndex, IPlayHitHandler handler)
         {
             _ownerPlayerIdx = playerIdx;
             _obstacleLaneIndex = laneIndex;
-            // 이유: 풀링 후 위치가 강제로 이동되었을 때 첫 프레임 레이캐스트가 길게 뻗어나가는 것을 방지함.
-            _hasPrevPos = false; 
+            _hitHandler = handler;
+            _hasPrevPos = false;
         }
 
-        /// <summary>
-        /// 매 프레임 이동 거리를 기반으로 레이캐스트 충돌 검사 수행.
-        /// </summary>
         private void Update()
         {
             if (_isHitProcessed || IsStopMove) return;
@@ -75,167 +86,127 @@ namespace My.Scripts._02_PlayTutorial.Components
             }
 
             Vector3 currentPos = transform.position;
-            // 예: current(0,0,1) - prev(0,0,0) = (0,0,1)
             Vector3 dir = currentPos - _prevPos;
             float dist = dir.magnitude;
 
             if (dist > 0.001f)
             {
-                // # TODO: 레이캐스트 검사 빈도를 줄이거나 충돌 레이어를 세분화하여 연산 최적화 필요.
-                int hitCount = Physics.RaycastNonAlloc(
-                    _prevPos,
-                    dir.normalized,
-                    _ccdHits,
-                    dist,
-                    Physics.DefaultRaycastLayers,
-                    QueryTriggerInteraction.Collide);
-                    
+                int hitCount = Physics.SphereCastNonAlloc(
+                    _prevPos, hitRadius, dir.normalized, _ccdHits, dist,
+                    1 << gameObject.layer, QueryTriggerInteraction.Collide);
+
                 for (int i = 0; i < hitCount; i++)
-                {   
-                    RaycastHit hit = _ccdHits[i];
-                    
-                    if (IsValidTarget(hit.collider))
+                {
+                    Collider hitCol = _ccdHits[i].collider;
+                    if (IsValidTarget(hitCol))
                     {
-                        CheckHitLogic();
+                        ProcessHit();
                         if (_isHitProcessed) break;
                     }
                 }
             }
-
             _prevPos = currentPos;
         }
 
-        /// <summary>
-        /// 트리거 진입 시 충돌 처리.
-        /// </summary>
-        /// <param name="other">충돌한 콜라이더</param>
-        private void OnTriggerEnter(Collider other)
-        {   
-            if (_isHitProcessed) return;
-            if (IsValidTarget(other)) CheckHitLogic();
-        }
+        private void OnTriggerEnter(Collider other) => TryProcessTrigger(other);
+        private void OnTriggerStay(Collider other) => TryProcessTrigger(other);
 
-        /// <summary>
-        /// 트리거 머무름 시 충돌 처리.
-        /// </summary>
-        /// <param name="other">충돌한 콜라이더</param>
-        private void OnTriggerStay(Collider other)
+        private void TryProcessTrigger(Collider other)
         {
             if (_isHitProcessed) return;
-            if (IsValidTarget(other)) CheckHitLogic();
+            if (IsValidTarget(other))
+            {
+                ProcessHit();
+            }
         }
 
-        /// <summary>
-        /// 충돌한 객체가 유효한 타겟인지 판별함.
-        /// </summary>
-        /// <param name="col">검사할 콜라이더</param>
-        /// <returns>유효성 여부</returns>
         private bool IsValidTarget(Collider col)
         {
             if (!col) return false;
-
-            // 자기 자신의 자식 콜라이더와 충돌하는 자가 당착 방지.
             if (col.transform.IsChildOf(transform)) return false;
 
-            // 대각선 트랙에서 다중 스폰 시 다른 레인의 장애물을 판정선으로 오인하는 현상 완벽 차단.
-            if (col.name.Contains("Obstacle")) return false;
-
-            // 바닥 등 불필요한 물리 객체 연산 제외.
-            if (!col.isTrigger && !col.CompareTag("Player")) return false;
-
-            // 플레이어 본체와의 직접 충돌 허용.
-            if (col.CompareTag("Player")) return true;
-
-            // # TODO: 문자열 비교(Contains) 대신 LayerMask 비트 연산으로 판정선 검사 최적화 필요.
-            string layerName = LayerMask.LayerToName(col.gameObject.layer);
-            string objName = col.name;
-
-            if (layerName.Contains("Left") || layerName.Contains("Center") || layerName.Contains("Right")) return true;
-            if (objName.Contains("Left") || objName.Contains("Center") || objName.Contains("Right")) return true;
-
-            return false;
+            return col.gameObject.layer == gameObject.layer;
         }
 
-        /// <summary>
-        /// 게임 모드별 피격 로직 처리 및 상태 업데이트.
-        /// </summary>
-        private void CheckHitLogic()
+        private void ProcessHit()
         {
-            // PlayShort 모드에서 질문 팝업이 떠 있는 동안에는 레인 이동 시 장애물 충돌을 무시해야 함.
-            if (PlayShortManager.Instance && PlayShortManager.Instance.IsPlayerPaused(_ownerPlayerIdx))
+            if (_hitHandler == null) return;
+
+            int convertedObstacleLane = _obstacleLaneIndex + 1;
+
+            int p1Lane = _hitHandler.GetCurrentLane(0);
+            int p2Lane = _hitHandler.GetCurrentLane(1);
+    
+            if (_ownerPlayerIdx == -1) 
             {
-                return;
-            }
+                bool hitP1 = p1Lane == convertedObstacleLane;
+                bool hitP2 = p2Lane == convertedObstacleLane;
+                bool hitRedString = convertedObstacleLane == 1 && ((p1Lane == 0 && p2Lane == 2) || (p1Lane == 2 && p2Lane == 0));
 
-            // 예: _obstacleLaneIndex(-1) + 1 = 0 (Left Lane)
-            int obstacleLaneConverted = _obstacleLaneIndex + 1; 
-            bool isHit = false;
-
-            if (PlayLongManager.Instance)
-            {
-                int p1Lane = PlayLongManager.Instance.GetCurrentLane(0); 
-                int p2Lane = PlayLongManager.Instance.GetCurrentLane(1); 
-
-                bool p1DirectHit = (p1Lane == obstacleLaneConverted);
-                bool p2DirectHit = (p2Lane == obstacleLaneConverted);
-
-                bool redStringHit = false;
-                if (obstacleLaneConverted == 1)
+                if (hitP1 || hitP2 || hitRedString)
                 {
-                    redStringHit = (p1Lane == 0 && p2Lane == 2) || (p1Lane == 2 && p2Lane == 0);
-                }
-
-                if (p1DirectHit || p2DirectHit || redStringHit)
-                {
-                    _isHitProcessed = true;
-                    IsStopMove = true;
-            
-                    PlayLongManager.Instance.OnBothPlayersHit();
-            
-                    if (_animator) _animator.SetTrigger(Hit); 
-                    StartCoroutine(DestroyRoutine());
+                    _hitHandler.OnPlayerHit(-1);
+                    FinalizeHit();
                 }
             }
-            else if (PlayTutorialManager.Instance)
+            else 
             {
-                int playerCurrentLane = PlayTutorialManager.Instance.GetCurrentLane(_ownerPlayerIdx); 
-                if (playerCurrentLane == obstacleLaneConverted)
+                // 개인 장애물도 동일하게 수정
+                int playerLane = _hitHandler.GetCurrentLane(_ownerPlayerIdx);
+                if (playerLane == convertedObstacleLane)
                 {
-                    _isHitProcessed = true;
-                    isHit = true;
-                    PlayTutorialManager.Instance.OnPlayerHit(_ownerPlayerIdx);
+                    _hitHandler.OnPlayerHit(_ownerPlayerIdx);
+                    FinalizeHit();
                 }
-            }
-            else if (PlayShortManager.Instance)
-            {
-                int playerCurrentLane = PlayShortManager.Instance.GetCurrentLane(_ownerPlayerIdx); 
-                if (playerCurrentLane == obstacleLaneConverted)
-                {
-                    _isHitProcessed = true;
-                    isHit = true;
-                    PlayShortManager.Instance.OnPlayerHit(_ownerPlayerIdx);
-                }
-            }
-
-            if (isHit)
-            {       
-                if (_animator) _animator.SetTrigger(Hit);
-                if (Time.time - _lastSoundPlayTime > 0.1f)
-                {
-                    _lastSoundPlayTime = Time.time;
-                }
-                StartCoroutine(DestroyRoutine());
             }
         }
 
-        /// <summary>
-        /// 타격 연출 대기 후 객체 파괴.
-        /// </summary>
-        /// <returns>IEnumerator 루틴</returns>
-        private IEnumerator DestroyRoutine()
+        private void FinalizeHit()
         {
-            yield return CoroutineData.GetWaitForSeconds(hitDuration);
-            Destroy(gameObject);
+            _isHitProcessed = true;
+            IsStopMove = true;
+
+            if (_animator) _animator.SetTrigger(HitTrigger);
+
+            if (Time.time - _lastSoundPlayTime > 0.1f)
+            {
+                _lastSoundPlayTime = Time.time;
+            }
+
+            DestroyTaskAsync(_destroyCts.Token).Forget();
         }
+
+        private async UniTaskVoid DestroyTaskAsync(CancellationToken ct)
+        {
+            await UniTask.Delay(TimeSpan.FromSeconds(hitDuration), cancellationToken: ct);
+            if (this && gameObject)
+            {
+                // Destroy(gameObject) 대신 풀링을 위해 오브젝트 비활성화
+                gameObject.SetActive(false);
+            }
+        }
+        
+#if UNITY_EDITOR
+        private void OnDrawGizmos()
+        {
+            if (_isHitProcessed || IsStopMove) return;
+
+            // 장애물 이동 방향 시각화 (현재 위치에서 이전 위치로 향하는 벡터)
+            Vector3 dir = (_hasPrevPos) ? (transform.position - _prevPos) : Vector3.zero;
+            float dist = dir.magnitude;
+
+            Gizmos.color = Color.yellow;
+        
+            // SphereCast의 두께(Radius)만큼 기즈모 구를 그림
+            Gizmos.DrawWireSphere(transform.position, hitRadius);
+        
+            if (dist > 0.001f)
+            {
+                // 이동 경로를 따라 기둥 형태로 기즈모 표시
+                Gizmos.DrawLine(_prevPos, transform.position);
+                Gizmos.DrawWireSphere(_prevPos, hitRadius);
+            }
+        }
+#endif
     }
 }

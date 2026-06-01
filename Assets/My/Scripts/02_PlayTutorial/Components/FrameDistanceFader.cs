@@ -1,5 +1,9 @@
+using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using UnityEngine;
-using UnityEngine.UI; // ★ Text 컴포넌트 제어를 위해 추가
+using UnityEngine.UI;
+using VContainer;
+using ZLogger;
 
 namespace My.Scripts._02_PlayTutorial.Components
 {
@@ -8,58 +12,79 @@ namespace My.Scripts._02_PlayTutorial.Components
     /// </summary>
     public class FrameDistanceFader : MonoBehaviour
     {
+        private readonly static int ColorPropertyId = Shader.PropertyToID("_Color");
+        private readonly static int BaseColorPropertyId = Shader.PropertyToID("_BaseColor");
+
         [Header("Target Settings")]
-        [Tooltip("거리를 측정할 대상 (비워두면 메인 카메라 사용)")]
         public Transform targetTransform;
 
         [Header("Fading Settings")]
-        [Tooltip("이 거리보다 가까우면 완전히 선명하게 보임 (Alpha 1)")]
         public float fullyVisibleDist = 20f; 
-
-        [Tooltip("이 거리보다 멀어지면 완전히 투명해짐 (Alpha 0)")]
         public float invisibleDist = 30f; 
 
         private SpriteRenderer _spriteRenderer;
         private MeshRenderer _meshRenderer;
         private Color _originColor;
 
-        private Text[] _childTexts; 
-        private Color[] _originTextColors;
+        private readonly List<Text> _childTexts = new List<Text>(); 
+        private readonly List<Color> _originTextColors = new List<Color>();
+
+        private ILogger<FrameDistanceFader> _logger;
+
+        [Inject]
+        public void Construct(ILogger<FrameDistanceFader> logger)
+        {
+            _logger = logger;
+        }
 
         private void Awake()
         {
-            // 1. 렌더러 컴포넌트 찾기
-            _spriteRenderer = GetComponent<SpriteRenderer>();
-            if (_spriteRenderer)
+            InitializeRenderers();
+            InitializeChildTexts();
+        }
+
+        private void InitializeRenderers()
+        {
+            if (TryGetComponent(out SpriteRenderer spriteRenderer))
             {
+                _spriteRenderer = spriteRenderer;
                 _originColor = _spriteRenderer.color;
             }
-            else
+            else if (TryGetComponent(out MeshRenderer meshRenderer))
             {
-                _meshRenderer = GetComponent<MeshRenderer>();
-                if (_meshRenderer)
+                _meshRenderer = meshRenderer;
+                Material mat = _meshRenderer.sharedMaterial;
+                if (mat == null)
                 {
-                    _originColor = _meshRenderer.material.color;
+                    foreach (Material m in _meshRenderer.sharedMaterials)
+                    {
+                        if (m != null) { mat = m; break; }
+                    }
+                }
+                if (mat != null)
+                {
+                    _originColor = mat.color;
+                }
+                else
+                {
+                    _originColor = Color.white;
+                    _logger?.ZLogWarning($"[FrameDistanceFader] {name}: MeshRenderer에 유효한 Material이 없어 기본 색상을 사용합니다.");
                 }
             }
+        }
 
-            // 2. 자식 오브젝트에 있는 모든 Text 컴포넌트를 찾아서 색상 저장
-            _childTexts = GetComponentsInChildren<Text>();
-            if (_childTexts != null && _childTexts.Length > 0)
+        private void InitializeChildTexts()
+        {
+            GetComponentsInChildren(true, _childTexts);
+            foreach (Text txt in _childTexts)
             {
-                _originTextColors = new Color[_childTexts.Length];
-                for (int i = 0; i < _childTexts.Length; i++)
-                {
-                    // 각 텍스트의 원래 색상(RGB)을 기억해둠
-                    _originTextColors[i] = _childTexts[i].color;
-                }
+                _originTextColors.Add(txt.color);
             }
         }
 
         private void Start()
         {
-            // 타겟이 설정되지 않았다면 메인 카메라를 자동으로 찾음
-            if (targetTransform == null && Camera.main != null)
+            if (!targetTransform && Camera.main)
             {
                 targetTransform = Camera.main.transform;
             }
@@ -69,19 +94,14 @@ namespace My.Scripts._02_PlayTutorial.Components
         {
             if (!targetTransform) return;
 
-            // 1. Z축 거리 계산 (절댓값)
             float distance = Mathf.Abs(transform.position.z - targetTransform.position.z);
-
-            // 2. 거리 비율 계산 (가까움 -> 1, 멂 -> 0)
             float alpha = Mathf.InverseLerp(invisibleDist, fullyVisibleDist, distance);
 
-            // 3. 알파값 일괄 적용
             SetAlpha(alpha);
         }
 
         private void SetAlpha(float alpha)
         {
-            // 프레임 본체(Sprite/Mesh) 투명도 조절
             if (_spriteRenderer)
             {
                 Color c = _originColor;
@@ -90,26 +110,34 @@ namespace My.Scripts._02_PlayTutorial.Components
             }
             else if (_meshRenderer)
             {
-                Color c = _originColor;
-                c.a = alpha;
-                if (_meshRenderer.material.HasProperty("_Color"))
-                    _meshRenderer.material.color = c;
-                else if (_meshRenderer.material.HasProperty("_BaseColor"))
-                    _meshRenderer.material.SetColor("_BaseColor", c);
+                ApplyMeshMaterialAlpha(_meshRenderer, alpha);
             }
 
-            // 자식 텍스트들의 투명도 조절
-            if (_childTexts != null)
+            for (int i = 0; i < _childTexts.Count; i++)
             {
-                for (int i = 0; i < _childTexts.Length; i++)
+                if (_childTexts[i])
                 {
-                    if (_childTexts[i])
-                    {
-                        Color c = _originTextColors[i]; // 원래 색상 가져오기
-                        c.a = alpha;                    // 투명도만 덮어쓰기
-                        _childTexts[i].color = c;       // 적용
-                    }
+                    Color c = _originTextColors[i];
+                    c.a = alpha;
+                    _childTexts[i].color = c;
                 }
+            }
+        }
+
+        private void ApplyMeshMaterialAlpha(MeshRenderer meshRenderer, float alpha)
+        {
+            // 공유 머티리얼이 아닌 인스턴스 제어가 필요할 경우 material 사용
+            Material mat = meshRenderer.material; 
+            Color c = _originColor;
+            c.a = alpha;
+
+            if (mat.HasProperty(ColorPropertyId))
+            {
+                mat.color = c;
+            }
+            else if (mat.HasProperty(BaseColorPropertyId))
+            {
+                mat.SetColor(BaseColorPropertyId, c);
             }
         }
         
@@ -120,6 +148,7 @@ namespace My.Scripts._02_PlayTutorial.Components
                 if (Camera.main) targetTransform = Camera.main.transform;
                 else return;
             }
+            
             float distance = Mathf.Abs(transform.position.z - targetTransform.position.z);
             float alpha = Mathf.InverseLerp(invisibleDist, fullyVisibleDist, distance);
             SetAlpha(alpha);

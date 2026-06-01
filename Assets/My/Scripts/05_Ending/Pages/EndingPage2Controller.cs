@@ -1,12 +1,15 @@
 using System;
-using System.Collections;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using My.Scripts.Core;
 using My.Scripts.UI;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 using Wonjeong.Data;
 using Wonjeong.UI;
-using Wonjeong.Utils; 
+using ZLogger;
 
 namespace My.Scripts._05_Ending.Pages
 {
@@ -17,12 +20,14 @@ namespace My.Scripts._05_Ending.Pages
         public TextSetting bottomTextFormat;
     }
 
+    /// <summary>
+    /// 엔딩 씬의 마음 조각 획득 연출을 담당하는 페이지 컨트롤러.
+    /// UniTask 비동기 처리와 DI를 통해 안정성을 최적화함.
+    /// </summary>
     public class EndingPage2Controller : GamePage<EndingPage2Data>
     {
         [Header("UI Groups")]
-        [Tooltip("중간 마음 조각 이미지 5개를 묶어둔 CanvasGroup")]
         [SerializeField] private CanvasGroup heartsCg;
-        [Tooltip("상단 및 하단 텍스트를 묶어둔 CanvasGroup")]
         [SerializeField] private CanvasGroup textsCg;
 
         [Header("Texts")]
@@ -30,13 +35,27 @@ namespace My.Scripts._05_Ending.Pages
         [SerializeField] private Text bottomText;
 
         [Header("Heart Images")]
-        [Tooltip("왼쪽부터 순서대로 5개의 별(마음조각) 이미지를 할당하세요.")]
         [SerializeField] private Image[] heartImages;
         [SerializeField] private Sprite heartGetSprite;
         [SerializeField] private Sprite heartDontGetSprite;
 
         private EndingPage2Data _data;
         private bool _hasSentPieceUpdate;
+        private CancellationTokenSource _cts;
+
+        private ILogger<EndingPage2Controller> _logger;
+        private GameManager _gameManager;
+        private UIManager _uiManager;
+        private SoundManager _soundManager;
+
+        [Inject]
+        public void Construct(ILogger<EndingPage2Controller> logger, GameManager gameManager, UIManager uiManager, SoundManager soundManager)
+        {
+            _logger = logger;
+            _gameManager = gameManager;
+            _uiManager = uiManager;
+            _soundManager = soundManager;
+        }
 
         protected override void SetupData(EndingPage2Data data)
         {
@@ -47,133 +66,119 @@ namespace My.Scripts._05_Ending.Pages
         public override void OnEnter()
         {
             base.OnEnter();
+            _cts = new CancellationTokenSource();
 
-            // 1. 초기화: 캔버스 그룹 투명화 (연출 전 숨김 처리)
+            ResetUIState();
+            
+            var (fragments, totalPieces) = ProcessGameLogic();
+            
+            SetupTexts(fragments, totalPieces);
+            InitializeHearts(fragments);
+
+            EntranceSequenceAsync(fragments, _cts.Token).Forget();
+        }
+        
+        private void ResetUIState()
+        {
             if (heartsCg) heartsCg.alpha = 0f;
             if (textsCg) textsCg.alpha = 0f;
+        }
+        
+        private (int fragments, int totalPieces) ProcessGameLogic()
+        {
+            if (!_gameManager) return (0, 0);
 
-            // 2. 획득한 조각 개수 계산 (100M당 1개, 최대 5개로 제한)
-            float dist = GameManager.Instance ? GameManager.Instance.lastPlayDistance : 0f;
+            float dist = _gameManager.lastPlayDistance;
             int fragments = Mathf.Clamp(Mathf.FloorToInt(dist / 100f), 0, 5);
 
-            // 3. API 업데이트 및 총 획득량 계산
-            int totalPieces = fragments;
-            if (GameManager.Instance)
-            {
-                // PlayLong(현재 콘텐츠)에서 얻은 마음 조각을 로컬 변수에 캐싱함
-                GameManager.Instance.PieceC2 = fragments;
-                
-                // GameManager.TotalPieces는 C2를 제외한 값이므로,
-                // 방금 게임에서 획득한 조각(fragments)을 더함
-                totalPieces = GameManager.Instance.TotalPieces + fragments;
+            _gameManager.PieceC2 = fragments;
+            int totalPieces = _gameManager.TotalPieces + fragments;
 
-                // 서버에 획득한 마음 조각 데이터를 실시간으로 동기화함
-                if (!_hasSentPieceUpdate)
-                {
-                    GameManager.Instance.SendPieceUpdateAPI(fragments);
-                    _hasSentPieceUpdate = true;
-                }
+            if (!_hasSentPieceUpdate)
+            {
+                _gameManager.SendPieceUpdateAPI(fragments);
+                _hasSentPieceUpdate = true;
             }
 
-            // 4. 텍스트 데이터 세팅
-            if (_data != null)
-            {
-                if (topText && _data.topTextFormat != null)
-                {
-                    if (UIManager.Instance) UIManager.Instance.SetText(topText.gameObject, _data.topTextFormat);
-                    topText.text = string.Format(_data.topTextFormat.text, fragments);
-                }
-
-                if (bottomText && _data.bottomTextFormat != null)
-                {
-                    if (UIManager.Instance) UIManager.Instance.SetText(bottomText.gameObject, _data.bottomTextFormat);
-                    bottomText.text = string.Format(_data.bottomTextFormat.text, totalPieces);
-                }
-            }
-
-            // 5. 조각 이미지 스프라이트 및 초기 투명도 설정
-            if (heartImages != null)
-            {
-                for (int i = 0; i < heartImages.Length; i++)
-                {
-                    if (heartImages[i])
-                    {
-                        bool isGot = i < fragments;
-                        heartImages[i].sprite = isGot ? heartGetSprite : heartDontGetSprite;
-                        
-                        // 순차적 연출을 위해 투명(0)으로 초기화 
-                        Color c = heartImages[i].color;
-                        c.a = 0.0f;
-                        heartImages[i].color = c;
-                    }
-                }
-            }
-
-            // 6. 시퀀스 시작
-            StartCoroutine(EntranceSequence(fragments));
+            return (fragments, totalPieces);
         }
-
-        /// <summary>
-        /// 요청된 기획에 맞춰 대기 -> 컨테이너 페이드인 -> 개별 조각 순차 페이드인 -> 텍스트 표시 순서로 진행함.
-        /// </summary>
-        private IEnumerator EntranceSequence(int fragments)
+        
+        private void SetupTexts(int fragments, int totalPieces)
         {
-            // 1. 페이지 입장 후 시각적 안정을 위한 0.5초 대기
-            yield return CoroutineData.GetWaitForSeconds(0.5f);
+            if (_data == null) return;
 
-            // 2. 전체 마음 조각 배경/틀 그룹을 0.5초 동안 페이드인
-            if (heartsCg)
+            if (topText && _data.topTextFormat != null)
             {
-                yield return StartCoroutine(UIUtils.FadeCanvasGroup(heartsCg, 0f, 1f, 0.5f));
+                _uiManager?.SetText(topText.gameObject, _data.topTextFormat);
+                topText.text = string.Format(_data.topTextFormat.text, fragments);
             }
 
-            // 3. 획득한 조각 개수만큼 1번부터 순차적으로 알파값 0 -> 1 연출 (각 0.5초)
-            if (heartImages != null)
+            if (bottomText && _data.bottomTextFormat != null)
             {
+                _uiManager?.SetText(bottomText.gameObject, _data.bottomTextFormat);
+                bottomText.text = string.Format(_data.bottomTextFormat.text, totalPieces);
+            }
+        }
+        
+        private void InitializeHearts(int fragments)
+        {
+            if (heartImages == null) return;
+
+            foreach (Image img in heartImages)
+            {
+                if (img)
+                {
+                    img.sprite = heartDontGetSprite;
+                    Color c = img.color;
+                    c.a = 0.0f;
+                    img.color = c;
+                }
+            }
+        }
+        
+        private async UniTaskVoid EntranceSequenceAsync(int fragments, CancellationToken ct)
+        {
+            try
+            {
+                await UniTask.Delay(TimeSpan.FromSeconds(0.5f), cancellationToken: ct);
+                if (heartsCg) await UIUtils.FadeCanvasGroupAsync(heartsCg, 0f, 1f, 0.5f, ct);
+
                 for (int i = 0; i < fragments; i++)
                 {
                     if (i < heartImages.Length && heartImages[i])
                     {
-                        if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_6");
-                        yield return StartCoroutine(FadeImageAlpha(heartImages[i], 0f, 1f, 0.5f));
+                        _soundManager?.PlaySFX("공통_6");
+                        heartImages[i].sprite = heartGetSprite;
+                        await FadeImageAlphaAsync(heartImages[i], 0f, 1f, 0.5f, ct);
                     }
                 }
+
+                await UniTask.Delay(TimeSpan.FromSeconds(0.5f), cancellationToken: ct);
+                if (textsCg) await UIUtils.FadeCanvasGroupAsync(textsCg, 0f, 1f, 1.0f, ct);
+
+                await UniTask.Delay(TimeSpan.FromSeconds(2.0f), cancellationToken: ct);
+                CompleteStep();
             }
-
-            // (선택) 텍스트 등장 전 약간의 자연스러운 대기 시간
-            yield return CoroutineData.GetWaitForSeconds(0.5f);
-
-            // 4. 텍스트 캔버스 그룹 페이드인
-            if (textsCg)
-            {
-                yield return StartCoroutine(UIUtils.FadeCanvasGroup(textsCg, 0f, 1f, 1.0f));
-            }
-
-            // 5. 유저가 결과를 인지할 수 있도록 대기 후 다음 페이지로 전환
-            yield return CoroutineData.GetWaitForSeconds(2.0f);
-            
-            CompleteStep();
+            catch (OperationCanceledException) { /* 정상 종료 */ }
         }
 
-        /// <summary> 개별 이미지의 알파값을 부드럽게 조절하기 위한 전용 코루틴 </summary>
-        private IEnumerator FadeImageAlpha(Image img, float start, float end, float duration)
+        private async UniTask FadeImageAlphaAsync(Image img, float start, float end, float duration, CancellationToken ct)
         {
-            if (!img) yield break;
+            if (!img) return;
             
-            float time = 0f;
+            float elapsed = 0f;
             Color c = img.color;
             c.a = start;
             img.color = c;
 
-            while (time < duration)
+            while (elapsed < duration)
             {
-                time += Time.deltaTime;
-                c.a = Mathf.Lerp(start, end, time / duration);
+                elapsed += Time.deltaTime;
+                c.a = Mathf.Lerp(start, end, elapsed / duration);
                 img.color = c;
-                yield return null;
+                await UniTask.Yield(PlayerLoopTiming.Update, ct);
             }
             
-            // 오차 보정
             c.a = end;
             img.color = c;
         }
@@ -181,7 +186,9 @@ namespace My.Scripts._05_Ending.Pages
         public override void OnExit()
         {
             base.OnExit();
-            StopAllCoroutines();
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
         }
     }
 }

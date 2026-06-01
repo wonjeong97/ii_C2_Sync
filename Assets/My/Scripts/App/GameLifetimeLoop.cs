@@ -25,7 +25,8 @@ namespace My.Scripts.App
         [SerializeField] private FadeManager fadeManager;
         [SerializeField] private UIManager uiManager;
         [SerializeField] private VideoManager videoManager;
-
+        [SerializeField] private InputManager inputManager;
+        
         protected override void Configure(IContainerBuilder builder)
         {
             // 1. ZLogger 및 MessagePipe 초기화 상속
@@ -38,8 +39,9 @@ namespace My.Scripts.App
             if (!soundManager) throw new InvalidOperationException("GameLifetimeScope.soundManager is required.");
             if (!fadeManager) throw new InvalidOperationException("GameLifetimeScope.fadeManager is required.");
             if (!uiManager) throw new InvalidOperationException("GameLifetimeScope.uiManager is required.");
-            if (!videoManager) throw new InvalidOperationException("GameLifetimeScope.videoManager is required.");
-            
+            if (!inputManager) throw new InvalidOperationException("GameLifetimeScope.inputManager is required."); // 추가
+        
+            // 3. 컨테이너에 등록
             builder.RegisterComponent(gameManager);
             builder.RegisterComponent(sessionManager);
             builder.RegisterComponent(arduinoManager);
@@ -47,6 +49,7 @@ namespace My.Scripts.App
             builder.RegisterComponent(fadeManager);
             builder.RegisterComponent(uiManager);
             builder.RegisterComponent(videoManager);
+            builder.RegisterComponent(inputManager);
         }
     }
 }

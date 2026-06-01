@@ -43,7 +43,7 @@ namespace My.Scripts.Core
 
         [Header("Debug / Testing")]
         public float lastPlayDistance = 100f;
-        
+
         private bool isAutoProgressing = false;
 
         private SystemData _systemData;
@@ -374,7 +374,9 @@ namespace My.Scripts.Core
             try
             {
                 // 1. 경고 단계
-                UpdatePopupText(CurrentInactivityTextType == InactivityTextType.Tag ? _systemData.tagText : _systemData.inactivityWarningText);
+                UpdatePopupText(CurrentInactivityTextType == InactivityTextType.Tag
+                    ? _systemData.tagText
+                    : _systemData.inactivityWarningText);
                 await FadeSystemPopupAsync(0f, 1f, 0.5f, ct);
                 await UniTask.Delay(TimeSpan.FromSeconds(3.0), cancellationToken: ct);
                 await FadeSystemPopupAsync(1f, 0f, 0.5f, ct);
@@ -670,15 +672,18 @@ namespace My.Scripts.Core
             }
         }
 
-        public void SendValueUpdateAPI(int qNo, string side, int value)
+        public void SendValueUpdateAPI(int qNo, string questionText, string side, int value, float distance)
         {
+            string answer = value == 1 ? "Yes" : "No";
+            string playerName = side == "left" ? _sessionManager?.PlayerAFirstName : _sessionManager?.PlayerBFirstName;
+            _logger?.ZLogInformation($"{playerName}이(가) {qNo}번 문항({questionText})을 {answer}로 응답함. ({(int)distance}M)");
+
 #if UNITY_EDITOR
-            if (_logger != null) _logger.ZLogInformation($"에디터 모드: 가치관 데이터 전송 생략. 문항:{qNo}, 방향:{side}, 응답:{value}");
             return;
 #endif
             if (CurrentUserId == 0 || ApiConfig == null)
             {
-                if (_logger != null) _logger.ZLogWarning($"CurrentUserId가 0이거나 ApiConfig가 없음. 데이터 전송 취소.");
+                _logger?.ZLogWarning($"CurrentUserId가 0이거나 ApiConfig가 없음. 데이터 전송 취소.");
                 return;
             }
 
@@ -764,29 +769,30 @@ namespace My.Scripts.Core
         private async UniTaskVoid QuitAsync()
         {
 #if !UNITY_EDITOR
-            if (CurrentUserId != 0 && ApiConfig != null)
+        if (CurrentUserId != 0 && ApiConfig != null)
+        {   
+            string resetUrl = $"{ApiConfig.ResetStartUrl}?idx_user={CurrentUserId}&code=c2";
+            using (UnityWebRequest req = UnityWebRequest.Get(resetUrl))
             {   
-                string resetUrl = $"{ApiConfig.ResetStartUrl}?idx_user={CurrentUserId}&code=c2";
-                using (UnityWebRequest req = UnityWebRequest.Get(resetUrl))
-                {   
-                    req.timeout = 2; 
-                    try { await req.SendWebRequest().ToUniTask(); } catch { }
-                }
-
-                string exitUrl = $"{ApiConfig.ExitRoomUrl}?code=c2&idx_user={CurrentUserId}";
-                using (UnityWebRequest req = UnityWebRequest.Get(exitUrl))
-                {   
-                    req.timeout = 2;
-                    try { await req.SendWebRequest().ToUniTask(); } catch { }
-                }
+                req.timeout = 10; 
+                try { await req.SendWebRequest().ToUniTask(); } catch { }
             }
+
+            string exitUrl = $"{ApiConfig.ExitRoomUrl}?code=c2&idx_user={CurrentUserId}";
+            using (UnityWebRequest req = UnityWebRequest.Get(exitUrl))
+            {   
+                req.timeout = 10;
+                try { await req.SendWebRequest().ToUniTask(); } catch { }
+            }
+        }
 #endif
             _isQuitSafe = true;
 
 #if UNITY_EDITOR
+            await UniTask.Yield();
             UnityEditor.EditorApplication.isPlaying = false;
 #else
-            Application.Quit();
+        Application.Quit();
 #endif
         }
 

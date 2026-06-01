@@ -1,639 +1,495 @@
 using System;
-using System.Collections;
+using System.Threading;
+using Cysharp.Text;
+using Cysharp.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using My.Scripts._02_PlayTutorial.Components; // IPlayHitHandler 인터페이스 참조
 using My.Scripts._02_PlayTutorial.Data;
 using My.Scripts.Core;
+using My.Scripts.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using VContainer;
 using Wonjeong.Data;
 using Wonjeong.UI;
 using Wonjeong.Utils;
+using ZLogger;
 
 namespace My.Scripts._04_PlayLong
 {
-    /// <summary>
-    /// PlayLong(500m 달리기) 씬의 전반적인 게임 흐름, 플레이어 동기화, 물리 및 미션을 관리하는 클래스.
-    /// </summary>
-    public class PlayLongManager : MonoBehaviour
+    // IPlayHitHandler 구현 추가
+    public class PlayLongManager : MonoBehaviour, IPlayHitHandler
     {
         [Serializable]
-        public class Play500MSetting
+        public class PlayLongSetting
         {
             public TextSetting playerAName;
             public TextSetting playerBName;
-            
             public IntroPageData introPage;
             public TextSetting[] popupTexts;
             public TextSetting startText;
             public TextSetting endText;
         }
 
-        public static PlayLongManager Instance { get; private set; }
-
         [Header("Game Settings")]
         [SerializeField] private float targetDistance = 500f;
         [SerializeField] private float timeLimit = 60f;
         [SerializeField] private float readyWaitTimeout = 30f;
         [SerializeField] private TutorialSettingsSO baseSettings;
-        [SerializeField] private float stepDecayTime = 0.5f;   
+        [SerializeField] private float stepDecayTime = 0.5f;
 
-        [Header("Long Mode Lane Positions")]
+        [Header("References")]
         [SerializeField] private Vector2[] p1LongLanePositions;
         [SerializeField] private Vector2[] p2LongLanePositions;
-
-        [Header("Manager References")]
         [SerializeField] private PlayLongUIManager ui;
         [SerializeField] private Page_Intro introPage;
         [SerializeField] private PadDotController padDotController;
-
-        [Header("Players")]
         [SerializeField] private PlayerController[] players;
-
-        [Header("Environment")]
         [SerializeField] private PlayLongEnvironment env;
         [SerializeField] private PlayLongObstacleManager obstacleManager;
 
-        private Play500MSetting _setting;
+        private PlayLongSetting _setting;
         private bool _isGameActive;
         private float _currentTime;
+        private CancellationTokenSource _cts;
 
-        private bool _isIntroMissionActive;
-        private bool _isRightMissionActive;
-        private bool _isLeftMissionActive;
-        private bool _isInputBlocked;
-
-        private int _p1StepCount;
-        private int _p2StepCount;
-        private int _syncedStepCount;
-        private float _currentCoopDistance;
-
-        private float _p1LastStepTime;
-        private float _p2LastStepTime;
-        private float _lastHitSoundTime = -1f;
+        private bool _isIntroMissionActive, _isRightMissionActive, _isLeftMissionActive, _isInputBlocked, _isIntroDone;
+        private bool _isP1Ready;
+        private bool _isP2Ready;
+        private int _p1StepCount, _p2StepCount, _syncedStepCount;
+        private float _currentCoopDistance, _p1LastStepTime, _p2LastStepTime, _lastHitSoundTime = -1f;
 
         private const float RequiredIntroDistance = 6.0f;
         private const float RequiredRightDistance = 10.0f;
         private const float RequiredLeftDistance = 6.0f;
 
+        private ILogger<PlayLongManager> _logger;
+        private GameManager _gameManager;
+        private InputManager _inputManager;
+        private SoundManager _soundManager;
+        private UIManager _uiManager;
+        private IObjectResolver _resolver;
+
         public bool IsGameActive => _isGameActive;
 
-        /// <summary>
-        /// 싱글톤 인스턴스 초기화.
-        /// </summary>
-        private void Awake()
+        [Inject]
+        public void Construct(ILogger<PlayLongManager> logger, GameManager gameManager,
+            InputManager inputManager, SoundManager soundManager, UIManager uiManager, IObjectResolver resolver)
         {
-            if (!Instance) Instance = this;
-            else if (Instance && Instance.GetInstanceID() != this.GetInstanceID()) Destroy(gameObject);
+            _logger = logger;
+            _gameManager = gameManager;
+            _inputManager = inputManager;
+            _soundManager = soundManager;
+            _uiManager = uiManager;
+            _resolver = resolver;
         }
 
-        /// <summary>
-        /// 데이터 로드 및 게임 초기화.
-        /// </summary>
         private void Start()
         {
+            _cts = new CancellationTokenSource();
+
+            if (ui)
+            {
+                _resolver.Inject(ui);
+            }
+
             LoadSettings();
-            
-            if (ui) 
-            {
-                ui.InitUI(targetDistance);
-
-                if (GameManager.Instance)
-                {
-                    string nameA = string.IsNullOrEmpty(GameManager.Instance.PlayerAName) ? "Player A" : GameManager.Instance.PlayerAName;
-                    string nameB = string.IsNullOrEmpty(GameManager.Instance.PlayerBName) ? "Player B" : GameManager.Instance.PlayerBName;
-                    
-                    TextSetting settingA = _setting != null ? _setting.playerAName : null;
-                    TextSetting settingB = _setting != null ? _setting.playerBName : null;
-
-                    ui.SetPlayerNames(nameA, nameB, settingA, settingB);
-
-                    // 이유: 팝업 텍스트에 포함된 플레이어 이름 토큰을 실제 이름으로 치환하여 출력함.
-                    if (_setting != null && _setting.popupTexts != null)
-                    {
-                        foreach (TextSetting popupText in _setting.popupTexts)
-                        {
-                            if (popupText != null && !string.IsNullOrEmpty(popupText.text))
-                            {
-                                popupText.text = popupText.text.Replace("{nameA}", nameA).Replace("{nameB}", nameB);
-                            }
-                        }
-                    }
-
-                    Sprite spriteA = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerAColor);
-                    if (!spriteA) Debug.LogWarning("Player A 컬러 스프라이트 누락됨.");
-                    
-                    Sprite spriteB = GameManager.Instance.GetColorSprite(GameManager.Instance.PlayerBColor);
-                    if (!spriteB) Debug.LogWarning("Player B 컬러 스프라이트 누락됨.");
-                    
-                    ui.SetPlayerBalls(spriteA, spriteB);
-                }
-                else
-                {
-                    Debug.LogWarning("GameManager 인스턴스 누락됨.");
-                }
-            }
-            else
-            {
-                Debug.LogWarning("PlayLongUIManager 컴포넌트 누락됨.");
-            }
-            
+            InitializeUI();
             InitializePlayers();
-            
-            if (InputManager.Instance) InputManager.Instance.OnPadDown += HandlePadDown;
-            else Debug.LogWarning("InputManager 인스턴스 누락됨.");
 
+            _inputManager.OnPadDown += HandlePadDown;
             SetAutoProgressing(true);
-            StartCoroutine(InitialFlowRoutine());
+
+            _isInputBlocked = true;
+            RunInitialFlowAsync(_cts.Token).Forget();
         }
-        
-        /// <summary>
-        /// 객체 파괴 시 이벤트 구독 해제.
-        /// </summary>
+
+        private void Update()
+        {
+            CheckStepDecay();
+            bool isPhysicsActive =
+                (_isGameActive || _isIntroMissionActive || _isRightMissionActive || _isLeftMissionActive) &&
+                !_isInputBlocked;
+            if (isPhysicsActive)
+                foreach (var p in players)
+                    p?.OnUpdate(false, 0, 0);
+
+            if (_isGameActive)
+            {
+                _currentTime -= Time.deltaTime;
+                ui?.UpdateTimer(_currentTime);
+                if (_currentTime <= 0) FinishGame();
+            }
+        }
+
         private void OnDestroy()
         {
-            if (InputManager.Instance) InputManager.Instance.OnPadDown -= HandlePadDown;
-            if (Instance && Instance.GetInstanceID() == this.GetInstanceID()) Instance = null;
-
-            if (GameManager.Instance)
-            {
-                GameManager.Instance.IsAutoProgressing = false;
-            }
+            _inputManager.OnPadDown -= HandlePadDown;
+            _cts?.Cancel();
+            _cts?.Dispose();
+            if (_gameManager) _gameManager.IsAutoProgressing = false;
         }
 
         /// <summary>
-        /// 자동 진행 여부에 따른 글로벌 방치 타이머 상태 제어.
+        /// 게임 설정 데이터를 로드하고 인트로 페이지에 의존성 및 데이터를 주입함
         /// </summary>
-        /// <param name="isAuto">자동 진행 활성화 여부</param>
-        private void SetAutoProgressing(bool isAuto)
+        private void LoadSettings()
         {
-            if (GameManager.Instance)
+            string lang = _gameManager ? _gameManager.CurrentLanguage : "ko";
+            string localizedPath = GameConstants.Path.GetLocalizedPath(GameConstants.Path.PlayLong, lang);
+            _setting = JsonLoader.Load<PlayLongSetting>(localizedPath);
+
+            if (introPage)
             {
-                GameManager.Instance.IsAutoProgressing = isAuto;
-                
-                // 이유: 수동 조작 구간 진입 시 방치 타이머를 리셋하여 팝업 오작동을 방지함.
-                if (!isAuto)
+                // OnEnter 호출 및 데이터 셋업 전에 의존성(UIManager, GameManager 등) 강제 주입
+                _resolver.Inject(introPage);
+
+                if (_setting != null)
                 {
-                    GameManager.Instance.ResetInactivityTimer();
+                    introPage.SetupData(_setting.introPage);
                 }
             }
-            else
+        }
+
+        private void InitializeUI()
+        {
+            if (!ui) return;
+
+            ui.InitUI(targetDistance);
+            string nameA = string.IsNullOrEmpty(_gameManager.PlayerAName) ? "Player A" : _gameManager.PlayerAName;
+            string nameB = string.IsNullOrEmpty(_gameManager.PlayerBName) ? "Player B" : _gameManager.PlayerBName;
+
+            ui.SetPlayerNames(nameA, nameB, _setting?.playerAName, _setting?.playerBName);
+            if (_setting?.popupTexts != null)
             {
-                Debug.LogWarning("GameManager 인스턴스 누락됨.");
+                foreach (TextSetting pt in _setting.popupTexts)
+                    if (pt != null)
+                        pt.text = pt.text.Replace("{nameA}", nameA).Replace("{nameB}", nameB);
+            }
+
+            ui.SetPlayerBalls(_gameManager.GetColorSprite(_gameManager.PlayerAColor),
+                _gameManager.GetColorSprite(_gameManager.PlayerBColor));
+        }
+
+        private void InitializePlayers()
+        {
+            var config = baseSettings.physicsConfig;
+            config.maxDistance = targetDistance;
+            for (int i = 0; i < players.Length; i++)
+            {
+                if (players[i])
+                {
+                    players[i].Setup(i, (i == 0) ? p1LongLanePositions : p2LongLanePositions, config);
+                    var colorData = (i == 0) ? _gameManager.PlayerAColor : _gameManager.PlayerBColor;
+                    var sprite = _gameManager.GetColorSprite(colorData);
+                    if (sprite) players[i].SetCharacterSprite(sprite);
+                    else players[i].SetCharacterColor(_gameManager.GetColorFromData(colorData));
+                }
             }
         }
 
-        /// <summary>
-        /// 게임 진입 시 인트로 페이지 연출을 대기하고 완료 후 미션을 시작함.
-        /// </summary>
-        /// <returns>IEnumerator 루틴</returns>
-        private IEnumerator InitialFlowRoutine()
+        private async UniTaskVoid RunInitialFlowAsync(CancellationToken ct)
         {
             if (introPage)
             {
-                bool isIntroDone = false;
-        
-                Action<int> onComplete = (info) => isIntroDone = true;
-                introPage.onStepComplete += onComplete;
-        
+                _isIntroDone = false;
+                introPage.onStepComplete = OnIntroStepComplete;
                 introPage.OnEnter();
-        
-                float waitStartTime = Time.time;
-                while (!isIntroDone)
-                {
-                    if (Time.time - waitStartTime > readyWaitTimeout)
-                    {
-                        Debug.LogWarning("인트로 페이지 타임아웃 발생.");
-                        break;
-                    }
-                    yield return null;
-                }
-        
-                introPage.onStepComplete -= onComplete;
+                await UniTask.WaitUntil(IsIntroDone, cancellationToken: ct)
+                    .Timeout(TimeSpan.FromSeconds(readyWaitTimeout)).SuppressCancellationThrow();
                 introPage.OnExit();
             }
 
-            StartIntroMission();
+            await StartIntroMissionAsync(ct);
         }
 
-        /// <summary>
-        /// 두 플레이어 중 한 명이라도 스턴 상태인지 확인.
-        /// </summary>
-        /// <returns>스턴 여부</returns>
-        public bool IsAnyPlayerStunned()
-        {
-            if (players == null || players.Length < 2) return true;
+        private bool IsIntroDone() => _isIntroDone;
 
-            foreach (PlayerController p in players)
-            {
-                if (p && p.IsStunned) return true;
-            }
-
-            return false;
-        }
+        private void OnIntroStepComplete(int _) => _isIntroDone = true;
 
         /// <summary>
-        /// 붉은 실 연출 및 방향 전환(우->좌) 미션 시퀀스.
+        /// 인트로 미션을 시작하고 첫 번째 안내 팝업 출력이 완료될 때까지 입력을 제한함
         /// </summary>
-        /// <returns>IEnumerator 루틴</returns>
-        private IEnumerator RedStringIntroSequence()
+        private async UniTask StartIntroMissionAsync(CancellationToken ct)
         {
-            if (_setting == null || _setting.popupTexts == null)
-            {
-                Debug.LogError("설정 데이터 누락됨.");
-                yield break;
-            }
-
             _isInputBlocked = true;
-            SetAutoProgressing(true);
-            
-            foreach (PlayerController p in players)
+
+            if (ui && _setting?.popupTexts != null && _setting.popupTexts.Length > 0)
             {
-                if (p) p.ForceStop();
-            }
-
-            if (ui)
-            {
-                yield return StartCoroutine(ui.ShowRedStringStep1(_setting.popupTexts[1]));
-                yield return StartCoroutine(ui.BlinkRedString(2, 2.0f));
-                yield return StartCoroutine(ui.FadeInSecondLine(_setting.popupTexts[1], 2.0f));
-            }
-
-            if (padDotController) padDotController.StartBlinking(new[] { 4, 5, 10, 11 });
-            
-            _isInputBlocked = false;
-            _isRightMissionActive = true;
-            _currentCoopDistance = 0f;
-
-            SetAutoProgressing(false);
-
-            while (_currentCoopDistance < RequiredRightDistance) yield return null;
-
-            _isRightMissionActive = false;
-            SetAutoProgressing(true);
-            
-            foreach (PlayerController p in players)
-            {
-                if (p) p.ForceStop();
-            }
-                
-            if (padDotController) padDotController.StopBlinking(new[] { 4, 5, 10, 11 });
-
-            yield return CoroutineData.GetWaitForSeconds(0.5f);
-            
-            if (ui) yield return StartCoroutine(ui.ShowPopupSequence(new[] { _setting.popupTexts[2] }, 2.0f, false));
-
-            if (padDotController) padDotController.StartBlinking(new[] { 0, 1, 10, 11 });
-            
-            _isLeftMissionActive = true;
-            _p1StepCount = 0;
-            _p2StepCount = 0;
-            _syncedStepCount = 0;
-            _currentCoopDistance = 0f;
-
-            SetAutoProgressing(false);
-
-            while (_currentCoopDistance < RequiredLeftDistance) yield return null;
-
-            _isLeftMissionActive = false;
-            _isInputBlocked = true;
-            
-            SetAutoProgressing(true);
-            
-            foreach (PlayerController p in players)
-            {
-                if (p) p.ForceStop();
-            }
-                
-            if (padDotController) padDotController.StopBlinking(new[] { 0, 1, 10, 11 });
-
-            yield return StartCoroutine(SpawnCenterObstacleEvent());
-        }
-
-        /// <summary>
-        /// 중앙 장애물 생성 연출 및 준비 상태 확인 시퀀스.
-        /// </summary>
-        /// <returns>IEnumerator 루틴</returns>
-        private IEnumerator SpawnCenterObstacleEvent()
-        {
-            if (!obstacleManager) yield break;
-
-            if (ui && _setting != null && _setting.popupTexts != null && _setting.popupTexts.Length > 3)
-            {
-                yield return StartCoroutine(ui.ShowPopupSequence(new[] { _setting.popupTexts[3] }, 2.0f, false));
-            }
-
-            obstacleManager.SpawnSingleObstacle(2.0f, 0);
-            yield return CoroutineData.GetWaitForSeconds(1.0f);
-
-            float totalDistanceToMove = 2.0f;
-            float duration = 1.0f;
-            float elapsed = 0f;
-
-            while (elapsed < duration)
-            {
-                float deltaTime = Time.deltaTime;
-                elapsed += deltaTime;
-
-                // 예시 입력: totalDistance(2.0) / duration(1.0) * deltaTime(0.016) -> 결과값 = 0.032 (프레임당 이동 거리)
-                float stepMove = (totalDistanceToMove / duration) * deltaTime;
-                
-                if (env) env.ScrollByMeter(stepMove);
-                if (obstacleManager) obstacleManager.ForceMoveActiveObstacles(stepMove);
-
-                if (IsAnyPlayerStunned()) break;
-
-                yield return null;
-            }
-
-            yield return CoroutineData.GetWaitForSeconds(2.0f);
-
-            if (env) yield return StartCoroutine(env.SmoothResetEnvironment(1.0f));
-
-            if (ui && _setting != null && _setting.popupTexts != null && _setting.popupTexts.Length > 4)
-            {
-                yield return StartCoroutine(ui.FadeTransitionTutorialReady(1.0f));
-                yield return StartCoroutine(ui.ShowPopupSequence(new[] { _setting.popupTexts[4] }, 1.0f, false));
-            }
-
-            if (ui) ui.StartPopupTextBlinking(0.5f);
-
-            _isInputBlocked = false;
-            bool p1Ready = false;
-            bool p2Ready = false;
-            float readyStartTime = Time.time;
-
-            SetAutoProgressing(false);
-
-            // 로컬 함수 형태로 패드 입력 이벤트 콜백 정의
-            Action<int, int, int> onReadyPadDown = (pIdx, lIdx, padIdx) =>
-            {
-                if (lIdx == 1) 
-                {
-                    if (pIdx == 0 && !p1Ready)
-                    {
-                        p1Ready = true;
-                        if (players != null && players.Length > 0 && players[0]) players[0].MoveToLane(1);
-                    }
-                    else if (pIdx == 1 && !p2Ready)
-                    {
-                        p2Ready = true;
-                        if (players != null && players.Length > 1 && players[1]) players[1].MoveToLane(1);
-                    }
-                }
-            };
-
-            if (InputManager.Instance) InputManager.Instance.OnPadDown += onReadyPadDown;
-
-            while (!p1Ready || !p2Ready)
-            {
-                if (Time.time - readyStartTime > readyWaitTimeout) break;
-                yield return null;
-            }
-
-            if (InputManager.Instance) InputManager.Instance.OnPadDown -= onReadyPadDown;
-
-            SetAutoProgressing(true);
-
-            if (ui)
-            {
-                ui.StopPopupTextBlinking();
-                ui.HideQuestionPopup(0.5f);
-            }
-
-            yield return StartCoroutine(StartCountdownSequence());
-            
-            yield return CoroutineData.GetWaitForSeconds(0.1f);
-            StartInGame();
-        }
-
-        /// <summary>
-        /// 3, 2, 1 카운트다운 연출.
-        /// </summary>
-        /// <returns>IEnumerator 루틴</returns>
-        private IEnumerator StartCountdownSequence()
-        {
-            if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_10_3초");
-            
-            for (int i = 3; i > 0; i--)
-            {
-                if (ui) ui.SetCenterText(i.ToString(), true);
-                yield return CoroutineData.GetWaitForSeconds(1.0f);
-            }
-            
-            yield return CoroutineData.GetWaitForSeconds(0.1f);
-            if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_14");
-            
-            if (_setting != null && _setting.startText != null)
-            {
-                if (ui) ui.SetCenterText(_setting.startText);
-            }
-
-            yield return CoroutineData.GetWaitForSeconds(1.0f);
-
-            if (ui) ui.SetCenterText("", false);
-        }
-
-        /// <summary>
-        /// 발맞춰 달리기 튜토리얼 구간 시작.
-        /// </summary>
-        private void StartIntroMission()
-        {
-            if (ui && _setting != null && _setting.popupTexts != null && _setting.popupTexts.Length > 0)
-            {   
-                if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_7");
-                StartCoroutine(ui.ShowPopupSequence(new[] { _setting.popupTexts[0] }, 3.0f, false));
+                _soundManager?.PlaySFX("공통_7");
+                await ui.ShowPopupSequenceAsync(new[] { _setting.popupTexts[0] }, 1f, false, ct);
             }
 
             _isIntroMissionActive = true;
             _currentCoopDistance = 0f;
             _p1LastStepTime = Time.time;
             _p2LastStepTime = Time.time;
-            
             SetAutoProgressing(false);
+            _isInputBlocked = false;
         }
 
-        /// <summary>
-        /// 플레이어 발판 입력 이벤트 핸들러.
-        /// 입력 제한, 미션별 허용 레인, 동기화 로직을 처리함.
-        /// </summary>
+        private void SetAutoProgressing(bool isAuto)
+        {
+            if (_gameManager)
+            {
+                _gameManager.IsAutoProgressing = isAuto;
+                if (!isAuto) _gameManager.ResetInactivityTimer();
+            }
+        }
+
         private void HandlePadDown(int pIdx, int lIdx, int padIdx)
         {
-            if (_isInputBlocked) return;
-            if (IsAnyPlayerStunned()) return; 
+            if (_isInputBlocked || IsAnyPlayerStunned()) return;
+            if (!IsGameModeActive()) return;
 
-            bool isAnyActionActive = _isGameActive || _isIntroMissionActive || _isRightMissionActive || _isLeftMissionActive;
-            if (!isAnyActionActive) return;
-
-            if (players != null && pIdx >= 0 && pIdx < players.Length && players[pIdx])
+            if (players != null && pIdx >= 0 && pIdx < players.Length && players[pIdx].HandleInput(lIdx, padIdx))
             {
-                if (players[pIdx].HandleInput(lIdx, padIdx))
-                {
-                    bool isAnyTutorialMission = _isIntroMissionActive || _isRightMissionActive || _isLeftMissionActive;
-                    
-                    if (isAnyTutorialMission)
-                    {
-                        // 이유: 미션 구간에서는 한 플레이어가 과도하게 앞서나가는 것을 방지함.
-                        if (pIdx == 0 && _p1StepCount > _p2StepCount) return;
-                        if (pIdx == 1 && _p2StepCount > _p1StepCount) return;
-                    }
+                if (IsTutorialMode() && !IsValidTutorialInput(pIdx, lIdx)) return;
 
-                    if (_isIntroMissionActive && lIdx != 1) return;
-                    if (_isRightMissionActive && lIdx != 2) return;
+                HandleSpecialLaneInput(pIdx, lIdx);
 
-                    if (_isLeftMissionActive)
-                    {
-                        if (pIdx == 0 && lIdx != 0) return;
-                        if (pIdx == 1 && lIdx != 2) return;
-
-                        int baseIdx = pIdx * 6 + (lIdx * 2);
-                        if (padDotController) padDotController.StopBlinking(new[] { baseIdx, baseIdx + 1 });
-                    }
-
-                    players[pIdx].MoveAndAccelerate(lIdx);
-
-                    if (pIdx == 0)
-                    {
-                        _p1LastStepTime = Time.time;
-                        _p1StepCount++;
-                    }
-                    else
-                    {
-                        _p2LastStepTime = Time.time;
-                        _p2StepCount++;
-                    }
-
-                    ProcessCoopStepSync();
-                }
+                players[pIdx].MoveAndAccelerate(lIdx);
+                UpdatePlayerStepTime(pIdx);
+                ProcessCoopStepSync();
             }
         }
 
-        /// <summary>
-        /// 두 플레이어의 발걸음 동기화 상태를 확인하고 전진 처리함.
-        /// </summary>
+        private void UpdatePlayerStepTime(int pIdx)
+        {
+            if (pIdx == 0)
+            {
+                _p1LastStepTime = Time.time;
+                _p1StepCount++;
+            }
+            else
+            {
+                _p2LastStepTime = Time.time;
+                _p2StepCount++;
+            }
+        }
+
+        private bool IsGameModeActive() =>
+            _isGameActive || _isIntroMissionActive || _isRightMissionActive || _isLeftMissionActive;
+
+        private bool IsTutorialMode() => _isIntroMissionActive || _isRightMissionActive || _isLeftMissionActive;
+
+        private bool IsValidTutorialInput(int pIdx, int lIdx)
+        {
+            if ((pIdx == 0 && _p1StepCount > _p2StepCount) || (pIdx == 1 && _p2StepCount > _p1StepCount)) return false;
+            if (_isIntroMissionActive && lIdx != 1) return false;
+            if (_isRightMissionActive && lIdx != 2) return false;
+
+            return true;
+        }
+
+        private void HandleSpecialLaneInput(int pIdx, int lIdx)
+        {
+            if (_isLeftMissionActive)
+            {
+                if ((pIdx == 0 && lIdx != 0) || (pIdx == 1 && lIdx != 2)) return;
+
+                padDotController?.StopBlinking(new[] { pIdx * 6 + (lIdx * 2), pIdx * 6 + (lIdx * 2) + 1 });
+            }
+        }
+
         private void ProcessCoopStepSync()
         {
-            // 예시 입력: _p1StepCount(5), _p2StepCount(3) -> currentSynced = 3
             int currentSynced = Mathf.Min(_p1StepCount, _p2StepCount);
-            
-            if (currentSynced > _syncedStepCount)
-            {
-                int delta = currentSynced - _syncedStepCount;
-                _syncedStepCount = currentSynced;
+            if (currentSynced <= _syncedStepCount) return;
 
-                // 이유: 한 쌍의 스텝(동기화)당 2.0m 전진함.
-                float addMeters = delta * 2.0f; 
-                _currentCoopDistance += addMeters;
+            int delta = currentSynced - _syncedStepCount;
+            _syncedStepCount = currentSynced;
+            float addMeters = delta * 2.0f;
+            _currentCoopDistance += addMeters;
 
-                if (_isGameActive && ui)
-                {
-                    ui.UpdateLongCoopGauge(_currentCoopDistance, targetDistance);
-                    ui.UpdateDistanceMarkers(_currentCoopDistance);
-                }
-
-                if (env) env.ScrollByMeter(addMeters);
-
-                // 미션 완료 조건 검사
-                if (_isIntroMissionActive && _currentCoopDistance >= RequiredIntroDistance)
-                {
-                    _isIntroMissionActive = false;
-                    
-                    foreach (PlayerController p in players)
-                    {
-                        if (p) p.ForceStop();
-                    }
-                    
-                    _p1StepCount = 0;
-                    _p2StepCount = 0;
-                    _syncedStepCount = 0;
-                    
-                    StartCoroutine(RedStringIntroSequence());
-                }
-                else if (_isGameActive && _currentCoopDistance >= targetDistance)
-                {
-                    FinishGame();
-                }
-            }
+            UpdateTrackingUI();
+            env?.ScrollByMeter(addMeters);
+            CheckMissionCompletion();
         }
 
-        /// <summary>
-        /// 중앙 장애물에 두 플레이어가 묶인 상태로 충돌했을 때 일괄 피격 처리.
-        /// </summary>
-        public void OnBothPlayersHit()
-        {   
-            // 이유: 짧은 시간 안에 피격음이 겹쳐 볼륨이 과도해지는 것을 방지함.
-            if (Time.time - _lastHitSoundTime > 0.1f)
-            {
-                if (SoundManager.Instance) SoundManager.Instance.PlaySFX("달리기_2");
-                _lastHitSoundTime = Time.time;
-            }
-            
-            if (players == null) return;
-            
-            foreach (PlayerController p in players)
-            {
-                if (p) p.OnHit(2.0f);
-            }
-        }
-
-        /// <summary>
-        /// 매 프레임 상태 업데이트.
-        /// </summary>
-        private void Update()
+        private void UpdateTrackingUI()
         {
-            CheckStepDecay();
-            
-            bool isPhysicsActive = (_isGameActive || _isIntroMissionActive || _isRightMissionActive || _isLeftMissionActive) && !_isInputBlocked;
-                
-            if (isPhysicsActive)
+            if (_isGameActive && ui)
             {
-                // # TODO: 루프 내 반복되는 객체 배열 접근 최적화 고려.
-                foreach (PlayerController p in players)
-                {
-                    if (p) p.OnUpdate(false, 0, 0);
-                }
+                ui.UpdateLongCoopGauge(_currentCoopDistance, targetDistance);
+                ui.UpdateDistanceMarkers(_currentCoopDistance);
             }
-
-            if (!_isGameActive) return;
-
-            _currentTime -= Time.deltaTime;
-            
-            if (ui) ui.UpdateTimer(_currentTime);
-            if (_currentTime <= 0) FinishGame();
         }
 
-        /// <summary>
-        /// 특정 시간 동안 추가 입력이 없으면 초과 스텝을 동기화 수치로 롤백함.
-        /// </summary>
-        private void CheckStepDecay()
+        private void CheckMissionCompletion()
         {
-            float now = Time.time;
-            
-            // 이유: 한 플레이어가 먼저 발판을 여러 번 밟고 멈췄을 때, 스텝 차이가 유지되어 추후 불합리하게 전진하는 현상 방지.
-            if (now - _p1LastStepTime > stepDecayTime && _p1StepCount > _syncedStepCount)
+            if (_isIntroMissionActive && _currentCoopDistance >= RequiredIntroDistance)
             {
-                _p1StepCount = _syncedStepCount;
+                TransitionFromIntroToRedString();
             }
-            if (now - _p2LastStepTime > stepDecayTime && _p2StepCount > _syncedStepCount)
+            else if (_isGameActive && _currentCoopDistance >= targetDistance)
             {
-                _p2StepCount = _syncedStepCount;
+                FinishGame();
             }
         }
 
-        /// <summary>
-        /// JSON 설정 데이터 로드.
-        /// </summary>
-        private void LoadSettings()
+        private void TransitionFromIntroToRedString()
         {
-            _setting = JsonLoader.Load<Play500MSetting>(GameConstants.Path.PlayLong);
-            if (_setting != null && introPage) introPage.SetupData(_setting.introPage);
+            _isIntroMissionActive = false;
+            foreach (var p in players) p?.ForceStop();
+            _p1StepCount = _p2StepCount = _syncedStepCount = 0;
+            RunRedStringSequenceAsync(_cts.Token).Forget();
         }
 
-        /// <summary>
-        /// 본격적인 500m 달리기 모드 시작.
-        /// </summary>
+        private async UniTaskVoid RunRedStringSequenceAsync(CancellationToken ct)
+        {
+            _isInputBlocked = true;
+            SetAutoProgressing(true);
+            foreach (var p in players)
+            {
+                if (p) p.ForceStop();
+            }
+
+            if (ui)
+            {
+                await ui.ShowRedStringStep1Async(_setting.popupTexts[1], ct);
+                await ui.BlinkRedStringAsync(2, 2.0f, ct);
+                await ui.FadeInSecondLineAsync(_setting.popupTexts[1], 2.0f, ct);
+            }
+
+            await RunRightMissionAsync(ct);
+            await RunLeftMissionAsync(ct);
+            await RunCenterObstacleEventAsync(ct);
+        }
+
+        private async UniTask RunRightMissionAsync(CancellationToken ct)
+        {
+            padDotController?.StartBlinking(new[] { 4, 5, 10, 11 });
+            _isInputBlocked = false;
+            _isRightMissionActive = true;
+            _currentCoopDistance = 0f;
+            SetAutoProgressing(false);
+
+            await UniTask.WaitUntil(IsRightMissionComplete, cancellationToken: ct);
+
+            _isRightMissionActive = false;
+            SetAutoProgressing(true);
+            foreach (var p in players)
+                if (p)
+                    p.ForceStop();
+            padDotController?.StopBlinking(new[] { 4, 5, 10, 11 });
+
+            await UniTask.Delay(TimeSpan.FromSeconds(0.5f), cancellationToken: ct);
+            if (ui) await ui.ShowPopupSequenceAsync(new[] { _setting.popupTexts[2] }, 2.0f, false, ct);
+        }
+
+        private async UniTask RunLeftMissionAsync(CancellationToken ct)
+        {
+            padDotController?.StartBlinking(new[] { 0, 1, 10, 11 });
+            _isLeftMissionActive = true;
+            _p1StepCount = _p2StepCount = _syncedStepCount = 0;
+            _currentCoopDistance = 0f;
+            SetAutoProgressing(false);
+
+            await UniTask.WaitUntil(IsLeftMissionComplete, cancellationToken: ct);
+
+            _isLeftMissionActive = false;
+            _isInputBlocked = true;
+            SetAutoProgressing(true);
+            foreach (var p in players)
+                if (p)
+                    p.ForceStop();
+            padDotController?.StopBlinking(new[] { 0, 1, 10, 11 });
+        }
+
+        private async UniTask RunCenterObstacleEventAsync(CancellationToken ct)
+        {
+            await ui.ShowMissionPopupKeepAsync(_setting.popupTexts[3], ct);
+
+            obstacleManager.SpawnSingleObstacle(2.0f, 0);
+            await UniTask.Delay(TimeSpan.FromSeconds(1.0f), cancellationToken: ct);
+            await ExecuteObstacleMovementAsync(2.0f, 1.0f, ct);
+
+            await UniTask.Delay(TimeSpan.FromSeconds(2.0f), cancellationToken: ct);
+            ui.HideMissionPopupAsync(0.5f, ct).Forget();
+
+            if (env) await env.SmoothResetEnvironmentAsync(1.0f, ct);
+
+            await ui.ShowMissionPopupKeepAsync(_setting.popupTexts[4], ct);
+            ui?.StartPopupTextBlinkingAsync(0.5f, ct).Forget();
+
+            if (ui) ui.FadeTransitionTutorialReadyAsync(0.5f, ct).Forget();
+
+            await AwaitPlayerReadyAsync(ct);
+
+            ui?.StopPopupTextBlinking();
+            ui?.HideMissionPopupAsync(0.5f, ct).Forget();
+
+            await StartCountdownSequenceAsync(ct);
+            StartInGame();
+        }
+
+        private async UniTask ExecuteObstacleMovementAsync(float dist, float dur, CancellationToken ct)
+        {
+            float elapsed = 0f;
+            while (elapsed < dur)
+            {
+                elapsed += Time.deltaTime;
+                float stepMove = (dist / dur) * Time.deltaTime;
+                env?.ScrollByMeter(stepMove);
+                obstacleManager.ForceMoveActiveObstacles(stepMove);
+                if (IsAnyPlayerStunned()) break;
+
+                await UniTask.Yield(PlayerLoopTiming.Update, ct);
+            }
+        }
+
+        private async UniTask AwaitPlayerReadyAsync(CancellationToken ct)
+        {
+            _isInputBlocked = false;
+            _isP1Ready = false;
+            _isP2Ready = false;
+            SetAutoProgressing(false);
+
+            _inputManager.OnPadDown += OnReadyPadDown;
+
+            await UniTask.WaitUntil(IsPlayersReady, cancellationToken: ct)
+                .Timeout(TimeSpan.FromSeconds(readyWaitTimeout)).SuppressCancellationThrow();
+
+            _inputManager.OnPadDown -= OnReadyPadDown;
+            SetAutoProgressing(true);
+        }
+
+        private void OnReadyPadDown(int pIdx, int lIdx, int padIdx)
+        {
+            if (lIdx != 1) return;
+
+            if (pIdx == 0) _isP1Ready = true;
+            else if (pIdx == 1) _isP2Ready = true;
+
+            players[pIdx]?.MoveToLane(1);
+        }
+
+        private bool IsPlayersReady() => _isP1Ready && _isP2Ready;
+
+        private bool IsRightMissionComplete() => _currentCoopDistance >= RequiredRightDistance;
+
+        private bool IsLeftMissionComplete() => _currentCoopDistance >= RequiredLeftDistance;
+
+        private async UniTask StartCountdownSequenceAsync(CancellationToken ct)
+        {
+            _soundManager?.PlaySFX("공통_10_3초");
+            for (int i = 3; i > 0; i--)
+            {
+                ui?.SetCenterText(i.ToString(), true);
+                await UniTask.Delay(TimeSpan.FromSeconds(1.0f), cancellationToken: ct);
+            }
+
+            await UniTask.Delay(TimeSpan.FromSeconds(0.3f), cancellationToken: ct);
+            _soundManager?.PlaySFX("공통_14");
+            if (_setting?.startText != null) ui?.SetCenterText(_setting.startText);
+            await UniTask.Delay(TimeSpan.FromSeconds(1.0f), cancellationToken: ct);
+            ui?.SetCenterText("", false);
+        }
+
         private void StartInGame()
-        {   
-            if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_15_60초");   
-            
+        {
+            _soundManager?.PlaySFX("공통_15_60초");
             _currentTime = timeLimit;
             _isGameActive = true;
             _p1StepCount = 0;
@@ -642,132 +498,156 @@ namespace My.Scripts._04_PlayLong
             _currentCoopDistance = 0f;
             _p1LastStepTime = Time.time;
             _p2LastStepTime = Time.time;
-            
-            if (obstacleManager) obstacleManager.GenerateProgressiveObstacles();
-            else Debug.LogWarning("obstacleManager 누락됨.");
-            
+            obstacleManager?.GenerateProgressiveObstacles();
             SetAutoProgressing(false);
         }
 
-        /// <summary>
-        /// 거리 달성 또는 시간 초과로 인한 게임 종료 처리 진입.
-        /// </summary>
         private void FinishGame()
         {
             if (!_isGameActive) return;
-            _isGameActive = false;
 
-            StartCoroutine(FinishGameSequence());
+            _isGameActive = false;
+            FinishGameAsync(_cts.Token).Forget();
         }
 
         /// <summary>
-        /// 게임 종료 연출 및 엔딩 씬 전환.
+        /// 게임 종료 시퀀스를 실행함
         /// </summary>
-        /// <returns>IEnumerator 루틴</returns>
-        private IEnumerator FinishGameSequence()
-        {
+        private async UniTaskVoid FinishGameAsync(CancellationToken ct)
+        {   
+            string nameA = _gameManager ? _gameManager.PlayerAName : "Player A";
+            string nameB = _gameManager ? _gameManager.PlayerBName : "Player B";
+            
+            _logger?.ZLogInformation($"{nameA}(이)와 {nameB}은(는) {(int)_currentCoopDistance}M 만큼 진행함.");
+            
             SetAutoProgressing(true);
-
-            // 이유: 게임이 종료(성공/실패)되었으므로 시야를 가리지 않도록 남은 장애물들을 모두 지워줌.
             if (env) env.ClearObstacles(0.5f);
 
+            StopAllPlayers();
+            await ShowResultSequenceAsync(ct);
+            TransitionToEndingScene();
+        }
+
+        /// <summary>
+        /// 모든 플레이어의 이동 및 애니메이션을 강제 정지함
+        /// </summary>
+        private void StopAllPlayers()
+        {
+            if (players == null) return;
+
+            // 반복문 내 플레이어 누락 예외 방지
             foreach (PlayerController p in players)
             {
                 if (p) p.ForceStop();
             }
+        }
 
-            if (ui)
+        /// <summary>
+        /// 게임 성공 여부에 따른 결과 UI 및 사운드 연출을 대기함
+        /// </summary>
+        private async UniTask ShowResultSequenceAsync(CancellationToken ct)
+        {
+            if (!ui)
             {
-                bool isSuccess = _currentCoopDistance >= targetDistance;
-                if (isSuccess)
-                {
-                    if (_setting != null && _setting.endText != null)
-                    {   
-                        if (SoundManager.Instance) SoundManager.Instance.PlaySFX("달리기_4");
-                        ui.ShowCenterResultPopup(_setting.endText);
-                    }
-                    else
-                    {
-                        ui.ShowCenterResultPopup("SUCCESS");
-                        Debug.LogWarning("엔딩 텍스트 설정 데이터가 없음.");
-                    }
-                }
-                else
-                {   
-                    if (SoundManager.Instance) SoundManager.Instance.PlaySFX("공통_18");
-                    ui.ShowCenterResultPopup("TIME OVER");
-                }
+                // UI 객체 누락 시 연출 시간 동기화를 위한 대기
+                await UniTask.Delay(TimeSpan.FromSeconds(3.0f), cancellationToken: ct);
+                return;
             }
 
-            yield return CoroutineData.GetWaitForSeconds(3.0f);
+            if (_soundManager) _soundManager.StopSFX();
 
-            if (GameManager.Instance)
-            {   
-                // 이유: 엔딩 씬에서 도달 거리에 따른 분기 처리를 위해 데이터를 저장함.
-                GameManager.Instance.lastPlayDistance = _currentCoopDistance;
-                GameManager.Instance.ChangeScene(GameConstants.Scene.Ending); 
+            bool isSuccess = _currentCoopDistance >= targetDistance;
+
+            if (isSuccess)
+            {
+                if (_soundManager) _soundManager.PlaySFX("달리기_4");
+
+                if (_setting != null && _setting.endText != null)
+                {
+                    await ui.ShowCenterResultPopupAsync(_setting.endText, 3.0f, ct);
+                }
+                else
+                {
+                    await ui.ShowCenterResultPopupAsync("SUCCESS", 3.0f, ct);
+                }
+            }
+            else
+            {
+                if (_soundManager) _soundManager.PlaySFX("공통_18");
+                await ui.ShowCenterResultPopupAsync("TIME OVER", 3.0f, ct);
+            }
+        }
+
+        /// <summary>
+        /// 플레이 기록을 저장하고 엔딩 씬으로 전환함
+        /// </summary>
+        private void TransitionToEndingScene()
+        {
+            if (_gameManager)
+            {
+                _gameManager.lastPlayDistance = _currentCoopDistance;
+                _gameManager.ChangeScene(GameConstants.Scene.Ending);
             }
             else
             {
                 SceneManager.LoadScene(GameConstants.Scene.Ending);
             }
         }
-        
-        /// <summary>
-        /// 특정 플레이어의 현재 레인 인덱스 조회.
-        /// </summary>
-        /// <param name="playerIdx">플레이어 인덱스</param>
-        /// <returns>레인 인덱스</returns>
-        public int GetCurrentLane(int playerIdx)
-        {
-            if (players != null && playerIdx >= 0 && playerIdx < players.Length && players[playerIdx])
-                return players[playerIdx].currentLane;
 
-            return 1;
+        private void CheckStepDecay()
+        {
+            float now = Time.time;
+            if (now - _p1LastStepTime > stepDecayTime && _p1StepCount > _syncedStepCount)
+                _p1StepCount = _syncedStepCount;
+            if (now - _p2LastStepTime > stepDecayTime && _p2StepCount > _syncedStepCount)
+                _p2StepCount = _syncedStepCount;
         }
 
-        /// <summary>
-        /// 플레이어 캐릭터 객체의 설정(색상, 레인 위치 등)을 초기화함.
-        /// </summary>
-        private void InitializePlayers()
+        public bool IsAnyPlayerStunned()
         {
-            if (!baseSettings)
-            {
-                Debug.LogWarning("baseSettings 누락됨.");
-                return;
-            }
+            if (players == null) return false;
 
-            PlayerPhysicsConfig config = baseSettings.physicsConfig;
-            config.maxDistance = targetDistance;
-            
+            bool p1Stunned = players[0]?.IsStunned ?? false;
+            bool p2Stunned = players[1]?.IsStunned ?? false;
+            return p1Stunned || p2Stunned;
+        }
+
+        // ==========================================
+        // IPlayHitHandler 인터페이스 구현부 추가
+        // ==========================================
+        public void OnPlayerHit(int playerIdx)
+        {
             if (players != null)
             {
-                for (int i = 0; i < players.Length; i++)
+                if (Time.time - _lastHitSoundTime > 0.1f)
                 {
-                    if (players[i])
-                    {
-                        Vector2[] lanes = (i == 0) ? p1LongLanePositions : p2LongLanePositions;
-                        players[i].Setup(i, lanes, config);
+                    if (_soundManager) _soundManager.PlaySFX("달리기_2");
+                    _lastHitSoundTime = Time.time;
 
-                        if (GameManager.Instance)
-                        {
-                            ColorData colorData = (i == 0) ? GameManager.Instance.PlayerAColor : GameManager.Instance.PlayerBColor;
-                            Sprite targetSprite = GameManager.Instance.GetColorSprite(colorData);
-
-                            if (targetSprite)
-                            {
-                                players[i].SetCharacterSprite(targetSprite);
-                            }
-                            else
-                            {
-                                Debug.LogWarning($"Player {i} 대상 스프라이트 누락됨. 색상 틴트로 대체.");
-                                Color targetColor = GameManager.Instance.GetColorFromData(colorData);
-                                players[i].SetCharacterColor(targetColor);
-                            }
-                        }
-                    }
+                    // 동시 스폰된 바로 옆 장애물 페이드아웃
+                    if (obstacleManager) obstacleManager.FadeOutAdjacentObstacles(1.0f);
                 }
+
+                if (players.Length > 0 && players[0]) players[0].OnHit(2.0f);
+                if (players.Length > 1 && players[1]) players[1].OnHit(2.0f);
             }
+        }
+
+        public bool IsPlayerPaused(int playerIdx)
+        {
+            return IsAnyPlayerStunned();
+        }
+
+        public int GetCurrentLane(int playerIdx)
+        {
+            // 임시로 현재 플레이어의 레인을 반환합니다.
+            // (ObstacleHitChecker의 공용 판정 로직과 맞물려 동작합니다)
+            if (playerIdx >= 0 && playerIdx < players.Length && players[playerIdx])
+            {
+                return players[playerIdx].currentLane;
+            }
+
+            return 1; // 기본 중앙값
         }
     }
 }
