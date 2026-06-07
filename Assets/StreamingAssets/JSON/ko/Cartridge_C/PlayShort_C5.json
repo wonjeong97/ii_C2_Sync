@@ -1,0 +1,444 @@
+{
+  "questions": [
+    {
+      "page1": {
+        "name": "Text_Question1",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대와 의견이 다를 때,\n내가 바라는 점을\n명확하게 말로 꺼낸다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question1",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대와 의견이 다를 때,\n내가 바라는 점을 명확하게 말로 꺼낸다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question2",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "이미 정해진 계획이더라도,\n진행이 매끄럽지 않으면\n방식을 다시 조정한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question2",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "이미 정해진 계획이더라도,\n진행이 매끄럽지 않으면\n방식을 다시 조정한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question3",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "둘의 의견이 다를 때,\n이번에는 누구의 의견을 따를지\n함께 정하려고 한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question3",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "둘의 의견이 다를 때,\n이번에는 누구의 의견을 따를지\n함께 정하려고 한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question4",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "의견이 엇갈릴 때, 서운함이나\n속상함 등 내가 느끼는 감정을\n구체적으로 표현한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question4",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "의견이 엇갈릴 때, 서운함이나 속상함 등\n내가 느끼는 감정을 구체적으로 표현한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question5",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "외부 환경이나 조건이 바뀌면,\n처음에 정했던 방식을\n유연하게 수정한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question5",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "외부 환경이나 조건이 바뀌면,\n처음에 정했던 방식을 유연하게 수정한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question6",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "선택이 엇갈릴 때, 한 사람의\n뜻대로만 가지 않도록\n중간 지점을 찾는 편이다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question6",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "선택이 엇갈릴 때, 한 사람의 뜻대로만\n가지 않도록 중간 지점을 찾는 편이다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question7",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대의 행동으로 불편함이\n생기면, 마음에 담아두기보다\n대화로 표현한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question7",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대의 행동으로 불편함이 생기면,\n마음에 담아두기보다 대화로 표현한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question8",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "둘 사이의 분위기가 어색해지면,\n흐름을 바꾸기 위해 행동을\n조금 달리해본다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question8",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "둘 사이의 분위기가 어색해지면,\n흐름을 바꾸기 위해 행동을 조금 달리해본다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question9",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "둘의 의견이 다를 때, 이번 사안이\n누구에게 더 중요한지 확인하고\n결정의 무게를 정하는 편이다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question9",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "둘의 의견이 다를 때,\n이번 사안이 누구에게 더 중요한지 확인하고\n결정의 무게를 정하는 편이다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question10",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "의견 차이나 어긋남이 생기면 시간이 지나면서 괜찮아지길 기다리는 편이다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question10",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "의견 차이나 어긋남이 생기면 시간이 지나면서 괜찮아지길 기다리는 편이다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question11",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "대화 중 오해가 생겼다고 느끼면,\n왜 그렇게 생각했는지\n내 이유를 설명한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question11",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "대화 중 오해가 생겼다고 느끼면,\n왜 그렇게 생각했는지 내 이유를 설명한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question12",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "약속을 실천하는 도중 예상치 못한\n차이가 생기면, 그때그때\n행동을 수정한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question12",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "약속을 실천하는 도중 예상치 못한\n차이가 생기면, 그때그때 행동을 수정한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question13",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "의견이 팽팽할 때, 이번엔 상대방의 의견을 따르고 다음에는 내 의견을 따르는 식의 규칙을 정한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question13",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "의견이 팽팽할 때, 이번엔 상대방의 의견을 따르고 다음에는 내 의견을 따르는 식의 규칙을 정한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question14",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "나와 상대의 생각이 다르다고\n느껴지면, 서로 무엇을 기대하고\n있었는지 질문하여 확인한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question14",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "나와 상대의 생각이 다르다고 느껴지면,\n서로 무엇을 기대하고 있었는지\n질문하여 확인한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question15",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방과 속도가 맞지 않을 때,\n기다리거나 맞춰가며\n다시 움직이는 편이다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question15",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방과 속도가 맞지 않을 때,\n기다리거나 맞춰가며 다시 움직이는 편이다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question16",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방이 계속 나에게 맞추는 것\n같으면, 결정의 몫을 다시\n나눠보려 한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question16",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대방이 계속 나에게 맞추는 것 같으면,\n결정의 몫을 다시 나눠보려 한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question17",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "불편한 일이 반복되어도 그때 말하지 않고 넘기다가 어느 순간 마음이 멀어지는 편이다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question17",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "불편한 일이 반복되어도 그때 말하지 않고 넘기다가 어느 순간 마음이 멀어지는 편이다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question18",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "그냥 지나가면 나중에 서운해질 것\n같은 일은, 그때 말해두는 편이다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question18",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "그냥 지나가면 나중에 서운해질 것\n같은 일은, 그때 말해두는 편이다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question19",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상황이 예상과 달라지면, 누가\n맞았는지 따지기보다 지금 할 수\n있는 쪽으로 바꾸는 편이다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question19",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상황이 예상과 달라지면, 누가 맞았는지\n따지기보다 지금 할 수 있는 쪽으로\n바꾸는 편이다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    },
+    {
+      "page1": {
+        "name": "Text_Question20",
+        "position": { "x": 0, "y": 144 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대가 혼자 결정을 내리려 하면,\n내 생각도 함께 반영해 같이\n정하자고 말한다.",
+        "fontName": "font7",
+        "fontSize": 43,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      },
+      "page2": {
+        "name": "Text_Question20",
+        "position": { "x": 0, "y": 100 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "text": "상대가 혼자 결정을 내리려 하면,\n내 생각도 함께 반영해 같이\n정하자고 말한다.",
+        "fontName": "font7",
+        "fontSize": 37,
+        "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
+        "alignment": 1
+      }
+    }
+  ]
+}
