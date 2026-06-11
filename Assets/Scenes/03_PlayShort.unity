@@ -3083,9 +3083,9 @@ PrefabInstance:
     - target: {fileID: 7269095533582961264, guid: 1fb3c5c4585b6b04899de4bcc4730837,
         type: 3}
       propertyPath: m_Text
-      value: "Q.\uC0C1\uB300\uAC00 \uD63C\uC790 \uACB0\uC815\uC744 \uB0B4\uB9AC\uB824
-        \uD558\uBA74,\n\uB0B4 \uC0DD\uAC01\uB3C4 \uD568\uAED8 \uBC18\uC601\uD574
-        \uAC19\uC774\n\uC815\uD558\uC790\uACE0 \uB9D0\uD55C\uB2E4."
+      value: "Q.\uC774\uBBF8 \uC815\uD574\uC9C4 \uACC4\uD68D\uC774\uB354\uB77C\uB3C4,
+        \uC9C4\uD589\uC774\r\n\uB9E4\uB044\uB7FD\uC9C0 \uC54A\uC73C\uBA74 \uBC29\uC2DD\uC744
+        \uB2E4\uC2DC \uC870\uC815\uD55C\uB2E4."
       objectReference: {fileID: 0}
     - target: {fileID: 7269095533582961264, guid: 1fb3c5c4585b6b04899de4bcc4730837,
         type: 3}
@@ -7315,9 +7315,18 @@ PrefabInstance:
     - target: {fileID: 3124538023247375177, guid: 1fb3c5c4585b6b04899de4bcc4730837,
         type: 3}
       propertyPath: m_Text
-      value: "Q.\uC0C1\uB300\uAC00 \uD63C\uC790 \uACB0\uC815\uC744 \uB0B4\uB9AC\uB824
-        \uD558\uBA74,\n\uB0B4 \uC0DD\uAC01\uB3C4 \uD568\uAED8 \uBC18\uC601\uD574
-        \uAC19\uC774\n\uC815\uD558\uC790\uACE0 \uB9D0\uD55C\uB2E4."
+      value: "Q. \uC0C1\uB300\uC640 \uC758\uACAC\uC774 \uB2E4\uB97C \uB54C,\n\uB0B4\uAC00
+        \uBC14\uB77C\uB294 \uC810\uC744 \uBA85\uD655\uD558\uAC8C \uB9D0\uB85C \uAEBC\uB0B8\uB2E4."
+      objectReference: {fileID: 0}
+    - target: {fileID: 3124538023247375177, guid: 1fb3c5c4585b6b04899de4bcc4730837,
+        type: 3}
+      propertyPath: m_FontData.m_MinSize
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3124538023247375177, guid: 1fb3c5c4585b6b04899de4bcc4730837,
+        type: 3}
+      propertyPath: m_FontData.m_FontSize
+      value: 43
       objectReference: {fileID: 0}
     - target: {fileID: 3142715156407850483, guid: 1fb3c5c4585b6b04899de4bcc4730837,
         type: 3}
