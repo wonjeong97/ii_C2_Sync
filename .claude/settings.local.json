@@ -3,7 +3,8 @@
     "allow": [
       "Bash(xargs wc *)",
       "Bash(xargs grep *)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

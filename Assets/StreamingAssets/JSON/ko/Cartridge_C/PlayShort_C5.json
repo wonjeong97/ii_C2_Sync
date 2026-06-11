@@ -435,7 +435,7 @@
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "상대가 혼자 결정을 내리려 하면,\n내 생각도 함께 반영해 같이 정하자고 말한다.",
         "fontName": "font7",
-        "fontSize": 3,
+        "fontSize": 35,
         "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
         "alignment": 1
       }
