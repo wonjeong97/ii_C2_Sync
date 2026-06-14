@@ -107,34 +107,54 @@ namespace My.Scripts.Hardware
 
         private async UniTask TryConnectPortAsync(string portName, CancellationToken token)
         {
-            // 수정: Func<UniTask> 캐스팅 유지 및 로그 문법 표준화
             await UniTask.RunOnThreadPool((Func<UniTask>)(async () =>
             {
+                if (token.IsCancellationRequested) return;
+
                 var tempPort = new SerialPort(portName, 9600) { ReadTimeout = 2000, DtrEnable = true };
+                bool connected = false;
+
+                // Reconnect()가 토큰을 취소하면 다음 프레임을 기다리지 않고
+                // Cancel() 호출 시점에 동기적으로 포트를 닫아 즉시 재사용 가능하게 함.
+                CancellationTokenRegistration reg = token.Register(() =>
+                {
+                    if (!connected) try { if (tempPort.IsOpen) tempPort.Close(); } catch { }
+                });
+
                 try
                 {
                     tempPort.Open();
-                    await UniTask.Delay(TimeSpan.FromSeconds(2.5f), cancellationToken: token)
+
+                    bool isCanceled = await UniTask.Delay(TimeSpan.FromSeconds(2.5f), cancellationToken: token)
                         .SuppressCancellationThrow();
 
-                    if (token.IsCancellationRequested) return;
+                    if (isCanceled || token.IsCancellationRequested) return;
 
-                    if (tempPort.BytesToRead > 0 && tempPort.ReadExisting().Contains("Sensor"))
+                    string response = tempPort.BytesToRead > 0 ? tempPort.ReadExisting() : string.Empty;
+                    if (response.Contains("Sensor"))
                     {
                         tempPort.ReadTimeout = 10;
-                        _arduinoPort = tempPort;
-                        _logger.ZLogInformation($"아두이노 연결 성공: {portName}");
-                    }
-                    else
-                    {
-                        tempPort.Close();
-                        tempPort.Dispose();
+                        await UniTask.SwitchToMainThread();
+                        if (!token.IsCancellationRequested)
+                        {
+                            _arduinoPort = tempPort;
+                            connected = true;
+                            _logger.ZLogInformation($"아두이노 연결 성공: {portName}");
+                        }
                     }
                 }
                 catch (Exception e)
                 {
-                    _logger.ZLogWarning(e, $"포트 연결 실패 ({portName})");
-                    tempPort.Dispose();
+                    _logger.ZLogWarning($"포트 연결 실패 ({portName}): {e.Message}");
+                }
+                finally
+                {
+                    reg.Dispose();
+                    if (!connected)
+                    {
+                        try { if (tempPort.IsOpen) tempPort.Close(); } catch { }
+                        try { tempPort.Dispose(); } catch { }
+                    }
                 }
             }));
         }
