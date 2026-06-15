@@ -59,7 +59,7 @@ namespace My.Scripts._01_Tutorial.Pages
         }
 
         protected override void SetupData(TutorialPage1Data data)
-        {   
+        {
             if (descriptionText && _uiManager)
             {
                 _uiManager.SetText(descriptionText.gameObject, data.descriptionText);
@@ -73,11 +73,12 @@ namespace My.Scripts._01_Tutorial.Pages
         public override void OnEnter()
         {
             base.OnEnter();
-            _cts = new CancellationTokenSource();
-            
+            var cts = new CancellationTokenSource();
+            _cts = cts;
+
             if (_gameManager) _gameManager.IsAutoProgressing = true;
-            
-            FadeInAndPollAsync(_cts.Token).Forget();
+
+            FadeInAndPollAsync(cts).Forget();
         }
 
         public override void OnExit()
@@ -87,7 +88,7 @@ namespace My.Scripts._01_Tutorial.Pages
                 _soundManager.StopBGM();
                 _soundManager.PlayBGM("MainBGM");
             }
-            
+
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
@@ -99,8 +100,9 @@ namespace My.Scripts._01_Tutorial.Pages
             if (Input.GetKeyDown(KeyCode.Return)) CompleteStep();
         }
 
-        private async UniTaskVoid FadeInAndPollAsync(CancellationToken ct)
+        private async UniTaskVoid FadeInAndPollAsync(CancellationTokenSource cts)
         {
+            CancellationToken ct = cts.Token;
             if (descriptionText)
             {
                 float duration = 0.5f;
@@ -111,14 +113,16 @@ namespace My.Scripts._01_Tutorial.Pages
                     SetTextAlpha(Mathf.Clamp01(elapsed / duration));
                     await UniTask.Yield(PlayerLoopTiming.Update, ct);
                 }
+
                 SetTextAlpha(1f);
             }
 
-            await PollRoomStateAsync(ct);
+            await PollRoomStateAsync(cts);
         }
 
-        private async UniTask PollRoomStateAsync(CancellationToken ct)
+        private async UniTask PollRoomStateAsync(CancellationTokenSource cts)
         {
+            CancellationToken ct = cts.Token;
 #if UNITY_EDITOR
             await UniTask.Delay(TimeSpan.FromSeconds(1.0f), cancellationToken: ct);
             if (apiManager) apiManager.FillDebugSession();
@@ -160,8 +164,10 @@ namespace My.Scripts._01_Tutorial.Pages
                         await UniTask.Delay(TimeSpan.FromSeconds(pollInterval), cancellationToken: ct);
                         continue;
                     }
+
                     if (res.result == UnityWebRequest.Result.Success &&
-                        res.downloadHandler.text.Contains(GameConstants.Api.StatusEmpty, StringComparison.OrdinalIgnoreCase))
+                        res.downloadHandler.text.Contains(GameConstants.Api.StatusEmpty,
+                            StringComparison.OrdinalIgnoreCase))
                     {
                         roomEmpty = true;
                     }
@@ -170,12 +176,18 @@ namespace My.Scripts._01_Tutorial.Pages
                 if (roomEmpty)
                 {
                     emptyStartTime = (emptyStartTime < 0f) ? Time.time : emptyStartTime;
-                    if (Time.time - emptyStartTime >= 15f) { _gameManager.ReturnToTitle(); return; }
+                    if (Time.time - emptyStartTime >= 15f)
+                    {
+                        cts.Cancel();
+                        _gameManager.ReturnToTitle();
+                        return;
+                    }
+
                     await UniTask.Delay(TimeSpan.FromSeconds(pollInterval), cancellationToken: ct);
                     continue;
                 }
 
-                // ② 유저 조회 (방이 USING일 때만)
+                // 유저 조회 (방이 USING일 때만)
                 using (var req = UnityWebRequest.Get(userUrl))
                 {
                     req.timeout = 10;
@@ -194,24 +206,33 @@ namespace My.Scripts._01_Tutorial.Pages
                         await UniTask.Delay(TimeSpan.FromSeconds(pollInterval), cancellationToken: ct);
                         continue;
                     }
+
                     if (res.result == UnityWebRequest.Result.Success)
                     {
                         string rawText = res.downloadHandler.text;
                         if (rawText.Contains(GameConstants.Api.StatusEmpty, StringComparison.OrdinalIgnoreCase))
                         {
                             emptyStartTime = (emptyStartTime < 0f) ? Time.time : emptyStartTime;
-                            if (Time.time - emptyStartTime >= 15f) { _gameManager.ReturnToTitle(); return; }
+                            if (Time.time - emptyStartTime >= 15f)
+                            {
+                                cts.Cancel();
+                                _gameManager.ReturnToTitle();
+                                return;
+                            }
                         }
                         else if (rawText.Contains(","))
                         {
                             emptyStartTime = -1f;
-                            string[] parts = rawText.Split(new[] { '\r', '\n', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                            string[] parts = rawText.Split(new[] { '\r', '\n', ',' },
+                                StringSplitOptions.RemoveEmptyEntries);
                             if (parts.Length >= 2 && _sessionManager)
                             {
                                 _sessionManager.PlayerAUid = parts[0].Trim();
                                 _sessionManager.PlayerBUid = parts[1].Trim();
-                                var fetchResult = await apiManager.FetchDataAsync(parts[0].Trim()).SuppressCancellationThrow();
-                                if (fetchResult.IsCanceled == false && fetchResult.Result == true && _sessionManager.CurrentUserId != 0)
+                                var fetchResult = await apiManager.FetchDataAsync(parts[0].Trim())
+                                    .SuppressCancellationThrow();
+                                if (fetchResult.IsCanceled == false && fetchResult.Result == true &&
+                                    _sessionManager.CurrentUserId != 0)
                                 {
                                     CompleteStep();
                                     return;
@@ -220,6 +241,7 @@ namespace My.Scripts._01_Tutorial.Pages
                         }
                     }
                 }
+
                 await UniTask.Delay(TimeSpan.FromSeconds(pollInterval), cancellationToken: ct);
             }
         }
