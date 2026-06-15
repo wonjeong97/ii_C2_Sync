@@ -59,7 +59,7 @@ namespace My.Scripts._01_Tutorial.Pages
         }
 
         protected override void SetupData(TutorialPage1Data data)
-        {   
+        {
             if (descriptionText && _uiManager)
             {
                 _uiManager.SetText(descriptionText.gameObject, data.descriptionText);
@@ -74,9 +74,9 @@ namespace My.Scripts._01_Tutorial.Pages
         {
             base.OnEnter();
             _cts = new CancellationTokenSource();
-            
+
             if (_gameManager) _gameManager.IsAutoProgressing = true;
-            
+
             FadeInAndPollAsync(_cts.Token).Forget();
         }
 
@@ -87,7 +87,7 @@ namespace My.Scripts._01_Tutorial.Pages
                 _soundManager.StopBGM();
                 _soundManager.PlayBGM("MainBGM");
             }
-            
+
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
@@ -111,6 +111,7 @@ namespace My.Scripts._01_Tutorial.Pages
                     SetTextAlpha(Mathf.Clamp01(elapsed / duration));
                     await UniTask.Yield(PlayerLoopTiming.Update, ct);
                 }
+
                 SetTextAlpha(1f);
             }
 
@@ -160,8 +161,10 @@ namespace My.Scripts._01_Tutorial.Pages
                         await UniTask.Delay(TimeSpan.FromSeconds(pollInterval), cancellationToken: ct);
                         continue;
                     }
+
                     if (res.result == UnityWebRequest.Result.Success &&
-                        res.downloadHandler.text.Contains(GameConstants.Api.StatusEmpty, StringComparison.OrdinalIgnoreCase))
+                        res.downloadHandler.text.Contains(GameConstants.Api.StatusEmpty,
+                            StringComparison.OrdinalIgnoreCase))
                     {
                         roomEmpty = true;
                     }
@@ -170,12 +173,18 @@ namespace My.Scripts._01_Tutorial.Pages
                 if (roomEmpty)
                 {
                     emptyStartTime = (emptyStartTime < 0f) ? Time.time : emptyStartTime;
-                    if (Time.time - emptyStartTime >= 15f) { _gameManager.ReturnToTitle(); return; }
+                    if (Time.time - emptyStartTime >= 15f)
+                    {
+                        _cts?.Cancel();
+                        _gameManager.ReturnToTitle();
+                        return;
+                    }
+
                     await UniTask.Delay(TimeSpan.FromSeconds(pollInterval), cancellationToken: ct);
                     continue;
                 }
 
-                // ② 유저 조회 (방이 USING일 때만)
+                // 유저 조회 (방이 USING일 때만)
                 using (var req = UnityWebRequest.Get(userUrl))
                 {
                     req.timeout = 10;
@@ -194,24 +203,33 @@ namespace My.Scripts._01_Tutorial.Pages
                         await UniTask.Delay(TimeSpan.FromSeconds(pollInterval), cancellationToken: ct);
                         continue;
                     }
+
                     if (res.result == UnityWebRequest.Result.Success)
                     {
                         string rawText = res.downloadHandler.text;
                         if (rawText.Contains(GameConstants.Api.StatusEmpty, StringComparison.OrdinalIgnoreCase))
                         {
                             emptyStartTime = (emptyStartTime < 0f) ? Time.time : emptyStartTime;
-                            if (Time.time - emptyStartTime >= 15f) { _gameManager.ReturnToTitle(); return; }
+                            if (Time.time - emptyStartTime >= 15f)
+                            {
+                                _cts?.Cancel();
+                                _gameManager.ReturnToTitle();
+                                return;
+                            }
                         }
                         else if (rawText.Contains(","))
                         {
                             emptyStartTime = -1f;
-                            string[] parts = rawText.Split(new[] { '\r', '\n', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                            string[] parts = rawText.Split(new[] { '\r', '\n', ',' },
+                                StringSplitOptions.RemoveEmptyEntries);
                             if (parts.Length >= 2 && _sessionManager)
                             {
                                 _sessionManager.PlayerAUid = parts[0].Trim();
                                 _sessionManager.PlayerBUid = parts[1].Trim();
-                                var fetchResult = await apiManager.FetchDataAsync(parts[0].Trim()).SuppressCancellationThrow();
-                                if (fetchResult.IsCanceled == false && fetchResult.Result == true && _sessionManager.CurrentUserId != 0)
+                                var fetchResult = await apiManager.FetchDataAsync(parts[0].Trim())
+                                    .SuppressCancellationThrow();
+                                if (fetchResult.IsCanceled == false && fetchResult.Result == true &&
+                                    _sessionManager.CurrentUserId != 0)
                                 {
                                     CompleteStep();
                                     return;
@@ -220,6 +238,7 @@ namespace My.Scripts._01_Tutorial.Pages
                         }
                     }
                 }
+
                 await UniTask.Delay(TimeSpan.FromSeconds(pollInterval), cancellationToken: ct);
             }
         }

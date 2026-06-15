@@ -33,13 +33,6 @@ namespace My.Scripts.Hardware
 
         public bool IsConnected => _arduinoPort != null && _arduinoPort.IsOpen;
 
-        private void Start()
-        {
-            _isRunning = true;
-            _cts = new CancellationTokenSource();
-            AutoConnectAsync(_cts.Token).Forget();
-        }
-
         private void Update()
         {
             if (_inputQueue.Count > 100)
