@@ -278,6 +278,7 @@ namespace My.Scripts._04_PlayLong
             if ((pIdx == 0 && _p1StepCount > _p2StepCount) || (pIdx == 1 && _p2StepCount > _p1StepCount)) return false;
             if (_isIntroMissionActive && lIdx != 1) return false;
             if (_isRightMissionActive && lIdx != 2) return false;
+            if (_isLeftMissionActive && ((pIdx == 0 && lIdx != 0) || (pIdx == 1 && lIdx != 2))) return false;
 
             return true;
         }

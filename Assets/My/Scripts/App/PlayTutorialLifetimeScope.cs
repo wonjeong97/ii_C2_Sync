@@ -14,6 +14,7 @@ namespace My.Scripts.App
             builder.RegisterComponentInHierarchy<PlayTutorialEnvironment>();
             builder.RegisterComponentInHierarchy<PlayTutorialUIManager>();
             builder.RegisterComponentInHierarchy<PadDotController>();
+            builder.RegisterComponentInHierarchy<InputManager>();
         }
     }    
 }

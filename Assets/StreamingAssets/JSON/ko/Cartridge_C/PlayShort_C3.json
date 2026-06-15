@@ -7,7 +7,7 @@
         "scale": { "x": 1, "y": 1, "z": 1 },
         "text": "상대와 의견이 다를 때,\n내가 바라는 점을 명확하게 말로 꺼낸다.",
         "fontName": "font7",
-        "fontSize": 48,
+        "fontSize": 38,
         "fontColor": { "r": 1, "g": 1, "b": 1, "a": 1 },
         "alignment": 1
       },

@@ -38,6 +38,7 @@ namespace My.Scripts.Core.FlowSystem
         {
             cts?.Cancel();
             cts?.Dispose();
+            cts = null;
         }
 
         private async UniTaskVoid InitializeFlowAsync(CancellationToken ct)
@@ -85,6 +86,8 @@ namespace My.Scripts.Core.FlowSystem
 
         protected virtual void OnPageComplete(int currentIndex, int nextIndex, int info)
         {
+            if (cts == null) return;
+
             if (nextIndex < pages.Length)
             {
                 TransitionAsync(nextIndex, info, cts.Token).Forget();
