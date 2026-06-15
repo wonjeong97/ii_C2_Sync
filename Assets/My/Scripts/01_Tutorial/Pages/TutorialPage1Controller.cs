@@ -73,11 +73,12 @@ namespace My.Scripts._01_Tutorial.Pages
         public override void OnEnter()
         {
             base.OnEnter();
-            _cts = new CancellationTokenSource();
+            var cts = new CancellationTokenSource();
+            _cts = cts;
 
             if (_gameManager) _gameManager.IsAutoProgressing = true;
 
-            FadeInAndPollAsync(_cts.Token).Forget();
+            FadeInAndPollAsync(cts).Forget();
         }
 
         public override void OnExit()
@@ -99,8 +100,9 @@ namespace My.Scripts._01_Tutorial.Pages
             if (Input.GetKeyDown(KeyCode.Return)) CompleteStep();
         }
 
-        private async UniTaskVoid FadeInAndPollAsync(CancellationToken ct)
+        private async UniTaskVoid FadeInAndPollAsync(CancellationTokenSource cts)
         {
+            CancellationToken ct = cts.Token;
             if (descriptionText)
             {
                 float duration = 0.5f;
@@ -115,11 +117,12 @@ namespace My.Scripts._01_Tutorial.Pages
                 SetTextAlpha(1f);
             }
 
-            await PollRoomStateAsync(ct);
+            await PollRoomStateAsync(cts);
         }
 
-        private async UniTask PollRoomStateAsync(CancellationToken ct)
+        private async UniTask PollRoomStateAsync(CancellationTokenSource cts)
         {
+            CancellationToken ct = cts.Token;
 #if UNITY_EDITOR
             await UniTask.Delay(TimeSpan.FromSeconds(1.0f), cancellationToken: ct);
             if (apiManager) apiManager.FillDebugSession();
@@ -175,7 +178,7 @@ namespace My.Scripts._01_Tutorial.Pages
                     emptyStartTime = (emptyStartTime < 0f) ? Time.time : emptyStartTime;
                     if (Time.time - emptyStartTime >= 15f)
                     {
-                        _cts?.Cancel();
+                        cts.Cancel();
                         _gameManager.ReturnToTitle();
                         return;
                     }
@@ -212,7 +215,7 @@ namespace My.Scripts._01_Tutorial.Pages
                             emptyStartTime = (emptyStartTime < 0f) ? Time.time : emptyStartTime;
                             if (Time.time - emptyStartTime >= 15f)
                             {
-                                _cts?.Cancel();
+                                cts.Cancel();
                                 _gameManager.ReturnToTitle();
                                 return;
                             }
