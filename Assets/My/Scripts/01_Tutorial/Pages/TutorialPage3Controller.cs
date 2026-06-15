@@ -37,7 +37,7 @@ namespace My.Scripts._01_Tutorial.Pages
         private TutorialPage3Data _data; 
         private CancellationTokenSource _cts;
 
-        private bool _isAFinished, _isBFinished, _isStepCompleted; 
+        private bool _isAFinished, _isBFinished, _isStepCompleted, _finishSoundPlayed;
         private bool _pAPad0, _pAPad1, _pBPad0, _pBPad1;
         private bool _pAIsReady, _pAHasJumped, _pBIsReady, _pBHasJumped;
         private float _pAFirstFootTime, _pBFirstFootTime; 
@@ -82,7 +82,7 @@ namespace My.Scripts._01_Tutorial.Pages
             
             if (_gameManager) _gameManager.IsAutoProgressing = false;
 
-            _isAFinished = _isBFinished = _isStepCompleted = false;
+            _isAFinished = _isBFinished = _isStepCompleted = _finishSoundPlayed = false;
             _pAIsReady = _pAHasJumped = _pBIsReady = _pBHasJumped = false;
             _pAFirstFootTime = _pBFirstFootTime = 0f;
 
@@ -201,8 +201,12 @@ namespace My.Scripts._01_Tutorial.Pages
             {
                 bool isSimultaneous = (Time.time - firstFootTime) <= jumpLandingTolerance;
                 if (hasJumped && isSimultaneous)
-                {   
-                    _soundManager?.PlaySFX("공통_5");
+                {
+                    if (!_finishSoundPlayed)
+                    {
+                        _finishSoundPlayed = true;
+                        _soundManager?.PlaySFX("공통_5");
+                    }
                     isFinished = true;
                     FadeInImageAsync(checkImg, 1.0f, _cts.Token).Forget();
                 }

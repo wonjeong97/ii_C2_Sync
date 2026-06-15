@@ -883,8 +883,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df5acd0db11654146908388f4a3aa64d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxRetries: 0
-  retryDelay: 0
+  maxRetries: 10
+  retryDelay: 1
 --- !u!4 &632960797
 Transform:
   m_ObjectHideFlags: 0

@@ -144,7 +144,7 @@ namespace My.Scripts._01_Tutorial.Pages
                 string checkUrl = ZString.Concat(_gameManager.ApiConfig.CheckRoomStateUrl, "?code=", code);
                 string userUrl = ZString.Concat(_gameManager.ApiConfig.GetCurrentRoomUserUrl, "?code=", code);
 
-                // ① 방 상태 확인
+                // 방 상태 확인
                 bool roomEmpty = false;
                 using (var req = UnityWebRequest.Get(checkUrl))
                 {
